@@ -15,15 +15,21 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.database.models import Employee, ProjectMember, WikiPage
+from app.database.models import Employee, ProjectMember, WikiPage, WikiPageRevision
 from app.services import wiki_service
 from app.services.auth_service import get_current_user, require_permission
-from app.services.permission_engine import _get_user_permissions, get_scope_level
+from app.services.permission_engine import (
+    _get_user_permissions,
+    get_scope_level,
+    get_workspace_role,
+    workspace_role_can,
+    has_any_permission,
+)
 from app.services.audit_service import log_audit
 
 router = APIRouter()
@@ -46,6 +52,28 @@ class WikiPageDetail(WikiPageSummary):
     content_md: str
     backlinks: list[str]
     outlinks: list[str]
+    orphaned: bool = False
+
+
+class WikiDirectEditRequest(BaseModel):
+    content_md: str
+    change_note: Optional[str] = None
+
+    @field_validator("content_md")
+    @classmethod
+    def not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("content_md must not be empty")
+        return v
+
+
+class WikiRevisionSummary(BaseModel):
+    id: uuid.UUID
+    version: int
+    change_type: str
+    changed_by_name: Optional[str] = None
+    change_note: Optional[str] = None
+    created_at: str
 
 
 def _summary(p: WikiPage) -> WikiPageSummary:
@@ -60,6 +88,16 @@ def _summary(p: WikiPage) -> WikiPageSummary:
         scope_id=p.scope_id,
         version=p.version or 1,
         updated_at=p.updated_at.isoformat() if p.updated_at else "",
+    )
+
+
+def _detail(p: WikiPage, backlinks: list[str], outlinks: list[str]) -> WikiPageDetail:
+    return WikiPageDetail(
+        **_summary(p).model_dump(),
+        content_md=p.content_md or "",
+        backlinks=sorted(backlinks),
+        outlinks=sorted(outlinks),
+        orphaned=p.orphaned or False,
     )
 
 
@@ -161,13 +199,7 @@ async def get_wiki_page(
 
     backlinks = await wiki_service.get_backlinks(db, slug)
     outlinks = await wiki_service.get_outlinks(db, slug)
-    base = _summary(page)
-    return WikiPageDetail(
-        **base.model_dump(),
-        content_md=page.content_md or "",
-        backlinks=sorted(backlinks),
-        outlinks=sorted(outlinks),
-    )
+    return _detail(page, backlinks, outlinks)
 
 
 @router.get("/wiki/index")
@@ -186,6 +218,120 @@ async def get_wiki_log(
 ):
     page = await wiki_service.get_page_by_slug(db, wiki_service.LOG_SLUG)
     return {"content_md": page.content_md if page else ""}
+
+
+@router.put("/wiki/pages/{slug:path}", response_model=WikiPageDetail)
+async def direct_edit_wiki_page(
+    slug: str,
+    body: WikiDirectEditRequest,
+    db: AsyncSession = Depends(get_db),
+    user: Employee = Depends(get_current_user),
+):
+    """Direct sync edit by an editor or admin. No review step. Creates a revision."""
+    if slug in (wiki_service.INDEX_SLUG, wiki_service.LOG_SLUG):
+        raise HTTPException(400, "Cannot directly edit reserved pages")
+
+    page = await wiki_service.get_page_by_slug_any_scope(db, slug)
+    if not page:
+        raise HTTPException(404, f"Wiki page not found: {slug}")
+
+    # Permission: workspace editor+ OR wiki:write:all OR admin
+    if user.role != "admin":
+        if page.scope_type == "project" and page.scope_id:
+            member_role = await get_workspace_role(db, user, page.scope_id)
+            if not member_role or not workspace_role_can(member_role, "editor"):
+                raise HTTPException(403, "Requires editor role or above in this workspace")
+        else:
+            perms = _get_user_permissions(user)
+            if "wiki:write:all" not in perms:
+                raise HTTPException(403, "Requires wiki:write:all permission to directly edit global wiki pages")
+
+    await wiki_service.direct_edit_page(db, page, user.id, body.content_md, body.change_note)
+    await log_audit(db, user, "update", "wiki_page", str(page.id), reason=f"direct edit: {slug}")
+    await db.commit()
+    await db.refresh(page)
+
+    backlinks = await wiki_service.get_backlinks(db, slug)
+    outlinks = await wiki_service.get_outlinks(db, slug)
+    return _detail(page, backlinks, outlinks)
+
+
+@router.get("/wiki/pages/{slug:path}/revisions", response_model=list[WikiRevisionSummary])
+async def list_wiki_page_revisions(
+    slug: str,
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    user: Employee = require_permission("wiki:read"),
+):
+    """List revision history for a wiki page (most recent first)."""
+    page = await wiki_service.get_page_by_slug_any_scope(db, slug)
+    if not page:
+        raise HTTPException(404, f"Wiki page not found: {slug}")
+
+    from app.database.models import Employee as Emp
+    rows = (await db.execute(
+        select(WikiPageRevision, Emp.name.label("changed_by_name"))
+        .outerjoin(Emp, WikiPageRevision.changed_by_id == Emp.id)
+        .where(WikiPageRevision.page_id == page.id)
+        .order_by(WikiPageRevision.version.desc())
+        .limit(limit)
+    )).all()
+
+    return [
+        WikiRevisionSummary(
+            id=r.WikiPageRevision.id,
+            version=r.WikiPageRevision.version,
+            change_type=r.WikiPageRevision.change_type,
+            changed_by_name=r.changed_by_name,
+            change_note=r.WikiPageRevision.change_note,
+            created_at=r.WikiPageRevision.created_at.isoformat(),
+        )
+        for r in rows
+    ]
+
+
+@router.post("/wiki/pages/{slug:path}/revisions/{version}/rollback", response_model=WikiPageDetail)
+async def rollback_wiki_page(
+    slug: str,
+    version: int,
+    db: AsyncSession = Depends(get_db),
+    user: Employee = Depends(get_current_user),
+):
+    """Rollback a wiki page to a specific version. Admin only."""
+    if user.role != "admin":
+        raise HTTPException(403, "Only admins can rollback wiki pages")
+
+    page = await wiki_service.get_page_by_slug_any_scope(db, slug)
+    if not page:
+        raise HTTPException(404, f"Wiki page not found: {slug}")
+
+    try:
+        await wiki_service.rollback_to_revision(db, page, version, user.id)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+    await log_audit(db, user, "update", "wiki_page", str(page.id), reason=f"rollback to v{version}: {slug}")
+    await db.commit()
+    await db.refresh(page)
+
+    backlinks = await wiki_service.get_backlinks(db, slug)
+    outlinks = await wiki_service.get_outlinks(db, slug)
+    return _detail(page, backlinks, outlinks)
+
+
+@router.get("/wiki/orphaned", response_model=list[WikiPageSummary])
+async def list_orphaned_wiki_pages(
+    db: AsyncSession = Depends(get_db),
+    user: Employee = Depends(get_current_user),
+):
+    """List wiki pages that have no source document (orphaned). Admin only."""
+    if user.role != "admin":
+        raise HTTPException(403, "Only admins can view orphaned pages")
+
+    pages = (await db.execute(
+        select(WikiPage).where(WikiPage.orphaned == True).order_by(WikiPage.updated_at.desc())  # noqa: E712
+    )).scalars().all()
+    return [_summary(p) for p in pages]
 
 
 @router.delete("/wiki/pages/{slug:path}")

@@ -250,13 +250,13 @@ export default function SkillDetailPage() {
               </div>
               <div className="space-y-3">
                 <Select 
-                  value={viewingVersion?.toString()} 
-                  onValueChange={(v) => setViewingVersion(parseInt(v))}
+                  value={viewingVersion?.toString() || ""} 
+                  onValueChange={(v) => setViewingVersion(v ? parseInt(v) : null)}
                 >
                   <SelectTrigger className="w-full bg-secondary/5 border-primary/20 h-10">
                     <SelectValue placeholder="Select version" />
                   </SelectTrigger>
-                  <SelectContent position="popper" sideOffset={4} className="max-h-60">
+                  <SelectContent sideOffset={4} className="max-h-60">
                     {versions.map((v) => (
                       <SelectItem key={v.version_number} value={v.version_number.toString()}>
                         Version {v.version_number} 

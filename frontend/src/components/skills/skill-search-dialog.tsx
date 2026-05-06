@@ -49,8 +49,7 @@ export function SkillSearchDialog({
     return skills.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
-        (s.description && s.description.toLowerCase().includes(q)) ||
-        s.tags.some(t => t.toLowerCase().includes(q))
+        (s.description && s.description.toLowerCase().includes(q))
     );
   }, [skills, debouncedQuery]);
 
@@ -119,9 +118,9 @@ export function SkillSearchDialog({
                       <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
                         {skill.name}
                       </p>
-                      {skill.department_name && (
+                      {skill.department_names && skill.department_names.length > 0 && (
                         <span className="text-[10px] bg-secondary px-2 py-0.5 rounded text-secondary-foreground font-medium">
-                          {skill.department_name}
+                          {skill.department_names[0]}
                         </span>
                       )}
                     </div>
@@ -130,14 +129,7 @@ export function SkillSearchDialog({
                         {skill.description}
                       </p>
                     )}
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {skill.tags.slice(0, 3).map(tag => (
-                        <span key={tag} className="text-[9px] bg-primary/5 text-primary/70 px-1.5 py-0.5 rounded-md border border-primary/10">
-                          {tag}
-                        </span>
-                      ))}
                     </div>
-                  </div>
                 </button>
               ))}
             </div>

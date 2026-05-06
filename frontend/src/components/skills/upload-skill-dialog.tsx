@@ -79,7 +79,7 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
       resetForm();
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        setConflictFiles(err.data?.detail?.conflicts || []);
+        setConflictFiles((err.data as any)?.detail?.conflicts || []);
       } else {
         alert(err instanceof Error ? err.message : "Upload failed");
       }
@@ -132,7 +132,7 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
             <div className="grid gap-2">
               <Label>Visibility</Label>
               <Select value={scopeType} onValueChange={(v) => {
-                setScopeType(v);
+                setScopeType(v || "global");
                 setDeptIds([]);
               }}>
                 <SelectTrigger className="bg-secondary/5 h-11">

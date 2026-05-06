@@ -10,99 +10,10 @@ import {
   forceCollide,
   forceX,
   forceY,
-  SimulationNodeDatum,
-  SimulationLinkDatum,
 } from "d3-force";
-import { wikiTypeColor, wikiTypeGroupLabel, wikiTypeIcon } from "./wiki-type-badge";
-
-// --- Convex hull for scope cluster bubbles ---
-function convexHull(points: [number, number][]): [number, number][] {
-  if (points.length <= 1) return points;
-  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const cross = (o: [number, number], a: [number, number], b: [number, number]) =>
-    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const lower: [number, number][] = [];
-  for (const p of sorted) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0)
-      lower.pop();
-    lower.push(p);
-  }
-  const upper: [number, number][] = [];
-  for (const p of sorted.reverse()) {
-    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0)
-      upper.pop();
-    upper.push(p);
-  }
-  upper.pop();
-  lower.pop();
-  return lower.concat(upper);
-}
-
-function hullToPath(hull: [number, number][], padding: number): string {
-  if (hull.length === 0) return "";
-  if (hull.length === 1) {
-    const [x, y] = hull[0];
-    return `M ${x - padding},${y} A ${padding},${padding} 0 1,0 ${x + padding},${y} A ${padding},${padding} 0 1,0 ${x - padding},${y} Z`;
-  }
-  if (hull.length === 2) {
-    // Capsule shape between 2 points
-    const [x1, y1] = hull[0];
-    const [x2, y2] = hull[1];
-    const dx = x2 - x1, dy = y2 - y1;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const nx = -dy / len * padding, ny = dx / len * padding;
-    return `M ${x1 + nx},${y1 + ny} L ${x2 + nx},${y2 + ny} A ${padding},${padding} 0 0,1 ${x2 - nx},${y2 - ny} L ${x1 - nx},${y1 - ny} A ${padding},${padding} 0 0,1 ${x1 + nx},${y1 + ny} Z`;
-  }
-  // Padded hull with rounded corners using cubic beziers
-  const cx = hull.reduce((s, p) => s + p[0], 0) / hull.length;
-  const cy = hull.reduce((s, p) => s + p[1], 0) / hull.length;
-  const expanded = hull.map(([x, y]) => {
-    const dx = x - cx, dy = y - cy;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    return [x + (dx / len) * padding, y + (dy / len) * padding] as [number, number];
-  });
-  const pts = expanded;
-  const n = pts.length;
-  let d = `M ${(pts[n - 1][0] + pts[0][0]) / 2},${(pts[n - 1][1] + pts[0][1]) / 2}`;
-  for (let i = 0; i < n; i++) {
-    const curr = pts[i];
-    const next = pts[(i + 1) % n];
-    const mx = (curr[0] + next[0]) / 2;
-    const my = (curr[1] + next[1]) / 2;
-    d += ` Q ${curr[0]},${curr[1]} ${mx},${my}`;
-  }
-  d += " Z";
-  return d;
-}
-
-// Pick a muted scope color distinct from type colors
-const SCOPE_COLORS = ["#7c8dac", "#9b8a6e", "#7a9e7a", "#b07a8a", "#8a7ab0", "#6e9b9b"];
-function scopeColor(idx: number): string {
-  return SCOPE_COLORS[idx % SCOPE_COLORS.length];
-}
-
-type GraphNode = SimulationNodeDatum & {
-  slug: string;
-  title: string;
-  page_type: string;
-  scope_type?: string;
-  scope_name?: string | null;
-  degree?: number;
-};
-
-type GraphLink = SimulationLinkDatum<GraphNode> & {
-  from: string;
-  to: string;
-};
-
-type NodeInput = {
-  slug: string;
-  title: string;
-  page_type: string;
-  scope_type?: string;
-  scope_id?: string | null;
-  scope_name?: string | null;
-};
+import { wikiTypeColor, wikiTypeGroupLabel, wikiTypeIcon } from "../wiki-type-badge";
+import { GraphNode, GraphLink, NodeInput } from "./types";
+import { convexHull, hullToPath, scopeColor, nodeRadius } from "./utils";
 
 type Props = {
   nodes: NodeInput[];
@@ -113,15 +24,9 @@ type Props = {
   onNodeClick?: (slug: string) => void;
 };
 
-// --- Palette ---
 const EDGE_COLOR = "rgba(120,112,106,0.35)";
 const EDGE_HIGHLIGHT = "#c2652a";
 const LABEL_COLOR = "#3a302a";
-
-function nodeRadius(degree: number, mini: boolean): number {
-  if (mini) return Math.max(3, Math.min(6, 3 + Math.sqrt(degree) * 1.2));
-  return Math.max(5, Math.min(18, 5 + Math.sqrt(degree) * 3));
-}
 
 export function WikiGraph({
   nodes: rawNodes,
@@ -403,7 +308,6 @@ export function WikiGraph({
         const padding = 30;
         const path = hullToPath(hull, padding);
         const cx = points.reduce((s, p) => s + p[0], 0) / points.length;
-        const cy = points.reduce((s, p) => s + p[1], 0) / points.length;
         // Find topmost point for label
         const topY = Math.min(...points.map((p) => p[1])) - padding - 6;
         return { key, path, cx, labelY: topY, color: scopeColor(idx), scopeName: g.scopeName };
@@ -733,22 +637,4 @@ export function WikiGraph({
   );
 }
 
-export function WikiGraphMini({
-  slug,
-  nodes,
-  edges,
-}: {
-  slug: string;
-  nodes: NodeInput[];
-  edges: { from: string; to: string }[];
-}) {
-  return (
-    <WikiGraph
-      nodes={nodes}
-      edges={edges}
-      centerSlug={slug}
-      mini
-      height={180}
-    />
-  );
-}
+export { WikiGraphMini } from "./wiki-graph-mini";

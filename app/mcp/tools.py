@@ -563,3 +563,396 @@ def register_tools(mcp: FastMCP):
             title = s.title or s.file_name or s.url or "Untitled"
             lines.append(f"- **{title}** (ID: `{s.id}`)")
         return "\n".join(lines)
+
+    # =========================================================================
+    # Tier 2 — Contribute (member-level, requires review)
+    # =========================================================================
+
+    @mcp.tool()
+    async def propose_wiki_edit(slug: str, content_md: str, note: Optional[str] = None) -> str:
+        """
+        Propose an edit to an existing wiki page. Creates a pending draft for editor review.
+
+        Use search_wiki() or read_wiki_index() to find the right slug first.
+        Always confirm with the user before submitting.
+
+        Args:
+            slug: Target page slug (e.g. "concept/fire-safety").
+            content_md: The full proposed content in Markdown (max 50,000 chars).
+            note: Optional one-line explanation of what you changed and why.
+        """
+        from sqlalchemy import select
+        from app.database import async_session_factory
+        from app.database.models import Employee, WikiPage
+        from app.services import wiki_service
+        from app.services.permission_engine import (
+            get_workspace_role, workspace_role_can, has_any_permission, _get_user_permissions,
+        )
+
+        identity, err = await _get_identity()
+        if err:
+            return err
+
+        if not slug or not content_md.strip():
+            return "Error: slug and content_md are required."
+        if slug in ("_index", "_log"):
+            return "Error: cannot propose drafts for reserved pages."
+        if len(content_md) > 50_000:
+            return "Error: content_md exceeds 50,000 character limit."
+
+        async with async_session_factory() as session:
+            page = (await session.execute(
+                select(WikiPage).where(WikiPage.slug == slug)
+            )).scalar_one_or_none()
+            if not page:
+                return f"Page '{slug}' not found. Use read_wiki_index() to browse available pages."
+
+            employee = await session.get(Employee, identity.employee_id)
+            if not employee:
+                return "Error: employee not found."
+
+            if employee.role != "admin":
+                if page.scope_type == "project" and page.scope_id:
+                    role = await get_workspace_role(session, employee, page.scope_id)
+                    if not role:
+                        return f"Error: you are not a member of the workspace for page '{slug}'."
+                    if not workspace_role_can(role, "contributor"):
+                        return f"Error: requires contributor role or above to propose edits to '{slug}'."
+                else:
+                    perms = _get_user_permissions(employee)
+                    if not has_any_permission(list(perms), "wiki", "write"):
+                        return "Error: insufficient permission to propose wiki edits."
+
+            draft = await wiki_service.create_draft(
+                session,
+                page_id=page.id,
+                author_id=employee.id,
+                content_md=content_md.strip(),
+                note=note,
+                source="mcp_claude_desktop",
+            )
+            await session.commit()
+
+        return (
+            f"Draft submitted for `{slug}` (Draft ID: `{draft.id}`).\n"
+            f"An editor will review it. Note: {note or '(none)'}"
+        )
+
+    # =========================================================================
+    # Tier 3 — Direct Edit (editor/admin only, no review)
+    # =========================================================================
+
+    @mcp.tool()
+    async def edit_wiki_page(slug: str, content_md: str, change_note: Optional[str] = None) -> str:
+        """
+        Directly edit a wiki page. Requires editor or admin role.
+        Creates a revision in history immediately — no review step.
+
+        Use propose_wiki_edit() instead if you only have contributor access.
+
+        Args:
+            slug: Target page slug.
+            content_md: Full new content in Markdown.
+            change_note: Optional one-line description of the change.
+        """
+        from sqlalchemy import select
+        from app.database import async_session_factory
+        from app.database.models import Employee, WikiPage
+        from app.services import wiki_service
+        from app.services.permission_engine import (
+            get_workspace_role, workspace_role_can, has_any_permission, _get_user_permissions,
+        )
+
+        identity, err = await _get_identity()
+        if err:
+            return err
+
+        if not slug or not content_md.strip():
+            return "Error: slug and content_md are required."
+        if slug in ("_index", "_log"):
+            return "Error: cannot directly edit reserved pages."
+
+        async with async_session_factory() as session:
+            page = (await session.execute(
+                select(WikiPage).where(WikiPage.slug == slug)
+            )).scalar_one_or_none()
+            if not page:
+                return f"Page '{slug}' not found."
+
+            employee = await session.get(Employee, identity.employee_id)
+            if not employee:
+                return "Error: employee not found."
+
+            if employee.role != "admin":
+                if page.scope_type == "project" and page.scope_id:
+                    role = await get_workspace_role(session, employee, page.scope_id)
+                    if not role or not workspace_role_can(role, "editor"):
+                        return f"Error: requires editor role or above to directly edit '{slug}'."
+                else:
+                    perms = _get_user_permissions(employee)
+                    if "wiki:write:all" not in perms:
+                        return "Error: requires wiki:write:all permission to directly edit global wiki pages. Use propose_wiki_edit() instead."
+
+            await wiki_service.direct_edit_page(session, page, employee.id, content_md.strip(), change_note)
+            await session.commit()
+
+        return f"Page `{slug}` updated to v{page.version}."
+
+    # =========================================================================
+    # Tier 4 — Review (editor/admin only)
+    # =========================================================================
+
+    @mcp.tool()
+    async def list_pending_drafts(workspace_id: Optional[str] = None) -> str:
+        """
+        List pending wiki drafts awaiting editor review.
+
+        Args:
+            workspace_id: Optional. Filter to a specific workspace UUID.
+                          Omit to see all accessible pending drafts.
+        """
+        from sqlalchemy import select
+        from app.database import async_session_factory
+        from app.database.models import Employee, WikiPage, WikiPageDraft
+        from app.services.permission_engine import (
+            get_workspace_role, workspace_role_can, has_any_permission, _get_user_permissions,
+        )
+
+        identity, err = await _get_identity()
+        if err:
+            return err
+
+        async with async_session_factory() as session:
+            employee = await session.get(Employee, identity.employee_id)
+            if not employee:
+                return "Error: employee not found."
+
+            stmt = (
+                select(WikiPageDraft)
+                .where(WikiPageDraft.status == "pending")
+                .order_by(WikiPageDraft.created_at.asc())
+                .limit(50)
+            )
+            drafts = (await session.execute(stmt)).scalars().all()
+
+            lines = []
+            for draft in drafts:
+                page = await session.get(WikiPage, draft.page_id)
+                if not page:
+                    continue
+                if workspace_id and str(page.scope_id) != workspace_id:
+                    continue
+                # Check reviewer permission
+                can_review = employee.role == "admin"
+                if not can_review and page.scope_type == "project" and page.scope_id:
+                    role = await get_workspace_role(session, employee, page.scope_id)
+                    can_review = bool(role) and workspace_role_can(role, "editor")
+                elif not can_review:
+                    perms = _get_user_permissions(employee)
+                    can_review = "wiki:write:all" in perms
+                if not can_review:
+                    continue
+
+                author = await session.get(Employee, draft.author_id) if draft.author_id else None
+                lines.append(
+                    f"- **{page.slug}** | Draft `{draft.id}` | "
+                    f"by {author.name if author else 'unknown'} | "
+                    f"{draft.created_at.strftime('%Y-%m-%d %H:%M')} | "
+                    f"note: {draft.note or '(none)'}"
+                )
+
+        if not lines:
+            return "No pending drafts found."
+        return f"**{len(lines)} pending draft(s):**\n\n" + "\n".join(lines)
+
+    @mcp.tool()
+    async def review_draft(draft_id: str) -> str:
+        """
+        Get full content of a pending draft for review.
+        Returns the draft content alongside the current page content for comparison.
+
+        Args:
+            draft_id: UUID of the draft (from list_pending_drafts).
+        """
+        from app.database import async_session_factory
+        from app.database.models import Employee, WikiPage, WikiPageDraft
+        from app.services.permission_engine import (
+            get_workspace_role, workspace_role_can, _get_user_permissions,
+        )
+        import uuid as _uuid
+
+        identity, err = await _get_identity()
+        if err:
+            return err
+
+        try:
+            did = _uuid.UUID(draft_id)
+        except ValueError:
+            return "Error: invalid draft ID format."
+
+        async with async_session_factory() as session:
+            draft = await session.get(WikiPageDraft, did)
+            if not draft:
+                return f"Draft `{draft_id}` not found."
+
+            employee = await session.get(Employee, identity.employee_id)
+            if not employee:
+                return "Error: employee not found."
+
+            page = await session.get(WikiPage, draft.page_id)
+            if not page:
+                return "Error: parent wiki page not found."
+
+            # Permission: editor+ in workspace, or wiki:write:all, or admin
+            can_review = employee.role == "admin"
+            if not can_review and page.scope_type == "project" and page.scope_id:
+                role = await get_workspace_role(session, employee, page.scope_id)
+                can_review = bool(role) and workspace_role_can(role, "editor")
+            elif not can_review:
+                perms = _get_user_permissions(employee)
+                can_review = "wiki:write:all" in perms
+            if not can_review:
+                return "Error: insufficient permission to review drafts for this page."
+
+            author = await session.get(Employee, draft.author_id) if draft.author_id else None
+
+        return (
+            f"## Draft `{draft_id}`\n"
+            f"**Page:** `{page.slug}` — {page.title}\n"
+            f"**Author:** {author.name if author else 'unknown'}\n"
+            f"**Status:** {draft.status}\n"
+            f"**Note:** {draft.note or '(none)'}\n\n"
+            f"---\n\n"
+            f"### Proposed content\n\n{draft.content_md}\n\n"
+            f"---\n\n"
+            f"### Current page content (v{page.version})\n\n{page.content_md or '_(empty)_'}"
+        )
+
+    @mcp.tool()
+    async def approve_draft(
+        draft_id: str,
+        reviewer_note: Optional[str] = None,
+        edited_content_md: Optional[str] = None,
+    ) -> str:
+        """
+        Approve a pending wiki draft. Requires editor or admin role.
+
+        The draft content (or your edited version) is written directly to the wiki page.
+        A revision is created in history.
+
+        Args:
+            draft_id: UUID of the draft to approve.
+            reviewer_note: Optional note to the author explaining the decision.
+            edited_content_md: Optional — provide this to approve with your own edits
+                               instead of the author's original content.
+        """
+        from app.database import async_session_factory
+        from app.database.models import Employee, WikiPage, WikiPageDraft
+        from app.services import wiki_service
+        from app.services.permission_engine import (
+            get_workspace_role, workspace_role_can, _get_user_permissions,
+        )
+        import uuid as _uuid
+
+        identity, err = await _get_identity()
+        if err:
+            return err
+
+        try:
+            did = _uuid.UUID(draft_id)
+        except ValueError:
+            return "Error: invalid draft ID format."
+
+        async with async_session_factory() as session:
+            draft = await session.get(WikiPageDraft, did)
+            if not draft:
+                return f"Draft `{draft_id}` not found."
+            if draft.status != "pending":
+                return f"Error: draft is already {draft.status}."
+
+            employee = await session.get(Employee, identity.employee_id)
+            if not employee:
+                return "Error: employee not found."
+
+            page = await session.get(WikiPage, draft.page_id)
+            if not page:
+                return "Error: parent wiki page not found."
+
+            can_review = employee.role == "admin"
+            if not can_review and page.scope_type == "project" and page.scope_id:
+                role = await get_workspace_role(session, employee, page.scope_id)
+                can_review = bool(role) and workspace_role_can(role, "editor")
+            elif not can_review:
+                perms = _get_user_permissions(employee)
+                can_review = "wiki:write:all" in perms
+            if not can_review:
+                return "Error: insufficient permission to approve drafts for this page."
+
+            await wiki_service.approve_draft(
+                session, draft, employee.id,
+                reviewer_note=reviewer_note,
+                edited_content_md=edited_content_md,
+            )
+            await session.commit()
+
+        return f"Draft `{draft_id}` approved. Page `{page.slug}` updated to v{page.version}."
+
+    @mcp.tool()
+    async def reject_draft(draft_id: str, reviewer_note: str) -> str:
+        """
+        Reject a pending wiki draft. reviewer_note is required — the author needs
+        to understand why their proposal was not accepted.
+
+        Args:
+            draft_id: UUID of the draft to reject.
+            reviewer_note: Required explanation for the author.
+        """
+        from app.database import async_session_factory
+        from app.database.models import Employee, WikiPage, WikiPageDraft
+        from app.services import wiki_service
+        from app.services.permission_engine import (
+            get_workspace_role, workspace_role_can, _get_user_permissions,
+        )
+        import uuid as _uuid
+
+        identity, err = await _get_identity()
+        if err:
+            return err
+
+        if not reviewer_note or not reviewer_note.strip():
+            return "Error: reviewer_note is required when rejecting a draft."
+
+        try:
+            did = _uuid.UUID(draft_id)
+        except ValueError:
+            return "Error: invalid draft ID format."
+
+        async with async_session_factory() as session:
+            draft = await session.get(WikiPageDraft, did)
+            if not draft:
+                return f"Draft `{draft_id}` not found."
+            if draft.status != "pending":
+                return f"Error: draft is already {draft.status}."
+
+            employee = await session.get(Employee, identity.employee_id)
+            if not employee:
+                return "Error: employee not found."
+
+            page = await session.get(WikiPage, draft.page_id)
+            if not page:
+                return "Error: parent wiki page not found."
+
+            can_review = employee.role == "admin"
+            if not can_review and page.scope_type == "project" and page.scope_id:
+                role = await get_workspace_role(session, employee, page.scope_id)
+                can_review = bool(role) and workspace_role_can(role, "editor")
+            elif not can_review:
+                perms = _get_user_permissions(employee)
+                can_review = "wiki:write:all" in perms
+            if not can_review:
+                return "Error: insufficient permission to reject drafts for this page."
+
+            await wiki_service.reject_draft(session, draft, employee.id, reviewer_note.strip())
+            await session.commit()
+
+        return f"Draft `{draft_id}` rejected. Note to author: {reviewer_note}"

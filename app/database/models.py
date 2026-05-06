@@ -182,6 +182,7 @@ class WikiPage(Base):
     )
     embedding = mapped_column(Vector(768), nullable=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    orphaned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -208,6 +209,80 @@ class WikiLink(Base):
         PrimaryKeyConstraint("from_slug", "to_slug"),
         Index("ix_wiki_links_from_slug", "from_slug"),
         Index("ix_wiki_links_to_slug", "to_slug"),
+    )
+
+
+class WikiPageDraft(Base):
+    """
+    Pending contribution proposed by a workspace member.
+    An editor/admin reviews and either approves (writing to wiki_pages.content_md)
+    or rejects (with a reviewer_note explaining why).
+    Multiple drafts per page are allowed — editor resolves all.
+    """
+    __tablename__ = "wiki_page_drafts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    page_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("wiki_pages.id", ondelete="CASCADE"), nullable=False
+    )
+    author_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("employees.id", ondelete="SET NULL"), nullable=True
+    )
+    content_md: Mapped[str] = mapped_column(Text, nullable=False)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    # web_ui | mcp_claude_desktop | mcp_claude_code | mcp_other | api_direct
+    source: Mapped[str] = mapped_column(String(40), nullable=False, default="web_ui")
+    source_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    reviewed_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("employees.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewer_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    page: Mapped["WikiPage"] = relationship("WikiPage", foreign_keys=[page_id])
+    author: Mapped[Optional["Employee"]] = relationship("Employee", foreign_keys=[author_id])
+    reviewer: Mapped[Optional["Employee"]] = relationship("Employee", foreign_keys=[reviewed_by_id])
+
+    __table_args__ = (
+        Index("ix_wiki_drafts_page_id", "page_id"),
+        Index("ix_wiki_drafts_status", "status"),
+        Index("ix_wiki_drafts_author_id", "author_id"),
+    )
+
+
+class WikiPageRevision(Base):
+    """
+    Immutable snapshot of wiki page content at each version.
+    Created on every content-changing operation: agent compile, editor edit,
+    draft approval, manual rebuild, rollback.
+    """
+    __tablename__ = "wiki_page_revisions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    page_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("wiki_pages.id", ondelete="CASCADE"), nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    content_md: Mapped[str] = mapped_column(Text, nullable=False)
+    # agent_compile | agent_retry | editor_edit | draft_approved | manual_rebuild | rollback
+    change_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    draft_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("wiki_page_drafts.id", ondelete="SET NULL"), nullable=True
+    )
+    changed_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("employees.id", ondelete="SET NULL"), nullable=True
+    )
+    change_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_wiki_revisions_page_id", "page_id"),
+        Index("ix_wiki_revisions_page_version", "page_id", "version"),
     )
 
 

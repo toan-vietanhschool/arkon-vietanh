@@ -301,6 +301,7 @@ def build_tool_handlers(
         if page is None:
             return {"error": f"Page not found: '{slug}'"}
         state.read_pages.add(slug)
+
         return {
             "slug": page.slug,
             "title": page.title,

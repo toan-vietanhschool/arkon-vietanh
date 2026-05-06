@@ -163,7 +163,7 @@ export function SkillTable({
 
                   {/* Visibility */}
                   <TableCell>
-                    <ScopeBadge scopeType={skill.scope_type} scopeId={skill.scope_id} />
+                    <ScopeBadge scopeType={skill.scope_type} scopeId={skill.scope_id || undefined} />
                   </TableCell>
 
 

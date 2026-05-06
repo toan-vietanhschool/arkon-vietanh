@@ -4,6 +4,14 @@ Projects router — cross-functional knowledge contexts.
 A Project groups employees and sources across departments for a specific purpose
 (client engagement, event, initiative). Only project members and admins can access
 project-scoped sources via MCP.
+
+Permission model:
+  - Create workspace: system admin only
+  - Update workspace (rename/archive): workspace admin OR system admin
+  - Delete workspace: system admin only
+  - View members/sources/wiki: any workspace member (viewer+)
+  - Manage sources (add/remove/upload): workspace editor+
+  - Manage members: workspace admin
 """
 
 import uuid
@@ -11,7 +19,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -85,6 +93,38 @@ async def _get_project_or_404(db: AsyncSession, project_id: str) -> Project:
     return project
 
 
+async def _require_workspace_member(db: AsyncSession, user: Employee, project_id: str) -> None:
+    """Raise 403 if user is not a workspace member (or system admin)."""
+    if not await can_access_workspace(db, user, uuid.UUID(project_id)):
+        raise HTTPException(403, "Workspace access required")
+
+
+async def _require_workspace_role(
+    db: AsyncSession, user: Employee, project_id: str, min_role: str
+) -> str:
+    """Raise 403 if user's workspace role is below min_role. Returns the role."""
+    ws_role = await get_workspace_role(db, user, uuid.UUID(project_id))
+    if not ws_role or not workspace_role_can(ws_role, min_role):
+        labels = {
+            WorkspaceRole.VIEWER.value: "viewer",
+            WorkspaceRole.CONTRIBUTOR.value: "contributor",
+            WorkspaceRole.EDITOR.value: "editor",
+            WorkspaceRole.ADMIN.value: "admin",
+        }
+        raise HTTPException(403, f"Workspace {labels.get(min_role, min_role)} access required")
+    return ws_role
+
+
+async def _count_workspace_admins(db: AsyncSession, project_id: str) -> int:
+    result = await db.execute(
+        select(func.count()).select_from(ProjectMember).where(
+            ProjectMember.project_id == uuid.UUID(project_id),
+            ProjectMember.role == WorkspaceRole.ADMIN.value,
+        )
+    )
+    return result.scalar() or 0
+
+
 def _project_out(project: Project, member_count: int = 0, source_count: int = 0) -> ProjectOut:
     return ProjectOut(
         id=str(project.id),
@@ -111,8 +151,6 @@ async def list_projects(
     Admin: returns all projects.
     Employee: returns only projects they are a member of.
     """
-    from sqlalchemy import func
-
     if current_user.role == "admin":
         result = await db.execute(select(Project).order_by(Project.created_at.desc()))
         projects = result.scalars().all()
@@ -132,7 +170,6 @@ async def list_projects(
     )
     member_counts = {str(r[0]): r[1] for r in member_counts_result.all()}
 
-    # Source counts: linked (project_sources) + owned (scope_type=project)
     linked_counts_result = await db.execute(
         select(ProjectSource.project_id, func.count(ProjectSource.source_id))
         .group_by(ProjectSource.project_id)
@@ -146,13 +183,10 @@ async def list_projects(
     )
     owned_counts = {str(r[0]): r[1] for r in owned_counts_result.all()}
 
-    # Merge: use max of linked+owned (some may overlap but it's a good estimate)
     all_project_ids = set(linked_counts.keys()) | set(owned_counts.keys())
     source_counts: dict[str, int] = {}
     for pid_str in all_project_ids:
-        linked = linked_counts.get(pid_str, 0)
-        owned = owned_counts.get(pid_str, 0)
-        source_counts[pid_str] = max(linked, owned)
+        source_counts[pid_str] = max(linked_counts.get(pid_str, 0), owned_counts.get(pid_str, 0))
 
     return [
         _project_out(p, member_counts.get(str(p.id), 0), source_counts.get(str(p.id), 0))
@@ -166,7 +200,6 @@ async def create_project(
     db: AsyncSession = Depends(get_db),
     current_user: Employee = Depends(get_current_user),
 ):
-    # Only admin can create workspaces
     if current_user.role != "admin":
         raise HTTPException(403, "Admin access required to create workspaces")
 
@@ -203,8 +236,10 @@ async def update_project(
     db: AsyncSession = Depends(get_db),
     _user: Employee = Depends(get_current_user),
 ):
-    project = await _get_project_or_404(db, project_id)
+    await _get_project_or_404(db, project_id)
+    await _require_workspace_role(db, _user, project_id, WorkspaceRole.ADMIN.value)
 
+    project = await _get_project_or_404(db, project_id)
     if body.name is not None:
         project.name = body.name
     if body.description is not None:
@@ -228,6 +263,9 @@ async def delete_project(
     db: AsyncSession = Depends(get_db),
     _user: Employee = Depends(get_current_user),
 ):
+    if _user.role != "admin":
+        raise HTTPException(403, "Only system admins can delete workspaces")
+
     project = await _get_project_or_404(db, project_id)
     await db.delete(project)
     return {"deleted": True}
@@ -242,6 +280,10 @@ class AddMemberBody(BaseModel):
     role: str = "viewer"
 
 
+class UpdateMemberBody(BaseModel):
+    role: str
+
+
 @router.get("/projects/{project_id}/members", response_model=list[MemberOut])
 async def list_members(
     project_id: str,
@@ -249,6 +291,8 @@ async def list_members(
     current_user: Employee = Depends(get_current_user),
 ):
     await _get_project_or_404(db, project_id)
+    await _require_workspace_member(db, current_user, project_id)
+
     result = await db.execute(
         select(ProjectMember)
         .options(selectinload(ProjectMember.employee))
@@ -275,11 +319,7 @@ async def add_member(
     _user: Employee = Depends(get_current_user),
 ):
     await _get_project_or_404(db, project_id)
-
-    # Check user has admin role in workspace (or is system admin)
-    ws_role = await get_workspace_role(db, _user, uuid.UUID(project_id))
-    if not ws_role or not workspace_role_can(ws_role, WorkspaceRole.ADMIN.value):
-        raise HTTPException(403, "Workspace admin access required to manage members")
+    await _require_workspace_role(db, _user, project_id, WorkspaceRole.ADMIN.value)
 
     emp = await db.get(Employee, uuid.UUID(body.employee_id))
     if not emp:
@@ -294,7 +334,7 @@ async def add_member(
 
     valid_roles = {r.value for r in WorkspaceRole}
     if body.role not in valid_roles:
-        raise HTTPException(400, f"Role must be one of: {valid_roles}")
+        raise HTTPException(400, f"Role must be one of: {sorted(valid_roles)}")
 
     member = ProjectMember(
         project_id=uuid.UUID(project_id),
@@ -313,10 +353,7 @@ async def remove_member(
     db: AsyncSession = Depends(get_db),
     _user: Employee = Depends(get_current_user),
 ):
-    # Check user has admin role in workspace
-    ws_role = await get_workspace_role(db, _user, uuid.UUID(project_id))
-    if not ws_role or not workspace_role_can(ws_role, WorkspaceRole.ADMIN.value):
-        raise HTTPException(403, "Workspace admin access required")
+    await _require_workspace_role(db, _user, project_id, WorkspaceRole.ADMIN.value)
 
     member = await db.get(
         ProjectMember,
@@ -324,8 +361,45 @@ async def remove_member(
     )
     if not member:
         raise HTTPException(404, "Member not found")
+
+    # Guard: cannot remove the last workspace admin
+    if member.role == WorkspaceRole.ADMIN.value:
+        if await _count_workspace_admins(db, project_id) <= 1:
+            raise HTTPException(400, "Cannot remove the last workspace admin")
+
     await db.delete(member)
     return {"removed": True}
+
+
+@router.patch("/projects/{project_id}/members/{employee_id}")
+async def update_member(
+    project_id: str,
+    employee_id: str,
+    body: UpdateMemberBody,
+    db: AsyncSession = Depends(get_db),
+    _user: Employee = Depends(get_current_user),
+):
+    await _require_workspace_role(db, _user, project_id, WorkspaceRole.ADMIN.value)
+
+    member = await db.get(
+        ProjectMember,
+        (uuid.UUID(project_id), uuid.UUID(employee_id)),
+    )
+    if not member:
+        raise HTTPException(404, "Member not found")
+
+    valid_roles = {r.value for r in WorkspaceRole}
+    if body.role not in valid_roles:
+        raise HTTPException(400, f"Role must be one of: {sorted(valid_roles)}")
+
+    # Guard: cannot demote the last workspace admin
+    if member.role == WorkspaceRole.ADMIN.value and body.role != WorkspaceRole.ADMIN.value:
+        if await _count_workspace_admins(db, project_id) <= 1:
+            raise HTTPException(400, "Cannot demote the last workspace admin")
+
+    member.role = body.role
+    await db.flush()
+    return {"updated": True}
 
 
 # ---------------------------------------------------------------------------
@@ -343,6 +417,8 @@ async def list_project_sources(
     current_user: Employee = Depends(get_current_user),
 ):
     await _get_project_or_404(db, project_id)
+    await _require_workspace_member(db, current_user, project_id)
+
     pid = uuid.UUID(project_id)
 
     # 1. Linked sources (project_sources table)
@@ -365,7 +441,6 @@ async def list_project_sources(
     owned_sources = owned_result.scalars().all()
 
     out: list[ProjectSourceOut] = []
-    # Linked sources
     for r in linked_rows:
         out.append(ProjectSourceOut(
             source_id=str(r.source_id),
@@ -378,7 +453,6 @@ async def list_project_sources(
             knowledge_type_name=r.source.knowledge_type.name if r.source.knowledge_type else None,
             added_at=r.added_at.isoformat(),
         ))
-    # Owned sources not already linked
     for s in owned_sources:
         if s.id not in linked_ids:
             out.append(ProjectSourceOut(
@@ -403,6 +477,7 @@ async def add_project_source(
     _user: Employee = Depends(get_current_user),
 ):
     await _get_project_or_404(db, project_id)
+    await _require_workspace_role(db, _user, project_id, WorkspaceRole.EDITOR.value)
 
     source = await db.get(Source, uuid.UUID(body.source_id))
     if not source:
@@ -431,6 +506,8 @@ async def remove_project_source(
     db: AsyncSession = Depends(get_db),
     _user: Employee = Depends(get_current_user),
 ):
+    await _require_workspace_role(db, _user, project_id, WorkspaceRole.EDITOR.value)
+
     pid = uuid.UUID(project_id)
     sid = uuid.UUID(source_id)
 
@@ -475,10 +552,11 @@ async def upload_workspace_source(
     db: AsyncSession = Depends(get_db),
     user: Employee = Depends(get_current_user),
 ):
-    """Upload a file directly into a workspace. Sets scope to project."""
-    project = await _get_project_or_404(db, project_id)
-    pid = uuid.UUID(project_id)
+    """Upload a file directly into a workspace. Requires editor+ role."""
+    await _get_project_or_404(db, project_id)
+    await _require_workspace_role(db, user, project_id, WorkspaceRole.EDITOR.value)
 
+    pid = uuid.UUID(project_id)
     file_data = await file.read()
     file_name = file.filename or "unknown"
 
@@ -498,7 +576,6 @@ async def upload_workspace_source(
     db.add(source)
     await db.flush()
 
-    # Upload to MinIO
     from app.services.storage_service import storage_service
     from app.services.kb_service import _guess_content_type
     minio_key = f"sources/{source.id}/original/{file_name}"
@@ -511,7 +588,6 @@ async def upload_workspace_source(
     source.file_name = file_name
     await db.flush()
 
-    # Enqueue ingestion
     pool = await _get_arq_pool()
     job = await pool.enqueue_job("ingest_file_task", str(source.id))
     source.job_id = job.job_id
@@ -539,8 +615,10 @@ async def add_workspace_url_source(
     db: AsyncSession = Depends(get_db),
     user: Employee = Depends(get_current_user),
 ):
-    """Add a URL source directly into a workspace."""
-    project = await _get_project_or_404(db, project_id)
+    """Add a URL source directly into a workspace. Requires editor+ role."""
+    await _get_project_or_404(db, project_id)
+    await _require_workspace_role(db, user, project_id, WorkspaceRole.EDITOR.value)
+
     pid = uuid.UUID(project_id)
 
     source = Source(
@@ -584,10 +662,11 @@ async def list_workspace_wiki(
     db: AsyncSession = Depends(get_db),
     current_user: Employee = Depends(get_current_user),
 ):
-    """List wiki pages scoped to this workspace."""
+    """List wiki pages scoped to this workspace. Requires workspace membership."""
     await _get_project_or_404(db, project_id)
-    pid = uuid.UUID(project_id)
+    await _require_workspace_member(db, current_user, project_id)
 
+    pid = uuid.UUID(project_id)
     from app.services import wiki_service
     pages = await wiki_service.list_pages(
         db,
@@ -619,8 +698,10 @@ async def get_workspace_wiki_index(
     db: AsyncSession = Depends(get_db),
     current_user: Employee = Depends(get_current_user),
 ):
-    """Get wiki index page scoped to this workspace."""
+    """Get wiki index page scoped to this workspace. Requires workspace membership."""
     await _get_project_or_404(db, project_id)
+    await _require_workspace_member(db, current_user, project_id)
+
     pid = uuid.UUID(project_id)
     from app.services import wiki_service
     page = await wiki_service.get_page_by_slug(
@@ -636,11 +717,12 @@ async def get_workspace_wiki_graph(
     db: AsyncSession = Depends(get_db),
     current_user: Employee = Depends(get_current_user),
 ):
-    """Return nodes/edges for workspace-scoped wiki graph visualization."""
+    """Return nodes/edges for workspace-scoped wiki graph. Requires workspace membership."""
     await _get_project_or_404(db, project_id)
+    await _require_workspace_member(db, current_user, project_id)
+
     pid = uuid.UUID(project_id)
 
-    from sqlalchemy import select
     from app.database.models import WikiLink, WikiPage
     from app.services import wiki_service
 
@@ -665,4 +747,3 @@ async def get_workspace_wiki_graph(
             if r.from_slug in slug_set and r.to_slug in slug_set
         ],
     }
-

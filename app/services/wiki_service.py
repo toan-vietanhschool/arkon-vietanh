@@ -21,7 +21,7 @@ from sqlalchemy import and_, delete, func, or_, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.models import WikiLink, WikiPage
+from app.database.models import WikiLink, WikiPage, WikiPageDraft, WikiPageRevision
 
 
 # Reserved page slugs — these are regular WikiPage rows but treated specially.
@@ -306,6 +306,10 @@ async def apply_create(
     session.add(page)
     await session.flush()
     await refresh_links(session, slug, content_md)
+    session.add(WikiPageRevision(
+        page_id=page.id, version=page.version,
+        content_md=content_md, change_type="agent_compile",
+    ))
     return page
 
 
@@ -348,6 +352,10 @@ async def apply_update(
     page.version = (page.version or 1) + 1
     await session.flush()
     await refresh_links(session, slug, new_content_md)
+    session.add(WikiPageRevision(
+        page_id=page.id, version=page.version,
+        content_md=new_content_md, change_type="agent_compile",
+    ))
     return page
 
 
@@ -545,25 +553,168 @@ async def detach_source_from_wiki(
 ) -> int:
     """
     Remove `source_id` from every WikiPage.source_ids. Pages whose source_ids
-    becomes empty are deleted (orphan pages). Used by force-recompile flow.
+    becomes empty are marked orphaned=True (not deleted) — admin decides per case.
+    Used by source deletion flow.
 
-    Returns the number of pages deleted.
+    Returns the number of pages marked orphaned.
     """
     stmt = select(WikiPage).where(WikiPage.source_ids.any(source_id))
     pages = list((await session.execute(stmt)).scalars().all())
-    deleted = 0
+    orphaned_count = 0
     for page in pages:
         remaining = [sid for sid in (page.source_ids or []) if sid != source_id]
+        page.source_ids = remaining
         if not remaining:
-            # Orphan: also clear out its outgoing links
-            await session.execute(
-                delete(WikiLink).where(WikiLink.from_slug == page.slug)
-            )
-            await session.delete(page)
-            deleted += 1
-        else:
-            page.source_ids = remaining
+            page.orphaned = True
+            orphaned_count += 1
     await session.flush()
-    if deleted:
-        logger.info(f"detach_source_from_wiki({source_id}): deleted {deleted} orphan pages")
-    return deleted
+    if orphaned_count:
+        logger.info(f"detach_source_from_wiki({source_id}): marked {orphaned_count} pages orphaned")
+    return orphaned_count
+
+
+# ---------------------------------------------------------------------------
+# Draft workflow
+# ---------------------------------------------------------------------------
+
+async def create_draft(
+    session: AsyncSession,
+    page_id: uuid.UUID,
+    author_id: uuid.UUID,
+    content_md: str,
+    note: Optional[str] = None,
+    source: str = "web_ui",
+    source_metadata: Optional[dict] = None,
+) -> WikiPageDraft:
+    """Create a pending draft for editor review."""
+    draft = WikiPageDraft(
+        page_id=page_id,
+        author_id=author_id,
+        content_md=content_md,
+        note=note,
+        status="pending",
+        source=source,
+        source_metadata=source_metadata,
+    )
+    session.add(draft)
+    await session.flush()
+    return draft
+
+
+async def approve_draft(
+    session: AsyncSession,
+    draft: WikiPageDraft,
+    reviewer_id: uuid.UUID,
+    reviewer_note: Optional[str] = None,
+    edited_content_md: Optional[str] = None,
+) -> WikiPage:
+    """
+    Approve a pending draft. Writes the final content to wiki_pages.content_md,
+    creates a revision, and marks the draft approved.
+    If edited_content_md is provided, that is used instead of the original draft content.
+    """
+    page = await session.get(WikiPage, draft.page_id)
+    if page is None:
+        raise ValueError(f"Wiki page {draft.page_id} not found")
+
+    final_content = edited_content_md.strip() if edited_content_md else draft.content_md
+    page.content_md = final_content
+    page.version = (page.version or 1) + 1
+    await session.flush()
+    await refresh_links(session, page.slug, final_content)
+
+    session.add(WikiPageRevision(
+        page_id=page.id,
+        version=page.version,
+        content_md=final_content,
+        change_type="draft_approved",
+        draft_id=draft.id,
+        changed_by_id=reviewer_id,
+        change_note=reviewer_note,
+    ))
+
+    draft.status = "approved"
+    draft.reviewed_by_id = reviewer_id
+    draft.reviewed_at = datetime.now(timezone.utc)
+    draft.reviewer_note = reviewer_note
+    await session.flush()
+    return page
+
+
+async def reject_draft(
+    session: AsyncSession,
+    draft: WikiPageDraft,
+    reviewer_id: uuid.UUID,
+    reviewer_note: str,
+) -> WikiPageDraft:
+    """Reject a pending draft with a required reason."""
+    draft.status = "rejected"
+    draft.reviewed_by_id = reviewer_id
+    draft.reviewed_at = datetime.now(timezone.utc)
+    draft.reviewer_note = reviewer_note
+    await session.flush()
+    return draft
+
+
+async def direct_edit_page(
+    session: AsyncSession,
+    page: WikiPage,
+    editor_id: uuid.UUID,
+    content_md: str,
+    change_note: Optional[str] = None,
+) -> WikiPage:
+    """
+    Sync write by an editor/admin — no review step.
+    Creates a revision immediately.
+    """
+    page.content_md = content_md
+    page.version = (page.version or 1) + 1
+    await session.flush()
+    await refresh_links(session, page.slug, content_md)
+
+    session.add(WikiPageRevision(
+        page_id=page.id,
+        version=page.version,
+        content_md=content_md,
+        change_type="editor_edit",
+        changed_by_id=editor_id,
+        change_note=change_note,
+    ))
+    await session.flush()
+    return page
+
+
+async def rollback_to_revision(
+    session: AsyncSession,
+    page: WikiPage,
+    target_version: int,
+    actor_id: uuid.UUID,
+) -> WikiPage:
+    """
+    Restore a page to a previous revision snapshot.
+    Creates a new revision recording the rollback.
+    """
+    revision = (await session.execute(
+        select(WikiPageRevision).where(
+            WikiPageRevision.page_id == page.id,
+            WikiPageRevision.version == target_version,
+        )
+    )).scalar_one_or_none()
+    if revision is None:
+        raise ValueError(f"Revision v{target_version} not found for page {page.slug}")
+
+    page.content_md = revision.content_md
+    page.version = (page.version or 1) + 1
+    await session.flush()
+    await refresh_links(session, page.slug, revision.content_md)
+
+    session.add(WikiPageRevision(
+        page_id=page.id,
+        version=page.version,
+        content_md=revision.content_md,
+        change_type="rollback",
+        changed_by_id=actor_id,
+        change_note=f"rollback to v{target_version}",
+    ))
+    await session.flush()
+    return page

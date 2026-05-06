@@ -19,6 +19,7 @@ from app.ai.agent_protocol import (
 )
 from app.ai.registry import ProviderRegistry
 from app.ai.wiki_agent_tools import TOOL_SCHEMAS, AgentState, build_tool_handlers
+from app.ai.wiki_analyzer import analyze_source, format_analysis_section
 from app.database.models import Source
 from app.services import wiki_service
 
@@ -167,6 +168,24 @@ Why good: legal references (Điều 5, Nghị định 136/2020), specific number
   - Err toward granular — each distinct regulation, equipment type, procedure, or hazard
     category deserves its own `concept` page if covered in any depth.
 
+# Pre-Analysis
+The initial user message may include a **Pre-Analysis** section. This is an
+advisory map generated before the agent loop. Treat it as a helpful starting
+point — not a binding plan. Always verify slugs and page existence with tools
+(read_wiki_index, search_wiki) before acting on any suggestion.
+
+# User Contributions
+Some pages contain **USER CONTRIBUTION** sections wrapped in HTML comments:
+```
+<!-- USER CONTRIBUTION (MUST be preserved/integrated) -->
+...user-supplied content...
+<!-- End of user contribution -->
+```
+These represent expert domain input. When updating such a page:
+- Integrate the specific facts and corrections into the new content.
+- Do not silently discard them, even if they overlap with the source.
+- If a contribution contradicts the source, keep both perspectives clearly labeled.
+
 # Tool workflow
 1. Call `read_wiki_index` to see what pages already exist.
 2. Call `search_wiki` for the document's main themes to find candidate pages to update.
@@ -193,6 +212,7 @@ Compile the following source document into the wiki.
 ## Knowledge type context
 {kt_context}
 
+{analysis_section}
 ## Source content (first {excerpt_chars} chars — use read_source_excerpt for more)
 {source_excerpt}
 """
@@ -242,6 +262,29 @@ async def compile_source_with_agent(
     state = AgentState(source=source, full_text=full_text)
     handlers = build_tool_handlers(session, source, kt_slug, embedding_provider, state)
 
+    # Pre-analysis: one cheap LLM call to give the agent a starting map.
+    # Query existing pages first so the analyzer can reference real slugs.
+    _scope_type = source.scope_type or "global"
+    _scope_id = source.scope_id
+    existing_pages_raw = await wiki_service.list_pages(
+        session, limit=300, scope_type=_scope_type, scope_id=_scope_id,
+    )
+    existing_pages = [
+        {"slug": p.slug, "title": p.title, "page_type": p.page_type}
+        for p in existing_pages_raw
+    ]
+    analysis = await analyze_source(
+        llm=llm,
+        source_title=source.title or source.file_name or str(source.id),
+        full_text=full_text,
+        existing_pages=existing_pages,
+        kt_name=kt_name,
+        kt_desc=kt_desc,
+    )
+    analysis_section = format_analysis_section(analysis)
+    if analysis_section:
+        logger.debug(f"WikiAgent: pre-analysis injected for source {source.id}")
+
     excerpt = full_text[:INITIAL_EXCERPT_CHARS]
     if len(full_text) > INITIAL_EXCERPT_CHARS:
         excerpt += f"\n\n[…{len(full_text) - INITIAL_EXCERPT_CHARS} more chars — use read_source_excerpt…]"
@@ -249,6 +292,7 @@ async def compile_source_with_agent(
     initial_msg = INITIAL_USER_TEMPLATE.format(
         title=source.title or source.file_name or str(source.id),
         kt_context=_format_kt_context(kt_name, kt_desc),
+        analysis_section=analysis_section,
         excerpt_chars=INITIAL_EXCERPT_CHARS,
         source_excerpt=excerpt,
     )

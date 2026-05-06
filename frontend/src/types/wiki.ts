@@ -17,6 +17,7 @@ export type WikiPageDetail = WikiPageSummary & {
   content_md: string;
   backlinks: string[];
   outlinks: string[];
+  orphaned?: boolean;
 };
 
 export type WikiGraphNode = {
