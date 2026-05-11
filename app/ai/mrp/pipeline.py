@@ -48,6 +48,7 @@ async def run_commit_phase(
     Uses apply_create / apply_update from wiki_service (idempotent via upsert
     fallback). All pages are flushed then committed in a single transaction.
     """
+    from app.ai.mrp.merger import merge_page_content
     from app.database.models import Source, SourceCompilationPlan
     from app.services import wiki_service
     from app.services.embedding_storage import (
@@ -61,6 +62,15 @@ async def run_commit_phase(
 
     pages_created = 0
     pages_updated = 0
+
+    # Provision LLM for merge operations
+    from app.ai.registry import ProviderRegistry
+    merge_llm = None
+    try:
+        merge_registry = ProviderRegistry(session)
+        merge_llm = await merge_registry.get_llm()
+    except Exception as exc:
+        logger.warning(f"MRP COMMIT: could not load LLM for merge: {exc}")
 
     await tracker.update(95, f"Committing {len(page_results)} pages to wiki...")
 
@@ -81,10 +91,30 @@ async def run_commit_phase(
                 )
                 pages_created += 1
             else:
+                # UPDATE: merge new content with existing page
+                existing_page = await wiki_service.get_page_by_slug(
+                    session, pr.slug, scope_type=scope_type, scope_id=scope_id,
+                )
+                final_content = pr.content_md
+
+                if existing_page and existing_page.content_md and merge_llm:
+                    # Check if content comes from a different source
+                    existing_sources = set(str(sid) for sid in (existing_page.source_ids or []))
+                    is_new_source = str(source.id) not in existing_sources
+
+                    if is_new_source and len(existing_page.content_md.strip()) > 100:
+                        # Merge: existing page has substantial content from other sources
+                        final_content = await merge_page_content(
+                            merge_llm,
+                            existing_page.content_md,
+                            pr.content_md,
+                            pr.slug,
+                        )
+
                 page = await wiki_service.apply_update(
                     session,
                     slug=pr.slug,
-                    new_content_md=pr.content_md,
+                    new_content_md=final_content,
                     summary=pr.summary,
                     title=pr.title,
                     add_knowledge_type_slug=kt_slug,
