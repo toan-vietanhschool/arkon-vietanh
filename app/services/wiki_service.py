@@ -171,7 +171,7 @@ async def get_page_by_slug(
         _scope_filter(scope_type, scope_id),
     )
     result = await session.execute(stmt)
-    page = result.scalar_one_or_none()
+    page = result.scalars().first()
     if page is None:
         return None
     if allowed_kt_slugs is None or slug in (INDEX_SLUG, LOG_SLUG):
@@ -194,7 +194,7 @@ async def get_page_by_slug_any_scope(
     """
     stmt = select(WikiPage).where(WikiPage.slug == slug).limit(1)
     result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    return result.scalars().first()
 
 
 async def list_pages(
