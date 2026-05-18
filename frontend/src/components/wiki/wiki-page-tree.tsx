@@ -54,6 +54,7 @@ export function WikiPageTree({
   linkQueryParams,
   onPageSelect,
   groupByScope = false,
+  activeScope,
 }: {
   activeSlug?: string;
   onDeleted?: () => void;
@@ -65,6 +66,8 @@ export function WikiPageTree({
   onPageSelect?: (slug: string) => void;
   /** When true, render a 2-level tree: scope → page_type → pages (used in /wiki). */
   groupByScope?: boolean;
+  /** Auto-expand the bucket matching this scope (used together with groupByScope). */
+  activeScope?: { scope_type: string; scope_id: string | null };
 }) {
   const pathname = usePathname();
   const [pages, setPages] = React.useState<WikiPageSummary[]>([]);
@@ -196,13 +199,20 @@ export function WikiPageTree({
   const [expandedScopes, setExpandedScopes] = React.useState<Set<string>>(
     new Set(["global"]),
   );
+  const activeScopeKey = React.useMemo(() => {
+    if (!activeScope) return null;
+    return activeScope.scope_id
+      ? `${activeScope.scope_type}:${activeScope.scope_id}`
+      : activeScope.scope_type;
+  }, [activeScope]);
   React.useEffect(() => {
     // When scope buckets first arrive, ensure global stays expanded and any
-    // bucket containing the active page is expanded.
+    // bucket containing the active page (or matching activeScope) is expanded.
     if (!groupByScope || scopeGrouped.length === 0) return;
     setExpandedScopes((prev) => {
       const next = new Set(prev);
       next.add("global");
+      if (activeScopeKey) next.add(activeScopeKey);
       if (activeSlug) {
         for (const b of scopeGrouped) {
           for (const ps of b.byType.values()) {
@@ -212,7 +222,7 @@ export function WikiPageTree({
       }
       return next;
     });
-  }, [groupByScope, scopeGrouped, activeSlug]);
+  }, [groupByScope, scopeGrouped, activeSlug, activeScopeKey]);
 
   const toggleGroup = (type: string) =>
     setExpandedGroups((prev) => {

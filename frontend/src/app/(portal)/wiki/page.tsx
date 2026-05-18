@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { WikiPageSummary, WikiScope } from "@/types/wiki";
 import { PageHeader } from "@/components/shared/page-header";
@@ -33,17 +34,45 @@ function scopeKey(s: { scope_type: string; scope_id: string | null }): string {
 }
 
 export default function WikiIndexPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlScopeType = searchParams.get("scope_type");
+  const urlScopeId = searchParams.get("scope_id");
+
   const [indexMd, setIndexMd] = React.useState<string | null>(null);
   const [allPages, setAllPages] = React.useState<WikiPageSummary[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<string>("all");
   const [scopes, setScopes] = React.useState<WikiScope[]>([]);
-  const [selectedScope, setSelectedScope] = React.useState<WikiScope>({
-    scope_type: "global",
-    scope_id: null,
-    name: "Global",
-  });
+
+  // Derive selected scope from URL params; fall back to the matching entry in
+  // `scopes` once it loads so we can show the proper display name.
+  const selectedScope: WikiScope = React.useMemo(() => {
+    if (urlScopeType && urlScopeType !== "global") {
+      const match = scopes.find(
+        (s) => s.scope_type === urlScopeType && (s.scope_id ?? null) === (urlScopeId ?? null),
+      );
+      if (match) return match;
+      // URL points to a scope we don't have a name for yet — render with a
+      // placeholder name; the actual content fetches still work by ID.
+      return { scope_type: urlScopeType, scope_id: urlScopeId, name: urlScopeType };
+    }
+    return { scope_type: "global", scope_id: null, name: "Global" };
+  }, [urlScopeType, urlScopeId, scopes]);
+
+  const setSelectedScope = React.useCallback(
+    (s: WikiScope) => {
+      const params = new URLSearchParams();
+      if (s.scope_type !== "global") {
+        params.set("scope_type", s.scope_type);
+        if (s.scope_id) params.set("scope_id", s.scope_id);
+      }
+      const qs = params.toString();
+      router.replace(qs ? `/wiki?${qs}` : "/wiki");
+    },
+    [router],
+  );
 
   // Fetch available scopes once
   React.useEffect(() => {
@@ -180,7 +209,13 @@ export default function WikiIndexPage() {
 
       <div className="flex-1 flex gap-0 -mx-6 md:-mx-8 lg:-mx-10 -mb-6 md:-mb-8 lg:-mb-10 min-h-0 border-t border-border">
         {/* Page Tree */}
-        <WikiPageTree groupByScope />
+        <WikiPageTree
+          groupByScope
+          activeScope={{
+            scope_type: selectedScope.scope_type,
+            scope_id: selectedScope.scope_id,
+          }}
+        />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-8 py-6">

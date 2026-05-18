@@ -42,6 +42,21 @@ export default function WikiPageViewer() {
   const isScoped = !!scopeType && scopeType !== "global";
   const isProjectScoped = isScoped && scopeType === "project";
 
+  // Where "back" navigates. Projects keep their dedicated workspace page;
+  // department-scoped pages return to the wiki landing with the scope preserved
+  // so the user lands back on that department's tree+index, not global.
+  const backHref = isProjectScoped
+    ? "/workspaces"
+    : isScoped
+      ? `/wiki?scope_type=${scopeType}&scope_id=${scopeId}`
+      : "/wiki";
+
+  // Suffix appended to in-page wiki links (backlinks, outlinks, [[wikilinks]])
+  // so navigation between related pages keeps the current scope context.
+  const scopeLinkSuffix = isScoped
+    ? `?scopeType=${scopeType}&scopeId=${scopeId}`
+    : "";
+
   const [page, setPage] = React.useState<WikiPageDetail | null>(null);
   const [notFound, setNotFound] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
@@ -249,19 +264,20 @@ export default function WikiPageViewer() {
           ) : page ? (
             <div className="max-w-3xl mx-auto px-8 py-8">
               {/* Breadcrumb & Back Button — project scope returns to /workspaces,
-                  department scope returns to the wiki index (no dept detail page). */}
+                  department scope returns to /wiki with that department's scope
+                  preserved so the user lands on the dept's tree+index. */}
               <div className="flex items-center gap-3 mb-6">
                 <Link
-                  href={isProjectScoped ? `/workspaces` : "/wiki"}
+                  href={backHref}
                   className="flex items-center justify-center w-8 h-8 rounded-full border border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0 shadow-sm"
-                  title={isProjectScoped ? "Back to Workspace" : "Back to Wiki Index"}
+                  title={isProjectScoped ? "Back to Workspace" : "Back to Wiki"}
                 >
                   <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                 </Link>
 
                 <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Link
-                    href={isProjectScoped ? `/workspaces` : "/wiki"}
+                    href={backHref}
                     className="hover:text-foreground transition-colors font-medium"
                   >
                     {isProjectScoped ? "Workspace" : "Wiki"}
@@ -331,7 +347,7 @@ export default function WikiPageViewer() {
                   onCancel={() => setMode("view")}
                 />
               ) : (
-                <WikiContent markdown={page.content_md} />
+                <WikiContent markdown={page.content_md} linkSuffix={scopeLinkSuffix} />
               )}
             </div>
           ) : null}
@@ -340,7 +356,7 @@ export default function WikiPageViewer() {
         {/* Right: Sidebar (hidden on < lg, only in view mode) */}
         {page && mode === "view" && (
           <div className="hidden lg:block h-full">
-            <WikiSidebarRight slug={fullSlug} page={page} />
+            <WikiSidebarRight slug={fullSlug} page={page} linkSuffix={scopeLinkSuffix} />
           </div>
         )}
       </div>
