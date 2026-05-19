@@ -106,6 +106,9 @@ export type DraftResponse = {
   page_id: string | null;
   page_slug: string;
   page_title: string;
+  page_scope_type: string;
+  page_scope_id: string | null;
+  page_scope_name: string | null;
   page_version: number;
   base_version: number | null;
   has_conflict: boolean;

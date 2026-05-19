@@ -207,6 +207,9 @@ class DraftResponse(BaseModel):
     page_id: Optional[uuid.UUID] = None
     page_slug: str
     page_title: str
+    page_scope_type: str = "global"
+    page_scope_id: Optional[uuid.UUID] = None
+    page_scope_name: Optional[str] = None
     page_version: int
     base_version: Optional[int] = None
     has_conflict: bool = False
@@ -451,15 +454,43 @@ async def _draft_response(db: AsyncSession, draft: WikiPageDraft) -> DraftRespon
         and draft.base_version < current_version
     )
     # Display slug/title come from the existing page for edit drafts, or
-    # from the contributor's suggested metadata for create drafts.
+    # from the contributor's suggested metadata for create drafts. Scope is
+    # also surfaced explicitly so the frontend can build correct deep links
+    # even when the same slug exists in multiple scopes.
     suggested = draft.suggested_metadata or {}
     display_slug = (page.slug if page else suggested.get("slug")) or ""
     display_title = (page.title if page else suggested.get("title")) or ""
+    if page is not None:
+        page_scope_type = page.scope_type or "global"
+        page_scope_id = page.scope_id
+    else:
+        page_scope_type = suggested.get("scope_type") or "global"
+        sid_raw = suggested.get("scope_id")
+        try:
+            page_scope_id = uuid.UUID(sid_raw) if isinstance(sid_raw, str) else sid_raw
+        except (ValueError, TypeError):
+            page_scope_id = None
+
+    # Resolve a human label for the scope so the queue can render e.g. "IT"
+    # next to a slug rather than the raw UUID.
+    page_scope_name: Optional[str] = None
+    if page_scope_id is not None:
+        if page_scope_type == "department":
+            from app.database.models import Department
+            d = await db.get(Department, page_scope_id)
+            page_scope_name = d.name if d else None
+        elif page_scope_type == "project":
+            from app.database.models import Project
+            p = await db.get(Project, page_scope_id)
+            page_scope_name = p.name if p else None
     return DraftResponse(
         id=draft.id,
         page_id=draft.page_id,
         page_slug=display_slug,
         page_title=display_title,
+        page_scope_type=page_scope_type,
+        page_scope_id=page_scope_id,
+        page_scope_name=page_scope_name,
         page_version=current_version or 1,
         base_version=draft.base_version,
         has_conflict=has_conflict,
@@ -546,23 +577,27 @@ async def propose_draft(
 
 @router.get("/wiki/drafts", response_model=list[DraftResponse])
 async def list_all_drafts(
-    status: Optional[str] = Query("pending", description="Filter by status: pending | approved | rejected"),
+    status: Optional[str] = Query("pending", description="Filter by status: pending | approved | rejected | needs_revision | withdrawn"),
+    mine: bool = Query(False, description="When true, list drafts authored by the current user instead of drafts to review"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     user: Employee = require_permission("wiki:read"),
 ):
-    """List wiki drafts. Editors see drafts for pages they can review. Admins see all.
+    """List wiki drafts.
 
-    Permission filtering runs in SQL (joined on WikiPage) so pagination is
-    correct — previously a post-query filter would silently drop drafts past
-    the first `limit` rows.
+    Two modes:
+    - default: drafts the current user can review (admins see everything;
+      editors see their workspace + global; etc.).
+    - `mine=true`: drafts the current user authored, regardless of scope.
+
+    LEFT JOIN on WikiPage so create-kind drafts (page_id NULL) are visible.
+    Permission filtering runs in SQL so pagination is correct — previously a
+    post-query filter would silently drop rows past the first `limit`.
     """
-    page_filter = _build_reviewable_page_filter(user)
-
     stmt = (
         select(WikiPageDraft)
-        .join(WikiPage, WikiPage.id == WikiPageDraft.page_id)
+        .outerjoin(WikiPage, WikiPage.id == WikiPageDraft.page_id)
         .options(
             selectinload(WikiPageDraft.page),
             selectinload(WikiPageDraft.author),
@@ -574,10 +609,15 @@ async def list_all_drafts(
     )
     if status:
         stmt = stmt.where(WikiPageDraft.status == status)
-    if page_filter is False:  # noqa: E712 — never true, kept for symmetry
-        return []
-    if page_filter is not None:
-        stmt = stmt.where(page_filter)
+
+    if mine:
+        stmt = stmt.where(WikiPageDraft.author_id == user.id)
+    else:
+        page_filter = _build_reviewable_page_filter(user)
+        if page_filter is False:  # noqa: E712 — never true, kept for symmetry
+            return []
+        if page_filter is not None:
+            stmt = stmt.where(page_filter)
 
     drafts = (await db.execute(stmt)).scalars().all()
     return [await _draft_response(db, d) for d in drafts]

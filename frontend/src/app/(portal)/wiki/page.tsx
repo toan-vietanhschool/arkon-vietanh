@@ -204,14 +204,14 @@ export default function WikiIndexPage() {
                 {createMode === "direct" ? "New page" : "Propose page"}
               </Button>
             )}
-            {(isAdmin || hasPermission("wiki:write:all") || hasPermission("wiki:write:own_dept")) && (
+            {user && (
               <Link
                 href="/wiki/queue"
                 className="inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium border border-border bg-background hover:bg-muted transition-colors"
-                title="Drafts awaiting review"
+                title="Drafts you authored and drafts waiting for your review"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>inbox</span>
-                Queue
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit_note</span>
+                Your contributions
               </Link>
             )}
             <Link

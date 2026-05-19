@@ -13,6 +13,7 @@ import { WikiDraftBanner } from "@/components/wiki/wiki-draft-banner";
 import { wikiTypeGroupLabel } from "@/components/wiki/wiki-type-badge";
 import { WikiSearchDialog } from "@/components/wiki/wiki-search-dialog";
 import { WikiScopeSwitcher } from "@/components/wiki/wiki-scope-switcher";
+import { WikiCreatePageDialog } from "@/components/wiki/wiki-create-page-dialog";
 import { WikiScope } from "@/types/wiki";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -81,6 +82,8 @@ export default function WikiPageViewer() {
   const [notFound, setNotFound] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [dialogScope, setDialogScope] = React.useState<WikiScope | null>(null);
 
   // Edit mode
   const [mode, setMode] = React.useState<"view" | "edit">("view");
@@ -126,6 +129,42 @@ export default function WikiPageViewer() {
 
   // Can review drafts
   const canReview: boolean = canEdit;
+
+  // Permission helper for the create-page action — mirrors the helper on
+  // /wiki landing so the dialog mode follows whatever scope is chosen.
+  const getCreateModeForScope = React.useCallback(
+    (scope: { scope_type: string; scope_id: string | null }): "direct" | "propose" | null => {
+      if (!user) return null;
+      const st = scope.scope_type;
+      const sid = scope.scope_id;
+      if (st === "project" && sid) {
+        const role = getWorkspaceRole(sid);
+        if (isGlobalAdmin || roleAtLeast(role, "editor")) return "direct";
+        if (roleAtLeast(role, "contributor")) return "propose";
+        return null;
+      }
+      if (st === "department" && sid) {
+        if (isGlobalAdmin || hasPermission("wiki:write:all")) return "direct";
+        if (hasPermission("wiki:write:own_dept") && user.department_id === sid) {
+          return "propose";
+        }
+        return null;
+      }
+      if (isGlobalAdmin || hasPermission("wiki:write:all")) return "direct";
+      if (hasPermission("wiki:write:own_dept")) return "propose";
+      return null;
+    },
+    [user, isGlobalAdmin, getWorkspaceRole, hasPermission],
+  );
+  const headerCreateMode = getCreateModeForScope({
+    scope_type: currentScope.scope_type,
+    scope_id: currentScope.scope_id ?? null,
+  });
+  const dialogTargetScope = dialogScope ?? currentScope;
+  const dialogMode = getCreateModeForScope({
+    scope_type: dialogTargetScope.scope_type,
+    scope_id: dialogTargetScope.scope_id ?? null,
+  });
 
   // ---------------------------------------------------------------------------
   // Load page
@@ -241,11 +280,39 @@ export default function WikiPageViewer() {
                 ⌘K
               </kbd>
             </Button>
+            {headerCreateMode && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDialogScope(null);
+                  setCreateOpen(true);
+                }}
+                className="gap-2"
+                title={
+                  headerCreateMode === "direct"
+                    ? `Create a new page in ${currentScope.name}`
+                    : `Propose a new page in ${currentScope.name} (reviewer approves)`
+                }
+              >
+                <span className="material-symbols-outlined text-base">add</span>
+                {headerCreateMode === "direct" ? "New page" : "Propose page"}
+              </Button>
+            )}
+            {user && (
+              <Link
+                href="/wiki/queue"
+                className="inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium border border-border bg-background hover:bg-muted transition-colors"
+                title="Drafts you authored and drafts waiting for your review"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit_note</span>
+                Your contributions
+              </Link>
+            )}
             <Link
               href="/wiki/graph"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>hub</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>hub</span>
               Graph View
             </Link>
           </div>
@@ -262,6 +329,22 @@ export default function WikiPageViewer() {
           activeScope={{
             scope_type: scopeType ?? "global",
             scope_id: scopeId ?? null,
+          }}
+          getCreateModeForScope={getCreateModeForScope}
+          onCreatePage={(scope) => {
+            const match = scopes.find(
+              (s) =>
+                s.scope_type === scope.scope_type &&
+                (s.scope_id ?? null) === (scope.scope_id ?? null),
+            );
+            setDialogScope(
+              match ?? {
+                scope_type: scope.scope_type,
+                scope_id: scope.scope_id,
+                name: scope.scope_type,
+              },
+            );
+            setCreateOpen(true);
           }}
         />
 
@@ -390,6 +473,18 @@ export default function WikiPageViewer() {
       </div>
 
       <WikiSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+      {dialogMode && (
+        <WikiCreatePageDialog
+          open={createOpen}
+          onOpenChange={(o) => {
+            setCreateOpen(o);
+            if (!o) setDialogScope(null);
+          }}
+          mode={dialogMode}
+          defaultScope={dialogTargetScope}
+          scopes={scopes}
+        />
+      )}
     </>
   );
 }

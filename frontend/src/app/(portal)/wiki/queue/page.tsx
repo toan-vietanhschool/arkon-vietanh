@@ -37,7 +37,10 @@ function relativeTime(iso: string): string {
   return date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
+type ScopeMode = "review" | "mine";
+
 export default function WikiQueuePage() {
+  const [scopeMode, setScopeMode] = React.useState<ScopeMode>("review");
   const [status, setStatus] = React.useState<string>("pending");
   const [drafts, setDrafts] = React.useState<DraftResponse[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -47,11 +50,15 @@ export default function WikiQueuePage() {
 
   const load = React.useCallback(() => {
     setLoading(true);
-    api<DraftResponse[]>(`/api/wiki/drafts?status=${status}&limit=200`)
+    const qs = new URLSearchParams();
+    qs.set("status", status);
+    qs.set("limit", "200");
+    if (scopeMode === "mine") qs.set("mine", "true");
+    api<DraftResponse[]>(`/api/wiki/drafts?${qs.toString()}`)
       .then((rows) => setDrafts(Array.isArray(rows) ? rows : []))
       .catch(() => setDrafts([]))
       .finally(() => setLoading(false));
-  }, [status]);
+  }, [status, scopeMode]);
 
   React.useEffect(() => {
     load();
@@ -108,8 +115,12 @@ export default function WikiQueuePage() {
   return (
     <>
       <PageHeader
-        title="Review Queue"
-        description="Drafts waiting for editor review across every scope you can review."
+        title="Your contributions"
+        description={
+          scopeMode === "review"
+            ? "Drafts waiting for your review across every scope."
+            : "Drafts you've authored, across every status."
+        }
         action={
           <div className="flex items-center gap-2">
             <select
@@ -132,7 +143,7 @@ export default function WikiQueuePage() {
             </Button>
             <Button
               onClick={handleBulkApprove}
-              disabled={busy || selected.size === 0 || status !== "pending"}
+              disabled={busy || selected.size === 0 || status !== "pending" || scopeMode !== "review"}
               className="gap-2"
               title={
                 status !== "pending"
@@ -150,6 +161,34 @@ export default function WikiQueuePage() {
           </div>
         }
       />
+
+      {/* Mode tabs: Mine (drafts I authored) vs To-review (drafts assigned to me) */}
+      <div className="mb-4 inline-flex rounded-lg border border-border bg-card p-0.5">
+        {([
+          { value: "review", label: "To review", icon: "fact_check" },
+          { value: "mine", label: "Mine", icon: "edit_note" },
+        ] as const).map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => {
+              setScopeMode(opt.value);
+              setSelected(new Set());
+              setLastResult(null);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              scopeMode === opt.value
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              {opt.icon}
+            </span>
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
       {lastResult && (
         <div className="mb-4 rounded-lg border border-border bg-card p-3 text-sm">
@@ -209,7 +248,7 @@ export default function WikiQueuePage() {
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="p-2 w-8">
-                  {status === "pending" && (
+                  {status === "pending" && scopeMode === "review" && (
                     <input
                       type="checkbox"
                       checked={allChecked}
@@ -241,8 +280,18 @@ export default function WikiQueuePage() {
                     : d.ai_check_status === "failed"
                     ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-200"
                     : "bg-muted text-muted-foreground";
+                // Preserve scope context — the same slug can exist in
+                // multiple scopes (e.g. an IT-dept page and a SALES-dept
+                // page sharing "ai-llm-ecosystem"); without the params the
+                // detail viewer falls back to the first match.
+                const scopeQs =
+                  d.page_scope_type && d.page_scope_type !== "global"
+                    ? `?scopeType=${d.page_scope_type}${
+                        d.page_scope_id ? `&scopeId=${d.page_scope_id}` : ""
+                      }`
+                    : "";
                 const pageHref = d.page_slug
-                  ? `/wiki/${d.page_slug}`
+                  ? `/wiki/${d.page_slug}${scopeQs}`
                   : null;
                 return (
                   <tr
@@ -252,7 +301,7 @@ export default function WikiQueuePage() {
                     }`}
                   >
                     <td className="p-2 align-top">
-                      {status === "pending" && (
+                      {status === "pending" && scopeMode === "review" && (
                         <input
                           type="checkbox"
                           checked={checked}
@@ -279,6 +328,12 @@ export default function WikiQueuePage() {
                       </div>
                       <p className="text-xs text-muted-foreground font-mono mt-0.5">
                         {d.page_slug}
+                        {d.page_scope_type && d.page_scope_type !== "global" && (
+                          <span className="ml-2 px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-sans">
+                            {d.page_scope_type}
+                            {d.page_scope_name ? ` · ${d.page_scope_name}` : ""}
+                          </span>
+                        )}
                       </p>
                     </td>
                     <td className="p-2 align-top">
