@@ -11,20 +11,31 @@ import { Project } from "./types";
 import { WIKI_TYPE_TABS } from "./utils";
 import { WikiDetailInline } from "./wiki-detail-inline";
 import { WikiGraphInline } from "./wiki-graph-inline";
+import { PinGlobalPageDialog } from "./pin-global-page-dialog";
 
 type Props = {
   project: Project;
   wikiPages: WikiPageSummary[];
   wikiLoading: boolean;
   wikiIndexMd: string | null;
+  onWikiChanged?: () => void;
+  canEdit?: boolean;
 };
 
-export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props) {
+export function WikiTab({
+  project,
+  wikiPages,
+  wikiLoading,
+  wikiIndexMd,
+  onWikiChanged,
+  canEdit = false,
+}: Props) {
   const t = useTranslations("Projects");
   const [wikiTypeTab, setWikiTypeTab] = useState<string>("all");
   const [selectedWikiSlug, setSelectedWikiSlug] = useState<string | null>(null);
   const [selectedWikiPage, setSelectedWikiPage] = useState<WikiPageDetail | null>(null);
   const [showGraph, setShowGraph] = useState(false);
+  const [pinDialogOpen, setPinDialogOpen] = useState(false);
 
   // Compute wiki counts
   const wikiTypeCounts = useMemo(() => {
@@ -131,6 +142,15 @@ export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props)
                         </span>
                       </div>
                     )}
+                    {canEdit && (
+                      <button
+                        onClick={() => setPinDialogOpen(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-border bg-card hover:bg-muted/50 transition-colors shadow-sahara"
+                      >
+                        <span className="material-symbols-outlined text-base">push_pin</span>
+                        {t("wiki.pinGlobalAction")}
+                      </button>
+                    )}
                     <button
                       onClick={() => setShowGraph(true)}
                       className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sahara"
@@ -211,6 +231,13 @@ export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props)
           <WikiSidebarRight slug={selectedWikiSlug} page={selectedWikiPage} />
         </div>
       )}
+
+      <PinGlobalPageDialog
+        projectId={project.id}
+        open={pinDialogOpen}
+        onClose={() => setPinDialogOpen(false)}
+        onPinned={() => onWikiChanged?.()}
+      />
     </div>
   );
 }
