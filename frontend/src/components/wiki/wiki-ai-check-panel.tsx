@@ -6,6 +6,8 @@ import { AiCheckItem, AiCheckResults, AiCheckStatus } from "@/types/wiki";
 type Props = {
   status: AiCheckStatus | string;
   results: AiCheckResults | null;
+  onRerun?: () => void | Promise<void>;
+  rerunBusy?: boolean;
 };
 
 function statusBadge(status: AiCheckStatus | string) {
@@ -85,7 +87,7 @@ function describeCheck(id: string): { label: string; category: string } {
   return { label: pretty, category: cat.replace(/_/g, " ") };
 }
 
-export function WikiAiCheckPanel({ status, results }: Props) {
+export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props) {
   const [expanded, setExpanded] = React.useState(false);
   const badge = statusBadge(status);
   const summary = results?.summary;
@@ -94,35 +96,62 @@ export function WikiAiCheckPanel({ status, results }: Props) {
   const passed = allChecks.filter((c) => c.status === "pass");
   const skipped = allChecks.filter((c) => c.status === "skipped");
   const [showPassed, setShowPassed] = React.useState(false);
+  const inFlight = status === "running" || status === "queued" || !!rerunBusy;
 
   return (
     <div className="border-t border-border bg-muted/30">
-      <button
-        type="button"
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center gap-2 px-4 py-2 text-xs hover:bg-muted/50 transition-colors"
-      >
-        <span
-          className={`material-symbols-outlined ${
-            status === "running" || status === "queued" ? "animate-spin" : ""
-          }`}
+      <div className="w-full flex items-center gap-2 px-4 py-2 text-xs hover:bg-muted/50 transition-colors">
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left"
+        >
+          <span
+            className={`material-symbols-outlined ${inFlight ? "animate-spin" : ""}`}
+            style={{ fontSize: 16 }}
+          >
+            {badge.icon}
+          </span>
+          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${badge.classes}`}>
+            {badge.label}
+          </span>
+          {summary && (
+            <span className="text-muted-foreground tabular-nums truncate">
+              {summary.pass} pass · {summary.warn} warn · {summary.fail} fail
+              {summary.skipped > 0 && ` · ${summary.skipped} skipped`}
+            </span>
+          )}
+        </button>
+        {onRerun && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!inFlight) void onRerun();
+            }}
+            disabled={inFlight}
+            title="Re-run AI pre-review for this draft"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide border border-border hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span
+              className={`material-symbols-outlined ${rerunBusy ? "animate-spin" : ""}`}
+              style={{ fontSize: 12 }}
+            >
+              {rerunBusy ? "progress_activity" : "refresh"}
+            </span>
+            Re-check
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          aria-label={expanded ? "Collapse" : "Expand"}
+          className="material-symbols-outlined text-muted-foreground"
           style={{ fontSize: 16 }}
         >
-          {badge.icon}
-        </span>
-        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${badge.classes}`}>
-          {badge.label}
-        </span>
-        {summary && (
-          <span className="text-muted-foreground tabular-nums">
-            {summary.pass} pass · {summary.warn} warn · {summary.fail} fail
-            {summary.skipped > 0 && ` · ${summary.skipped} skipped`}
-          </span>
-        )}
-        <span className="ml-auto material-symbols-outlined text-muted-foreground" style={{ fontSize: 16 }}>
           {expanded ? "expand_less" : "expand_more"}
-        </span>
-      </button>
+        </button>
+      </div>
 
       {expanded && (
         <div className="px-4 pb-3 space-y-3">
