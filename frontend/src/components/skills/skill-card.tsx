@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +35,7 @@ export function SkillCard({
   onEdit,
   onClick
 }: SkillCardProps) {
+  const t = useTranslations("Skills");
   const { canAccess, hasPermission } = useAuth();
   const dateStr = (() => {
     const d = new Date(skill.updated_at);
@@ -80,7 +82,7 @@ export function SkillCard({
               ) : (
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
                   <span className="material-symbols-outlined text-[12px]">public</span>
-                  Global
+                  {t("card.globalScope")}
                 </div>
               )}
               <span className={cn(
@@ -107,7 +109,7 @@ export function SkillCard({
             onClick={() => onClick?.(skill.slug)}
             disabled={skill.status === "deleting"}
           >
-            Details
+            {t("card.details")}
           </Button>
           {canAccess("skill", "edit") && (
             <Button
@@ -117,7 +119,7 @@ export function SkillCard({
               onClick={() => onEdit?.(skill.slug)}
               disabled={skill.status === "deleting"}
             >
-              Edit
+              {t("card.edit")}
             </Button>
           )}
           {canAccess("skill", "delete") && (
@@ -128,7 +130,7 @@ export function SkillCard({
               onClick={() => onDelete(skill.id, skill.name)}
               disabled={skill.status === "deleting"}
             >
-              Delete
+              {t("card.delete")}
             </Button>
           )}
         </div>

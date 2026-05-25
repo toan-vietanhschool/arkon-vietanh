@@ -1,0 +1,32 @@
+{
+  "title": "Vai trò",
+  "description": "Xác định các nhóm quyền hạn để gán cho nhân viên.",
+  "createRole": "Tạo vai trò",
+  "noRoles": {
+    "title": "Chưa có vai trò",
+    "description": "Tạo vai trò để gán quyền hạn cho nhân viên"
+  },
+  "systemBadge": "Hệ thống",
+  "noPermissions": "Chưa có quyền hạn",
+  "deleteConfirm": "Xóa vai trò \"{name}\"? Nhân viên được gán vai trò này sẽ mất vai trò đó.",
+  "deleteFailed": "Xóa thất bại",
+  "dialog": {
+    "createTitle": "Tạo vai trò",
+    "editTitle": "Sửa vai trò",
+    "nameLabel": "Tên",
+    "descriptionLabel": "Mô tả",
+    "descriptionPlaceholder": "Không bắt buộc",
+    "permissionsLabel": "Quyền hạn",
+    "permissionsSelected": "{selected} / {total} quyền được chọn",
+    "saveFailed": "Lưu thất bại",
+    "createButton": "Tạo",
+    "updateButton": "Cập nhật",
+    "saving": "Đang lưu..."
+  },
+  "workspaceRole": {
+    "viewer": "Người xem",
+    "contributor": "Người đóng góp",
+    "editor": "Biên tập viên",
+    "admin": "Quản trị viên"
+  }
+}

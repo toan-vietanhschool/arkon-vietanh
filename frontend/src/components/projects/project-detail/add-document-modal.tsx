@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { api, apiUpload } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -107,6 +108,7 @@ export function AddDocumentModal({
   availableSources: Source[];
   onDone: () => void;
 }) {
+  const t = useTranslations("Projects.addDocumentModal");
   const [mode, setMode] = useState<"upload" | "link">("upload");
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -159,7 +161,7 @@ export function AddDocumentModal({
       reset();
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t("uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -177,7 +179,7 @@ export function AddDocumentModal({
       reset();
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to link document");
+      setError(err instanceof Error ? err.message : t("linkFailed"));
     } finally {
       setLinking(false);
     }
@@ -187,7 +189,7 @@ export function AddDocumentModal({
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-[520px] p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="text-lg font-heading">Add Document</DialogTitle>
+          <DialogTitle className="text-lg font-heading">{t("title")}</DialogTitle>
         </DialogHeader>
 
         {/* Mode tabs */}
@@ -204,7 +206,7 @@ export function AddDocumentModal({
               <span className="material-symbols-outlined text-sm">
                 {m === "upload" ? "cloud_upload" : "add"}
               </span>
-              {m === "upload" ? "Upload File" : "Add Existing"}
+              {m === "upload" ? t("uploadTab") : t("linkTab")}
             </button>
           ))}
         </div>
@@ -258,7 +260,7 @@ export function AddDocumentModal({
                     <div className="text-center min-w-0 max-w-full">
                       <p className="text-sm font-medium text-foreground truncate max-w-[360px]">{selectedFile.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {(selectedFile.size / 1024).toFixed(0)} KB · Click to change
+                        {(selectedFile.size / 1024).toFixed(0)} KB · {t("dropZone.changeHint")}
                       </p>
                     </div>
                   </>
@@ -270,10 +272,10 @@ export function AddDocumentModal({
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium text-foreground">
-                        {dragOver ? "Drop file here" : "Drag & drop or click to browse"}
+                        {dragOver ? t("dropZone.dragHint") : t("dropZone.browseHint")}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        PDF, DOCX, XLSX, CSV, TXT, MD, PPTX · Max 50 MB
+                        {t("dropZone.sizeHint")}
                       </p>
                     </div>
                   </>
@@ -311,12 +313,12 @@ export function AddDocumentModal({
                 {uploading ? (
                   <>
                     <span className="material-symbols-outlined text-base mr-2 animate-spin">progress_activity</span>
-                    Uploading...
+                    {t("uploading")}
                   </>
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-base mr-2">upload</span>
-                    Upload
+                    {t("uploadButton")}
                   </>
                 )}
               </Button>
@@ -327,8 +329,8 @@ export function AddDocumentModal({
               {availableSources.length === 0 ? (
                 <div className="py-8 flex flex-col items-center gap-2">
                   <span className="material-symbols-outlined text-3xl text-muted-foreground/40">description</span>
-                  <p className="text-sm text-muted-foreground">No available documents to link</p>
-                  <p className="text-xs text-muted-foreground">All documents are already in this workspace.</p>
+                  <p className="text-sm text-muted-foreground">{t("noAvailableDocs")}</p>
+                  <p className="text-xs text-muted-foreground">{t("noAvailableDocsHint")}</p>
                 </div>
               ) : (
                 <>
@@ -339,7 +341,7 @@ export function AddDocumentModal({
                           {availableSources.find(s => s.id === selectedSourceId)?.title || selectedSourceId}
                         </span>
                       ) : (
-                        <SelectValue placeholder="Select an existing document to add..." />
+                        <SelectValue placeholder={t("selectDocPlaceholder")} />
                       )}
                     </SelectTrigger>
                     <SelectContent>
@@ -369,12 +371,12 @@ export function AddDocumentModal({
                     {linking ? (
                       <>
                         <span className="material-symbols-outlined text-base mr-2 animate-spin">progress_activity</span>
-                        Linking...
+                        {t("linking")}
                       </>
                     ) : (
                       <>
                         <span className="material-symbols-outlined text-base mr-2">add_link</span>
-                        Link to Workspace
+                        {t("linkButton")}
                       </>
                     )}
                   </Button>

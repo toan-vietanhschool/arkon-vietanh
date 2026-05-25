@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/shared/page-header";
@@ -22,6 +23,7 @@ export type Project = {
 
 export default function ProjectsPage() {
   const { user } = useAuth();
+  const t = useTranslations("Projects");
   const isAdmin = user?.role === "admin";
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -69,8 +71,8 @@ export default function ProjectsPage() {
   return (
     <>
       <PageHeader
-        title="Projects"
-        description="Manage cross-functional knowledge contexts for clients, initiatives, and events."
+        title={t("titleProjects")}
+        description={t("description")}
         action={
           isAdmin ? (
             <Button
@@ -78,7 +80,7 @@ export default function ProjectsPage() {
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <span className="material-symbols-outlined text-base mr-1">add</span>
-              New Project
+              {t("newProject")}
             </Button>
           ) : undefined
         }

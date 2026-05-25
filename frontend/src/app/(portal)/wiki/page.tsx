@@ -3,13 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { WikiPageSummary, WikiScope } from "@/types/wiki";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { WikiPageTree } from "@/components/wiki/wiki-page-tree";
 import { WikiContent } from "@/components/wiki/wiki-content";
-import { WikiTypeBadge, wikiTypeGroupLabel } from "@/components/wiki/wiki-type-badge";
+import { WikiTypeBadge, useWikiTypeGroupLabel } from "@/components/wiki/wiki-type-badge";
 import { ScopeBadge } from "@/components/shared/scope-badge";
 import { WikiSearchDialog } from "@/components/wiki/wiki-search-dialog";
 import { WikiScopeSwitcher } from "@/components/wiki/wiki-scope-switcher";
@@ -34,6 +35,8 @@ export default function WikiIndexPage() {
   const searchParams = useSearchParams();
   const urlScopeType = searchParams.get("scope_type");
   const urlScopeId = searchParams.get("scope_id");
+  const t = useTranslations("Wiki");
+  const typeGroupLabel = useWikiTypeGroupLabel();
 
   const { user, getWorkspaceRole, hasPermission } = useAuth();
 
@@ -46,9 +49,6 @@ export default function WikiIndexPage() {
   const [activeTab, setActiveTab] = React.useState<string>("all");
   const [scopes, setScopes] = React.useState<WikiScope[]>([]);
 
-  // `?new=1&title=<gap topic>` deep-link from the knowledge-gaps tab in
-  // /admin/statistics — auto-open the create dialog pre-filled with the
-  // gap's normalized topic.
   React.useEffect(() => {
     if (searchParams.get("new") === "1") {
       setPrefillTitle(searchParams.get("title") || "");
@@ -56,8 +56,6 @@ export default function WikiIndexPage() {
     }
   }, [searchParams]);
 
-  // Derive selected scope from URL params; fall back to the matching entry in
-  // `scopes` once it loads so we can show the proper display name.
   const selectedScope: WikiScope = React.useMemo(() => {
     if (urlScopeType && urlScopeType !== "global") {
       const match = scopes.find(
@@ -69,16 +67,12 @@ export default function WikiIndexPage() {
     return { scope_type: "global", scope_id: null, name: "Global" };
   }, [urlScopeType, urlScopeId, scopes]);
 
-  // Fetch available scopes once so we can resolve the display name for the URL
-  // scope. The switcher fetches its own copy — caching could optimise this but
-  // /api/wiki/my-scopes is tiny.
   React.useEffect(() => {
     api<WikiScope[]>("/api/wiki/my-scopes")
       .then((s) => setScopes(Array.isArray(s) ? s : []))
       .catch(() => setScopes([]));
   }, []);
 
-  // Refetch index + pages whenever the selected scope changes
   React.useEffect(() => {
     setLoading(true);
     const qs = selectedScope.scope_id
@@ -113,9 +107,6 @@ export default function WikiIndexPage() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Permission helper: which create flow (if any) is available for the given
-  // scope. Used to gate the header button and to surface per-scope `+`
-  // buttons inside the page tree.
   const isAdmin = user?.role === "admin";
   const getCreateModeForScope = React.useCallback(
     (scope: { scope_type: string; scope_id: string | null }): "direct" | "propose" | null => {
@@ -135,7 +126,6 @@ export default function WikiIndexPage() {
         }
         return null;
       }
-      // global
       if (isAdmin || hasPermission("wiki:write:all")) return "direct";
       if (hasPermission("wiki:write:own_dept")) return "propose";
       return null;
@@ -144,13 +134,10 @@ export default function WikiIndexPage() {
   );
   const createMode = getCreateModeForScope(selectedScope);
 
-  // Scope the dialog opens against. The header button uses the currently
-  // selected scope; the tree's `+` button overrides this on click.
   const [dialogScope, setDialogScope] = React.useState<WikiScope | null>(null);
   const dialogTargetScope: WikiScope = dialogScope ?? selectedScope;
   const dialogMode = getCreateModeForScope(dialogTargetScope);
 
-  // Stats
   const totalPages = allPages.length;
   const typeCounts = React.useMemo(() => {
     const c: Record<string, number> = {};
@@ -159,7 +146,6 @@ export default function WikiIndexPage() {
   }, [allPages]);
   const lastUpdated = allPages[0]?.updated_at;
 
-  // Filter by tab
   const displayPages = React.useMemo(() => {
     const list = activeTab === "all"
       ? allPages
@@ -170,8 +156,8 @@ export default function WikiIndexPage() {
   return (
     <>
       <PageHeader
-        title="Knowledge Wiki"
-        description="Compiled knowledge from your organization's documents."
+        title={t("pageHeader.title")}
+        description={t("pageHeader.description")}
         action={
           <div className="flex items-center gap-2">
             <WikiScopeSwitcher current={selectedScope} />
@@ -181,7 +167,7 @@ export default function WikiIndexPage() {
               className="gap-2"
             >
               <span className="material-symbols-outlined text-base">search</span>
-              Search
+              {t("searchBtn")}
               <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded border border-border text-xs font-mono text-muted-foreground">
                 ⌘K
               </kbd>
@@ -190,28 +176,28 @@ export default function WikiIndexPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setDialogScope(null); // header button = current scope
+                  setDialogScope(null);
                   setCreateOpen(true);
                 }}
                 className="gap-2"
                 title={
                   createMode === "direct"
-                    ? `Create a new page in ${selectedScope.name}`
-                    : `Propose a new page in ${selectedScope.name} (reviewer approves)`
+                    ? t("createPageTitle.direct", { scopeName: selectedScope.name })
+                    : t("createPageTitle.propose", { scopeName: selectedScope.name })
                 }
               >
                 <span className="material-symbols-outlined text-base">add</span>
-                {createMode === "direct" ? "New page" : "Propose page"}
+                {createMode === "direct" ? t("newPageBtn") : t("proposePageBtn")}
               </Button>
             )}
             {user && (
               <Link
                 href="/wiki/review"
                 className="inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium border border-border bg-background hover:bg-muted transition-colors"
-                title="Drafts you authored and drafts waiting for your review"
+                title={t("contributionsTitle")}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit_note</span>
-                Contributions
+                {t("contributionsBtn")}
               </Link>
             )}
             <Link
@@ -219,7 +205,7 @@ export default function WikiIndexPage() {
               className="inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>hub</span>
-              Graph View
+              {t("graphViewBtn")}
             </Link>
           </div>
         }
@@ -272,7 +258,7 @@ export default function WikiIndexPage() {
                   <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sahara">
                     <span className="material-symbols-outlined text-base text-primary">article</span>
                     <span className="text-sm font-semibold text-foreground">{totalPages}</span>
-                    <span className="text-xs text-muted-foreground">Pages</span>
+                    <span className="text-xs text-muted-foreground">{t("stats.pages")}</span>
                   </div>
                   {Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
                     <div
@@ -287,9 +273,11 @@ export default function WikiIndexPage() {
                     <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sahara ml-auto">
                       <span className="material-symbols-outlined text-base text-muted-foreground">schedule</span>
                       <span className="text-xs text-muted-foreground">
-                        Updated {new Date(lastUpdated).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
+                        {t("stats.updated", {
+                          date: new Date(lastUpdated).toLocaleDateString("vi-VN", {
+                            month: "short",
+                            day: "numeric",
+                          }),
                         })}
                       </span>
                     </div>
@@ -319,7 +307,7 @@ export default function WikiIndexPage() {
                               : "border-transparent text-muted-foreground hover:text-foreground"
                           }`}
                         >
-                          {tab === "all" ? "All" : wikiTypeGroupLabel(tab)}
+                          {tab === "all" ? t("tabs.all") : typeGroupLabel(tab)}
                           <span className="ml-1.5 tabular-nums text-muted-foreground">
                             {count}
                           </span>
@@ -360,7 +348,7 @@ export default function WikiIndexPage() {
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-3">
-                          {new Date(page.updated_at).toLocaleDateString()}
+                          {new Date(page.updated_at).toLocaleDateString("vi-VN")}
                         </p>
                       </Link>
                       );
@@ -372,8 +360,8 @@ export default function WikiIndexPage() {
           ) : (
             <EmptyState
               icon="auto_stories"
-              title="Wiki is empty"
-              description="Upload and compile documents to start building your knowledge wiki."
+              title={t("emptyState.title")}
+              description={t("emptyState.description")}
             />
           )}
         </div>

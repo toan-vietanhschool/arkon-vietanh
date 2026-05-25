@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,8 @@ export function DepartmentDialog({
   department,
   onSaved,
 }: Props) {
+  const t = useTranslations("Departments");
+  const tCommon = useTranslations("Common");
   const isEdit = !!department;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -60,7 +63,7 @@ export function DepartmentDialog({
       onSaved();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : t("dialog.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -71,30 +74,30 @@ export function DepartmentDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {isEdit ? "Edit Department" : "Create Department"}
+            {isEdit ? t("dialog.editTitle") : t("dialog.createTitle")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="dept-name">Name</Label>
+            <Label htmlFor="dept-name">{t("dialog.nameLabel")}</Label>
             <Input
               id="dept-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Sales, Engineering"
+              placeholder={t("dialog.namePlaceholder")}
               required
               className="bg-background"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="dept-desc">Description</Label>
+            <Label htmlFor="dept-desc">{t("dialog.descriptionLabel")}</Label>
             <Textarea
               id="dept-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description..."
+              placeholder={t("dialog.descriptionPlaceholder")}
               rows={3}
               className="bg-background"
             />
@@ -112,14 +115,18 @@ export function DepartmentDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
               disabled={saving}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {saving ? "Saving..." : isEdit ? "Update" : "Create"}
+              {saving
+                ? t("dialog.saving")
+                : isEdit
+                  ? t("dialog.updateButton")
+                  : t("dialog.createButton")}
             </Button>
           </div>
         </form>

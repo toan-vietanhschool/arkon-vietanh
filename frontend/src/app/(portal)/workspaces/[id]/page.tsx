@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ProjectDetail } from "@/components/projects/project-detail";
@@ -21,6 +22,7 @@ export default function WorkspaceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const t = useTranslations("Projects");
   const isAdmin = user?.role === "admin";
 
   const projectId = params.id as string;
@@ -67,12 +69,12 @@ export default function WorkspaceDetailPage() {
         <span className="material-symbols-outlined text-4xl text-muted-foreground">
           folder_off
         </span>
-        <p className="text-sm text-muted-foreground">Workspace not found</p>
+        <p className="text-sm text-muted-foreground">{t("detail.notFound")}</p>
         <button
           onClick={() => router.push("/")}
           className="text-sm text-primary hover:underline"
         >
-          Back to Dashboard
+          {t("detail.backToDashboard")}
         </button>
       </div>
     );

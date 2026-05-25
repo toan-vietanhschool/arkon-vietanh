@@ -1,0 +1,13 @@
+{
+  "sectionOrgKnowledge": "Tri thức tổ chức",
+  "sectionOrganization": "Tổ chức",
+  "sectionSystem": "Hệ thống",
+  "workspaces": "Workspace",
+  "newWorkspace": "Tạo workspace mới",
+  "loadingWorkspaces": "Đang tải…",
+  "noWorkspaces": "Chưa có workspace",
+  "moreWorkspaces": "{count} thêm…",
+  "profile": "Hồ sơ",
+  "signOut": "Đăng xuất",
+  "footerMeta": "On-Premise · Nội bộ"
+}

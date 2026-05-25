@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,6 +76,7 @@ export function MembersTab({
   onChanged,
   onError,
 }: Props) {
+  const t = useTranslations("Projects");
   // Multi-select picker state — chips for selected employees + free-text query.
   const [picked, setPicked] = useState<Employee[]>([]);
   const [query, setQuery] = useState("");
@@ -179,20 +181,20 @@ export function MembersTab({
       setPicked((prev) => prev.filter((p) => erroredIds.has(p.id)));
       await onChanged();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to add members");
+      onError(err instanceof Error ? err.message : t("members.addFailed"));
     } finally {
       setBusy(false);
     }
   };
 
   const handleRemoveMember = async (empId: string) => {
-    if (!confirm("Remove this member from the project?")) return;
+    if (!confirm(t("members.removeConfirm"))) return;
     onError(null);
     try {
       await api(`/api/projects/${project.id}/members/${empId}`, { method: "DELETE" });
       await onChanged();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to remove member");
+      onError(err instanceof Error ? err.message : t("members.removeFailed"));
     }
   };
 
@@ -206,7 +208,7 @@ export function MembersTab({
       });
       await onChanged();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to update role");
+      onError(err instanceof Error ? err.message : t("members.updateRoleFailed"));
     } finally {
       setUpdatingRoleFor(null);
     }
@@ -246,7 +248,7 @@ export function MembersTab({
                   onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
                   onFocus={() => setOpen(true)}
                   onKeyDown={handleInputKey}
-                  placeholder={picked.length === 0 ? "Type a name or email to search…" : ""}
+                  placeholder={picked.length === 0 ? t("members.searchPlaceholder") : ""}
                   className="flex-1 min-w-[180px] bg-transparent outline-none text-sm placeholder:text-muted-foreground"
                 />
               </div>
@@ -277,7 +279,7 @@ export function MembersTab({
               )}
               {open && query.trim() !== "" && matches.length === 0 && (
                 <div className="absolute z-20 left-0 right-0 top-full mt-1 rounded-md border border-border bg-popover shadow-md px-3 py-2">
-                  <p className="text-xs text-muted-foreground italic">No matching employees.</p>
+                  <p className="text-xs text-muted-foreground italic">{t("members.noMatch")}</p>
                 </div>
               )}
             </div>
@@ -303,17 +305,20 @@ export function MembersTab({
               ) : (
                 <span className="material-symbols-outlined text-base">person_add</span>
               )}
-              Add{picked.length > 0 ? ` ${picked.length}` : ""}
+              {picked.length > 0
+                ? t("members.addWithCount", { count: picked.length })
+                : t("members.addButton")}
             </Button>
           </div>
 
           {/* Helper hints + per-batch result */}
           {picked.length === 0 && !lastResult && (
             <p className="text-[11px] text-muted-foreground">
-              Tip: type to search, <kbd className="font-mono bg-muted px-1 rounded">↑↓</kbd> to navigate,
-              <kbd className="font-mono bg-muted px-1 rounded ml-1">Enter</kbd> to pick,
-              <kbd className="font-mono bg-muted px-1 rounded ml-1">Backspace</kbd> to remove last chip.
-              All selected members will receive the role above.
+              {t("members.keyboardHint", {
+                arrowKeys: "↑↓",
+                enterKey: "Enter",
+                backspaceKey: "Backspace",
+              })}
             </p>
           )}
 
@@ -321,25 +326,29 @@ export function MembersTab({
             <div className="rounded-md border border-border bg-background/60 px-3 py-2 text-xs">
               <p>
                 <span className="text-emerald-700 dark:text-emerald-300 font-medium">
-                  {lastResult.added} added
+                  {t("members.bulkResult.added", { count: lastResult.added })}
                 </span>
                 {lastResult.skipped > 0 && (
                   <>
                     {" · "}
-                    <span className="text-muted-foreground">{lastResult.skipped} skipped</span>
+                    <span className="text-muted-foreground">
+                      {t("members.bulkResult.skipped", { count: lastResult.skipped })}
+                    </span>
                   </>
                 )}
                 {lastResult.errored > 0 && (
                   <>
                     {" · "}
-                    <span className="text-destructive">{lastResult.errored} errored</span>
+                    <span className="text-destructive">
+                      {t("members.bulkResult.errored", { count: lastResult.errored })}
+                    </span>
                   </>
                 )}
               </p>
               {(lastResult.skipped > 0 || lastResult.errored > 0) && (
                 <details className="mt-1">
                   <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
-                    Details
+                    {t("members.bulkResult.details")}
                   </summary>
                   <ul className="mt-1 space-y-0.5">
                     {lastResult.results
@@ -368,7 +377,7 @@ export function MembersTab({
                 onClick={() => setLastResult(null)}
                 className="mt-1 text-[11px] text-muted-foreground hover:text-foreground underline"
               >
-                Dismiss
+                {t("members.bulkResult.dismiss")}
               </button>
             </div>
           )}
@@ -377,7 +386,11 @@ export function MembersTab({
 
       {members.length === 0 ? (
         <div className="bg-card rounded-xl border border-border shadow-sahara">
-          <EmptyState icon="group" title="No members yet" description="Add employees to give them access to this workspace's knowledge." />
+          <EmptyState
+            icon="group"
+            title={t("members.noMembers.title")}
+            description={t("members.noMembers.description")}
+          />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

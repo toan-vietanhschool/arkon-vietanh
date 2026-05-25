@@ -1,0 +1,129 @@
+{
+  "title": "Workspaces",
+  "titleProjects": "Projects",
+  "description": "Manage cross-functional knowledge contexts for clients, initiatives, and events.",
+  "descriptionWorkspaces": "Manage projects and customer engagements — each with its own team and documents.",
+  "newProject": "New Project",
+  "newWorkspace": "New Workspace",
+  "noWorkspaces": {
+    "title": "No workspaces yet",
+    "description": "Create a workspace to organize projects or customer engagements"
+  },
+  "memberCount": "{count} members",
+  "docCount": "{count} docs",
+  "workspaceType": {
+    "customer": "Customer",
+    "project": "Project"
+  },
+  "status": {
+    "active": "active",
+    "archived": "archived"
+  },
+  "deleteConfirm": "Delete this project? Members will lose access to its documents.",
+  "deleteFailed": "Failed to delete",
+  "detail": {
+    "back": "Back",
+    "tabs": {
+      "wiki": "Wiki",
+      "sources": "Documents",
+      "members": "Members"
+    },
+    "loadFailed": "Failed to load project details",
+    "notFound": "Workspace not found",
+    "backToDashboard": "Back to Dashboard"
+  },
+  "dialog": {
+    "createTitle": "New Workspace",
+    "editTitle": "Edit Workspace",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. ACME Corp, Q3 Board Deck, Alpha Launch",
+    "typeLabel": "Type",
+    "typeSelectPlaceholder": "Select type",
+    "descriptionLabel": "Description",
+    "descriptionOptional": "(optional)",
+    "descriptionPlaceholder": "Brief context about this project",
+    "statusLabel": "Status",
+    "statusActive": "Active",
+    "statusArchived": "Archived",
+    "nameRequired": "Name is required",
+    "saveFailed": "Failed to save",
+    "saveButton": "Save",
+    "createButton": "Create",
+    "saving": "Saving..."
+  },
+  "members": {
+    "searchPlaceholder": "Type a name or email to search…",
+    "noMatch": "No matching employees.",
+    "addButton": "Add",
+    "addWithCount": "Add {count}",
+    "keyboardHint": "Tip: type to search, {arrowKeys} to navigate, {enterKey} to pick, {backspaceKey} to remove last chip. All selected members will receive the role above.",
+    "addFailed": "Failed to add members",
+    "removeFailed": "Failed to remove member",
+    "updateRoleFailed": "Failed to update role",
+    "removeConfirm": "Remove this member from the project?",
+    "noMembers": {
+      "title": "No members yet",
+      "description": "Add employees to give them access to this workspace's knowledge."
+    },
+    "bulkResult": {
+      "added": "{count} added",
+      "skipped": "{count} skipped",
+      "errored": "{count} errored",
+      "details": "Details",
+      "dismiss": "Dismiss"
+    }
+  },
+  "sources": {
+    "documentsLabel": "Documents",
+    "ready": "ready",
+    "processing": "processing",
+    "failed": "failed",
+    "addDocument": "Add Document",
+    "noDocuments": {
+      "title": "No documents yet",
+      "description": "Upload files or link existing documents to build this workspace's knowledge base.",
+      "addFirstButton": "Add your first document"
+    },
+    "status": {
+      "ready": "Ready",
+      "processing": "Processing",
+      "failed": "Failed",
+      "needsReview": "Needs Review",
+      "pending": "Pending"
+    },
+    "removeFailed": "Failed to remove document",
+    "removeConfirm": "Remove this document from the workspace?",
+    "reviewPlan": "Review Plan",
+    "remove": "Remove"
+  },
+  "addDocumentModal": {
+    "title": "Add Document",
+    "uploadTab": "Upload File",
+    "linkTab": "Add Existing",
+    "dropZone": {
+      "dragHint": "Drop file here",
+      "browseHint": "Drag & drop or click to browse",
+      "sizeHint": "PDF, DOCX, XLSX, CSV, TXT, MD, PPTX · Max 50 MB",
+      "changeHint": "Click to change"
+    },
+    "uploadButton": "Upload",
+    "uploading": "Uploading...",
+    "uploadFailed": "Upload failed",
+    "noAvailableDocs": "No available documents to link",
+    "noAvailableDocsHint": "All documents are already in this workspace.",
+    "linkButton": "Link to Workspace",
+    "linking": "Linking...",
+    "linkFailed": "Failed to link document",
+    "selectDocPlaceholder": "Select an existing document to add..."
+  },
+  "wiki": {
+    "pagesLabel": "Pages",
+    "updatedLabel": "Updated",
+    "graphView": "Graph View",
+    "noPages": {
+      "title": "No wiki pages yet",
+      "description": "Upload documents in this workspace to automatically compile knowledge into wiki pages."
+    },
+    "allFilter": "All"
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ type Props = {
 };
 
 export function DeptMembersDialog({ open, onOpenChange, deptId, deptName }: Props) {
+  const t = useTranslations("Departments");
   const [members, setMembers] = useState<Employee[]>([]);
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
   const [selectedEmpId, setSelectedEmpId] = useState("");
@@ -74,7 +76,7 @@ export function DeptMembersDialog({ open, onOpenChange, deptId, deptName }: Prop
       setSelectedEmpId("");
       await loadMembers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add member");
+      setError(err instanceof Error ? err.message : t("membersDialog.addFailedFallback"));
     } finally {
       setSaving(false);
     }
@@ -87,7 +89,7 @@ export function DeptMembersDialog({ open, onOpenChange, deptId, deptName }: Prop
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="text-xl">Member Management — {deptName}</DialogTitle>
+          <DialogTitle className="text-xl">{t("membersDialog.title", { deptName })}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-5 mt-1">
@@ -107,7 +109,7 @@ export function DeptMembersDialog({ open, onOpenChange, deptId, deptName }: Prop
                     })()}
                   </span>
                 ) : (
-                  <SelectValue placeholder="Select employee to add..." />
+                  <SelectValue placeholder={t("membersDialog.selectPlaceholder")} />
                 )}
               </SelectTrigger>
               <SelectContent>
@@ -126,7 +128,7 @@ export function DeptMembersDialog({ open, onOpenChange, deptId, deptName }: Prop
             >
               {saving
                 ? <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                : "Add"}
+                : t("membersDialog.addButton")}
             </Button>
           </div>
 
@@ -134,7 +136,7 @@ export function DeptMembersDialog({ open, onOpenChange, deptId, deptName }: Prop
           <div className="border border-border rounded-xl bg-card overflow-hidden">
             <div className="bg-muted/50 px-4 py-2 border-b border-border">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Current Members ({members.length})
+                {t("membersDialog.currentMembers", { count: members.length })}
               </h3>
             </div>
 
@@ -144,7 +146,11 @@ export function DeptMembersDialog({ open, onOpenChange, deptId, deptName }: Prop
               </div>
             ) : members.length === 0 ? (
               <div className="p-4">
-                <EmptyState icon="group_off" title="No members" description="No employees are assigned to this department yet." />
+                <EmptyState
+                  icon="group_off"
+                  title={t("membersDialog.noMembers.title")}
+                  description={t("membersDialog.noMembers.description")}
+                />
               </div>
             ) : (
               <div className="flex flex-col divide-y divide-border max-h-60 overflow-y-auto">
@@ -161,7 +167,7 @@ export function DeptMembersDialog({ open, onOpenChange, deptId, deptName }: Prop
           </div>
 
           <p className="text-xs text-muted-foreground">
-            To move an employee out of this department, edit their profile and assign a new department.
+            {t("membersDialog.moveHint")}
           </p>
         </div>
       </DialogContent>

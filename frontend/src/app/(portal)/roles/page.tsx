@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { RoleList } from "@/components/roles/role-list";
 import { RoleDialog, type Role, type PermissionInfo } from "@/components/roles/role-dialog";
 
 export default function RolesPage() {
+  const t = useTranslations("Roles");
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<PermissionInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,15 +46,15 @@ export default function RolesPage() {
   return (
     <>
       <PageHeader
-        title="Roles"
-        description="Define permission sets that can be assigned to employees."
+        title={t("title")}
+        description={t("description")}
         action={
           <Button
             onClick={handleCreate}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <span className="material-symbols-outlined text-base mr-1">add</span>
-            Create Role
+            {t("createRole")}
           </Button>
         }
       />

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { diffLines, diffWordsWithSpace } from "diff";
 
 type Props = {
@@ -140,6 +141,7 @@ export function WikiDraftDiff({
   contextLines = 3,
   groupByHeading = true,
 }: Props) {
+  const t = useTranslations("WikiDraft");
   const changes = React.useMemo(() => buildLineChanges(oldText, newText), [oldText, newText]);
   const visible = React.useMemo(() => collapseEqualRuns(changes, contextLines), [changes, contextLines]);
   const sections = React.useMemo(
@@ -150,7 +152,7 @@ export function WikiDraftDiff({
   if (oldText === newText) {
     return (
       <p className="text-xs text-muted-foreground italic px-2 py-3">
-        No changes between the current page and the proposed content.
+        {t("diff.noChanges")}
       </p>
     );
   }
@@ -177,7 +179,7 @@ export function WikiDraftDiff({
           return (
             <div key={i} className="text-muted-foreground/70 px-2 whitespace-pre-wrap">
               <span className="text-muted-foreground/40 mr-2 select-none">·</span>
-              {c.text || " "}
+              {c.text || " "}
             </div>
           );
         }
@@ -188,7 +190,7 @@ export function WikiDraftDiff({
               className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 px-2 whitespace-pre-wrap border-l-2 border-emerald-400"
             >
               <span className="text-emerald-600 dark:text-emerald-400 mr-2 select-none">+</span>
-              {c.text || " "}
+              {c.text || " "}
             </div>
           );
         }
@@ -198,7 +200,7 @@ export function WikiDraftDiff({
             className="bg-rose-50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-200 px-2 whitespace-pre-wrap border-l-2 border-rose-400"
           >
             <span className="text-rose-600 dark:text-rose-400 mr-2 select-none">−</span>
-            {c.text || " "}
+            {c.text || " "}
           </div>
         );
       })}
@@ -207,6 +209,7 @@ export function WikiDraftDiff({
 }
 
 function SplitDiff({ oldText, newText }: { oldText: string; newText: string }) {
+  const t = useTranslations("WikiDraft");
   // Pair lines naively — for short diffs this is fine; for long ones we still
   // render but the eye will scan the unified mode.
   const oldLines = oldText.split(/\r?\n/);
@@ -216,7 +219,7 @@ function SplitDiff({ oldText, newText }: { oldText: string; newText: string }) {
   return (
     <div className="grid grid-cols-2 gap-0 font-mono text-xs leading-relaxed">
       <div className="border-r border-border">
-        <div className="px-2 py-1 text-[10px] uppercase tracking-wide bg-muted/50 sticky top-0">Current</div>
+        <div className="px-2 py-1 text-[10px] uppercase tracking-wide bg-muted/50 sticky top-0">{t("diff.splitCurrent")}</div>
         {Array.from({ length: max }).map((_, i) => {
           const o = oldLines[i] ?? "";
           const n = newLines[i] ?? "";
@@ -228,13 +231,13 @@ function SplitDiff({ oldText, newText }: { oldText: string; newText: string }) {
                 changed ? "bg-rose-50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-200" : ""
               }`}
             >
-              {changed && o ? renderWordDiff(o, n) : o || " "}
+              {changed && o ? renderWordDiff(o, n) : o || " "}
             </div>
           );
         })}
       </div>
       <div>
-        <div className="px-2 py-1 text-[10px] uppercase tracking-wide bg-muted/50 sticky top-0">Proposed</div>
+        <div className="px-2 py-1 text-[10px] uppercase tracking-wide bg-muted/50 sticky top-0">{t("diff.splitProposed")}</div>
         {Array.from({ length: max }).map((_, i) => {
           const o = oldLines[i] ?? "";
           const n = newLines[i] ?? "";
@@ -246,7 +249,7 @@ function SplitDiff({ oldText, newText }: { oldText: string; newText: string }) {
                 changed ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200" : ""
               }`}
             >
-              {changed && n ? renderWordDiff(o, n) : n || " "}
+              {changed && n ? renderWordDiff(o, n) : n || " "}
             </div>
           );
         })}
@@ -294,6 +297,7 @@ function renderHunkLine(c: LineChange, key: number) {
 }
 
 function SectionedDiff({ sections }: { sections: DiffSection[] }) {
+  const t = useTranslations("WikiDraft");
   const [openIdx, setOpenIdx] = React.useState<Set<number>>(() => {
     const s = new Set<number>();
     sections.forEach((sec, i) => {
@@ -351,11 +355,11 @@ function SectionedDiff({ sections }: { sections: DiffSection[] }) {
               </span>
               {sec.hasChanges ? (
                 <span className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                  changed
+                  {t("diff.changed")}
                 </span>
               ) : (
                 <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  unchanged
+                  {t("diff.unchanged")}
                 </span>
               )}
             </button>

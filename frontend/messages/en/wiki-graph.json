@@ -1,0 +1,20 @@
+{
+  "legend": {
+    "nodeTypes": "Node Types",
+    "scope": "Scope",
+    "filterPlaceholder": "Filter scopes…",
+    "noMatchingScopes": "No matching scopes.",
+    "scopeFilterCount": "{visible}/{total}"
+  },
+  "tooltip": {
+    "links": "{count} links",
+    "scopeGlobal": "Global",
+    "scopeDepartment": "Department",
+    "scopeWorkspace": "Workspace"
+  },
+  "controls": {
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "fitView": "Fit View"
+  }
+}

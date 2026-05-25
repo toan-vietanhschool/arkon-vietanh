@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { AiCheckItem, AiCheckResults, AiCheckStatus } from "@/types/wiki";
 
 type Props = {
@@ -10,23 +11,24 @@ type Props = {
   rerunBusy?: boolean;
 };
 
-function statusBadge(status: AiCheckStatus | string) {
+// Status badge classes stay untranslated (CSS only); labels come from t().
+function badgeClasses(status: AiCheckStatus | string): { classes: string; icon: string } {
   switch (status) {
     case "passed":
-      return { label: "AI: all clear", classes: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-200", icon: "check_circle" };
+      return { classes: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-200", icon: "check_circle" };
     case "warned":
-      return { label: "AI: needs attention", classes: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200", icon: "warning" };
+      return { classes: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200", icon: "warning" };
     case "failed":
-      return { label: "AI: critical flags", classes: "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-200", icon: "report" };
+      return { classes: "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-200", icon: "report" };
     case "running":
-      return { label: "AI: running…", classes: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200", icon: "progress_activity" };
+      return { classes: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200", icon: "progress_activity" };
     case "queued":
-      return { label: "AI: queued", classes: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200", icon: "schedule" };
+      return { classes: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200", icon: "schedule" };
     case "skipped":
-      return { label: "AI: skipped", classes: "bg-muted text-muted-foreground", icon: "skip_next" };
+      return { classes: "bg-muted text-muted-foreground", icon: "skip_next" };
     case "pending":
     default:
-      return { label: "AI: pending", classes: "bg-muted text-muted-foreground", icon: "schedule" };
+      return { classes: "bg-muted text-muted-foreground", icon: "schedule" };
   }
 }
 
@@ -54,42 +56,37 @@ function formatMatch(m: AiCheckItem["matches"][number]): string {
   return JSON.stringify(m);
 }
 
-// Human-friendly labels for each check id. The fallback (last entry) covers
-// any new check id added on the backend that doesn't yet have a label.
-const CHECK_LABELS: Record<string, { label: string; category: string }> = {
-  "pii.email": { label: "Email addresses", category: "Sensitive data" },
-  "pii.phone_vn": { label: "Phone numbers", category: "Sensitive data" },
-  "pii.cccd_vn": { label: "National ID numbers", category: "Sensitive data" },
-  "secret.api_key_sk": { label: "Generic API key (sk-…)", category: "Sensitive data" },
-  "secret.anthropic": { label: "Anthropic API key", category: "Sensitive data" },
-  "secret.aws_access": { label: "AWS access key", category: "Sensitive data" },
-  "secret.github_pat": { label: "GitHub personal access token", category: "Sensitive data" },
-  "secret.google_api": { label: "Google API key", category: "Sensitive data" },
-  "secret.jwt": { label: "JWT token", category: "Sensitive data" },
-  "secret.private_key": { label: "Private key block", category: "Sensitive data" },
-  "links.broken": { label: "Broken wikilinks", category: "Structure" },
-  "links.self": { label: "Self-referencing link", category: "Structure" },
-  "length.sanity": { label: "Content length", category: "Structure" },
-  "markdown.heading_jump": { label: "Heading hierarchy", category: "Structure" },
-  "markdown.unclosed_fence": { label: "Unclosed code fence", category: "Structure" },
-  "semantic.duplicate": { label: "Similar existing pages", category: "Duplicates" },
-  "llm.tone": { label: "Writing tone", category: "AI judgment" },
-  "llm.scope_fit": { label: "Topic fit", category: "AI judgment" },
-  "llm.factual": { label: "Factual concerns", category: "AI judgment" },
-  "runner.error": { label: "AI runner error", category: "System" },
-};
+// Check IDs that have known translations. The fallback prettification remains
+// for any new backend check id that hasn't been localised yet.
+const KNOWN_CHECK_IDS = new Set([
+  "pii.email", "pii.phone_vn", "pii.cccd_vn",
+  "secret.api_key_sk", "secret.anthropic", "secret.aws_access",
+  "secret.github_pat", "secret.google_api", "secret.jwt", "secret.private_key",
+  "links.broken", "links.self", "length.sanity",
+  "markdown.heading_jump", "markdown.unclosed_fence",
+  "semantic.duplicate",
+  "llm.tone", "llm.scope_fit", "llm.factual",
+  "runner.error",
+]);
 
-function describeCheck(id: string): { label: string; category: string } {
-  if (CHECK_LABELS[id]) return CHECK_LABELS[id];
-  // Fallback for unknown ids: prettify "foo.bar_baz" -> "Foo · Bar baz".
-  const [cat, rest] = id.split(".");
-  const pretty = (rest || cat).replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
-  return { label: pretty, category: cat.replace(/_/g, " ") };
-}
 
 export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props) {
+  const t = useTranslations("WikiAiCheck");
   const [expanded, setExpanded] = React.useState(false);
-  const badge = statusBadge(status);
+  const badge = badgeClasses(status);
+
+  // Resolve badge label from translations; fall back to raw status for unknown values.
+  const badgeLabelMap: Record<string, string> = {
+    passed: t("badge.passed"),
+    warned: t("badge.warned"),
+    failed: t("badge.failed"),
+    running: t("badge.running"),
+    queued: t("badge.queued"),
+    skipped: t("badge.skipped"),
+    pending: t("badge.pending"),
+  };
+  const badgeLabel = badgeLabelMap[status] ?? String(status);
+
   const summary = results?.summary;
   const allChecks = results?.checks || [];
   const flagged = allChecks.filter((c) => c.status === "warn" || c.status === "fail");
@@ -97,6 +94,69 @@ export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props)
   const skipped = allChecks.filter((c) => c.status === "skipped");
   const [showPassed, setShowPassed] = React.useState(false);
   const inFlight = status === "running" || status === "queued" || !!rerunBusy;
+
+  // Pre-built lookup tables so we never pass dynamic template-literal keys to t().
+  // JSON keys use underscores; backend check IDs use dots. Map dot-id → t() result.
+  const checkLabelLookup: Record<string, string> = {
+    "pii.email": t("checks.pii_email"),
+    "pii.phone_vn": t("checks.pii_phone_vn"),
+    "pii.cccd_vn": t("checks.pii_cccd_vn"),
+    "secret.api_key_sk": t("checks.secret_api_key_sk"),
+    "secret.anthropic": t("checks.secret_anthropic"),
+    "secret.aws_access": t("checks.secret_aws_access"),
+    "secret.github_pat": t("checks.secret_github_pat"),
+    "secret.google_api": t("checks.secret_google_api"),
+    "secret.jwt": t("checks.secret_jwt"),
+    "secret.private_key": t("checks.secret_private_key"),
+    "links.broken": t("checks.links_broken"),
+    "links.self": t("checks.links_self"),
+    "length.sanity": t("checks.length_sanity"),
+    "markdown.heading_jump": t("checks.markdown_heading_jump"),
+    "markdown.unclosed_fence": t("checks.markdown_unclosed_fence"),
+    "semantic.duplicate": t("checks.semantic_duplicate"),
+    "llm.tone": t("checks.llm_tone"),
+    "llm.scope_fit": t("checks.llm_scope_fit"),
+    "llm.factual": t("checks.llm_factual"),
+    "runner.error": t("checks.runner_error"),
+  };
+  const categoryLabelLookup: Record<string, string> = {
+    "Sensitive data": t("categories.sensitiveData"),
+    "Structure": t("categories.structure"),
+    "Duplicates": t("categories.duplicates"),
+    "AI judgment": t("categories.aiJudgment"),
+    "System": t("categories.system"),
+  };
+  const prefixToCategoryKey: Record<string, string> = {
+    pii: "Sensitive data",
+    secret: "Sensitive data",
+    links: "Structure",
+    length: "Structure",
+    markdown: "Structure",
+    semantic: "Duplicates",
+    llm: "AI judgment",
+    runner: "System",
+  };
+
+  function describeCheck(id: string): { label: string; category: string } {
+    if (KNOWN_CHECK_IDS.has(id)) {
+      const label = checkLabelLookup[id] ?? id;
+      const [cat] = id.split(".");
+      const rawCategory = prefixToCategoryKey[cat] ?? cat;
+      const category = categoryLabelLookup[rawCategory] ?? rawCategory;
+      return { label, category };
+    }
+    // Fallback for unknown ids: prettify "foo.bar_baz" -> "Foo · Bar baz".
+    const [cat, rest] = id.split(".");
+    const pretty = (rest || cat).replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+    return { label: pretty, category: cat.replace(/_/g, " ") };
+  }
+
+  const notRunText =
+    status === "running"
+      ? t("notRun.running")
+      : status === "queued"
+        ? t("notRun.queued")
+        : t("notRun.default");
 
   return (
     <div className="border-t border-border bg-muted/30">
@@ -113,12 +173,13 @@ export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props)
             {badge.icon}
           </span>
           <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${badge.classes}`}>
-            {badge.label}
+            {badgeLabel}
           </span>
           {summary && (
             <span className="text-muted-foreground tabular-nums truncate">
-              {summary.pass} pass · {summary.warn} warn · {summary.fail} fail
-              {summary.skipped > 0 && ` · ${summary.skipped} skipped`}
+              {summary.skipped > 0
+                ? t("summaryWithSkipped", { pass: summary.pass, warn: summary.warn, fail: summary.fail, skipped: summary.skipped })
+                : t("summary", { pass: summary.pass, warn: summary.warn, fail: summary.fail })}
             </span>
           )}
         </button>
@@ -130,7 +191,7 @@ export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props)
               if (!inFlight) void onRerun();
             }}
             disabled={inFlight}
-            title="Re-run AI pre-review for this draft"
+            title={t("recheckTitle")}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide border border-border hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <span
@@ -139,13 +200,13 @@ export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props)
             >
               {rerunBusy ? "progress_activity" : "refresh"}
             </span>
-            Re-check
+            {t("recheck")}
           </button>
         )}
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}
-          aria-label={expanded ? "Collapse" : "Expand"}
+          aria-label={expanded ? t("collapse") : t("expand")}
           className="material-symbols-outlined text-muted-foreground"
           style={{ fontSize: 16 }}
         >
@@ -157,18 +218,14 @@ export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props)
         <div className="px-4 pb-3 space-y-3">
           {!results ? (
             <p className="text-xs text-muted-foreground italic">
-              AI pre-review {status === "running"
-                ? "in progress"
-                : status === "queued"
-                  ? "queued — worker will pick it up shortly"
-                  : "has not run yet"}.
+              {notRunText}
             </p>
           ) : (
             <>
               {/* Flagged checks first — these need attention */}
               {flagged.length === 0 ? (
                 <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                  All checks passed.
+                  {t("allPassed")}
                 </p>
               ) : (
                 <ul className="space-y-1.5">
@@ -197,7 +254,7 @@ export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props)
                                 <li key={i} className="truncate">{formatMatch(m)}</li>
                               ))}
                               {c.matches.length > 5 && (
-                                <li className="italic">+{c.matches.length - 5} more…</li>
+                                <li className="italic">{t("moreMatches", { count: c.matches.length - 5 })}</li>
                               )}
                             </ul>
                           )}
@@ -223,8 +280,15 @@ export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props)
                     >
                       {showPassed ? "expand_less" : "expand_more"}
                     </span>
-                    {showPassed ? "Hide" : "Show"} {passed.length} pass
-                    {skipped.length > 0 && ` · ${skipped.length} skipped`}
+                    {showPassed
+                      ? t("hidePassed", {
+                          pass: passed.length,
+                          skippedSuffix: skipped.length > 0 ? t("skippedSuffix", { skipped: skipped.length }) : "",
+                        })
+                      : t("showPassed", {
+                          pass: passed.length,
+                          skippedSuffix: skipped.length > 0 ? t("skippedSuffix", { skipped: skipped.length }) : "",
+                        })}
                   </button>
                   {showPassed && (
                     <ul className="mt-1.5 space-y-1 pl-1">
@@ -262,7 +326,7 @@ export function WikiAiCheckPanel({ status, results, onRerun, rerunBusy }: Props)
             </>
           )}
           <p className="text-[10px] text-muted-foreground italic pt-1">
-            AI checks are advisory — they do not block approval.
+            {t("advisory")}
           </p>
         </div>
       )}

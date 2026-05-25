@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 export function McpTokenCard() {
+  const t = useTranslations("Profile.mcpToken");
   const [token, setToken] = useState<string | null>(null);
   const [hasToken, setHasToken] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,20 +28,20 @@ export function McpTokenCard() {
       setToken(data.token);
       setHasToken(true);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed");
+      alert(err instanceof Error ? err.message : t("failedFallback"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleRevoke = async () => {
-    if (!confirm("Revoke your MCP token? Claude Desktop will disconnect.")) return;
+    if (!confirm(t("revokeConfirm"))) return;
     try {
       await api("/api/my/mcp-token", { method: "DELETE" });
       setToken(null);
       setHasToken(false);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed");
+      alert(err instanceof Error ? err.message : t("failedFallback"));
     }
   };
 
@@ -56,10 +58,10 @@ export function McpTokenCard() {
         <span className="material-symbols-outlined text-primary">vpn_key</span>
         <div>
           <h3 className="text-lg font-semibold text-foreground">
-            MCP Token
+            {t("title")}
           </h3>
           <p className="text-xs text-muted-foreground">
-            Connect your Claude Desktop to Arkon
+            {t("description")}
           </p>
         </div>
       </div>
@@ -75,7 +77,7 @@ export function McpTokenCard() {
               <span className="material-symbols-outlined text-sm mr-1">
                 {copied ? "check" : "content_copy"}
               </span>
-              {copied ? "Copied!" : "Copy Token"}
+              {copied ? t("copied") : t("copyToken")}
             </Button>
             <Button
               variant="ghost"
@@ -86,7 +88,7 @@ export function McpTokenCard() {
               <span className="material-symbols-outlined text-sm mr-1">
                 vpn_key_off
               </span>
-              Revoke
+              {t("revoke")}
             </Button>
           </div>
         </div>
@@ -95,7 +97,7 @@ export function McpTokenCard() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-lg border border-green-200">
             <span className="material-symbols-outlined text-base">check_circle</span>
-            <span>MCP Token is active. Your token was shown when generated — it cannot be retrieved again for security.</span>
+            <span>{t("active")}</span>
           </div>
           <div className="flex gap-2">
             <Button
@@ -105,7 +107,7 @@ export function McpTokenCard() {
               size="sm"
             >
               <span className="material-symbols-outlined text-sm mr-1">refresh</span>
-              {loading ? "Regenerating..." : "Regenerate Token"}
+              {loading ? t("regenerating") : t("regenerate")}
             </Button>
             <Button
               variant="ghost"
@@ -116,7 +118,7 @@ export function McpTokenCard() {
               <span className="material-symbols-outlined text-sm mr-1">
                 vpn_key_off
               </span>
-              Revoke
+              {t("revoke")}
             </Button>
           </div>
         </div>
@@ -127,7 +129,7 @@ export function McpTokenCard() {
           disabled={loading}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          {loading ? "Generating..." : "Generate MCP Token"}
+          {loading ? t("generating") : t("generate")}
         </Button>
       )}
     </div>

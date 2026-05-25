@@ -1,0 +1,48 @@
+{
+  "backToWorkspace": "Workspace",
+  "backToWiki": "Wiki",
+  "backTitle": {
+    "workspace": "Quay lại Workspace",
+    "wiki": "Quay lại Wiki"
+  },
+  "editBtn": "Chỉnh sửa",
+  "proposeEditBtn": "Đề xuất chỉnh sửa",
+  "notFound": {
+    "title": "Không tìm thấy trang",
+    "description": "Không tìm thấy trang wiki cho \"{slug}\". Trang có thể chưa được tổng hợp."
+  },
+  "sidebar": {
+    "header": "Thông tin trang",
+    "version": "Phiên bản",
+    "updated": "Cập nhật",
+    "knowledgeTypes": "Loại kiến thức",
+    "sourceDocs": "Tài liệu nguồn ({count})",
+    "viewInKnowledgeBase": "Xem trong Knowledge Base",
+    "noConnections": "Chưa có liên kết nào.",
+    "backlinks": "Backlinks",
+    "outlinks": "Outlinks",
+    "localGraph": "Đồ thị cục bộ"
+  },
+  "image": {
+    "loading": "Đang tải hình ảnh…",
+    "denied": "Hình ảnh bị giới hạn quyền truy cập",
+    "missing": "Không tìm thấy hình ảnh",
+    "ariaLabel": "Hình ảnh wiki",
+    "download": "Tải xuống"
+  },
+  "content": {
+    "contents": "Mục lục",
+    "copyCode": "Sao chép code"
+  },
+  "editor": {
+    "resubmitNoteLabel": "Ghi chú nộp lại",
+    "resubmitNotePlaceholder": "Thay đổi gì trong lần này?",
+    "resubmitSaveLabel": "Nộp lại bản nháp",
+    "changeNoteLabel": "Ghi chú thay đổi",
+    "proposalNoteLabel": "Ghi chú đề xuất",
+    "changeNotePlaceholder": "Mô tả ngắn về thay đổi (tùy chọn)",
+    "proposalNotePlaceholder": "Mô tả thay đổi đề xuất (tùy chọn)",
+    "saveEditLabel": "Lưu chỉnh sửa",
+    "submitProposalLabel": "Nộp đề xuất"
+  }
+}

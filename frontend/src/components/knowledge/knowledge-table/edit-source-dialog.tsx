@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,8 @@ export function EditSourceDialog({
   const [scopeType, setScopeType] = React.useState(source.scope_type || "global");
   const [scopeId, setScopeId] = React.useState(source.scope_id || "");
   const [projects, setProjects] = React.useState<{ id: string; name: string }[]>([]);
+  const t = useTranslations("KnowledgeTable");
+  const tCommon = useTranslations("Common");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState("");
   const [pendingConfirm, setPendingConfirm] = React.useState(false);
@@ -83,7 +86,7 @@ export function EditSourceDialog({
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(err instanceof Error ? err.message : t("editDialog.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -101,12 +104,12 @@ export function EditSourceDialog({
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">Edit Document</DialogTitle>
+          <DialogTitle className="text-xl">{t("editDialog.title")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 mt-2">
           <div className="flex flex-col gap-1.5">
-            <Label>Title</Label>
+            <Label>{t("editDialog.titleLabel")}</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -115,18 +118,18 @@ export function EditSourceDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Knowledge Type</Label>
+            <Label>{t("editDialog.knowledgeTypeLabel")}</Label>
             <Select value={typeId} onValueChange={(v) => setTypeId(v ?? "")}>
               <SelectTrigger className="bg-background">
-                {typeId ? (() => { const t = types.find(x => x.id === typeId); return t ? (
+                {typeId ? (() => { const kt = types.find(x => x.id === typeId); return kt ? (
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
-                    <span>{t.name}</span>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: kt.color }} />
+                    <span>{kt.name}</span>
                   </div>
-                ) : <SelectValue placeholder="No type" />; })() : <SelectValue placeholder="No type" />}
+                ) : <SelectValue placeholder={t("editDialog.knowledgeTypePlaceholder")} />; })() : <SelectValue placeholder={t("editDialog.knowledgeTypePlaceholder")} />}
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No type</SelectItem>
+                <SelectItem value="">{t("editDialog.knowledgeTypePlaceholder")}</SelectItem>
                 {types.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
                     <div className="flex items-center gap-2">
@@ -141,13 +144,13 @@ export function EditSourceDialog({
 
           {/* Multi-department selection */}
           <div className="flex flex-col gap-1.5">
-            <Label>Departments</Label>
+            <Label>{t("editDialog.departmentsLabel")}</Label>
             <p className="text-xs text-muted-foreground">
-              Select which departments can access this document. Leave empty for global access.
+              {t("editDialog.departmentsHint")}
             </p>
             <div className="border rounded-lg p-2 max-h-40 overflow-y-auto bg-background">
               {departments.length === 0 ? (
-                <span className="text-xs text-muted-foreground">No departments available</span>
+                <span className="text-xs text-muted-foreground">{t("editDialog.noDepartments")}</span>
               ) : (
                 departments.map((d) => (
                   <label
@@ -191,7 +194,7 @@ export function EditSourceDialog({
 
           {/* Visibility / Scope */}
           <div className="flex flex-col gap-1.5">
-            <Label>Visibility</Label>
+            <Label>{t("editDialog.visibilityLabel")}</Label>
             <Select value={scopeType} onValueChange={(v) => {
               const val = v ?? "global";
               setScopeType(val);
@@ -202,20 +205,20 @@ export function EditSourceDialog({
                   <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
                     {scopeType === "global" ? "public" : "folder_special"}
                   </span>
-                  <span className="capitalize">{scopeType === "project" ? "Workspace" : scopeType}</span>
+                  <span className="capitalize">{scopeType === "project" ? t("editDialog.visibilityWorkspace") : t("editDialog.visibilityGlobal")}</span>
                 </div>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="global">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined" style={{ fontSize: 14 }}>public</span>
-                    Global
+                    {t("editDialog.visibilityGlobal")}
                   </div>
                 </SelectItem>
                 <SelectItem value="project">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined" style={{ fontSize: 14 }}>folder_special</span>
-                    Workspace
+                    {t("editDialog.visibilityWorkspace")}
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -223,17 +226,17 @@ export function EditSourceDialog({
             {scopeType === "global" && (
               <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5 mt-0.5">
                 <span className="material-symbols-outlined shrink-0" style={{ fontSize: 13, marginTop: 1 }}>warning</span>
-                Document content will be compiled into the shared wiki and visible to all employees — including those without access to the original file. Only use Global if the content is not sensitive.
+                {t("editDialog.visibilityGlobalWarning")}
               </p>
             )}
           </div>
 
           {scopeType === "project" && (
             <div className="flex flex-col gap-1.5">
-              <Label>Target Workspace</Label>
+              <Label>{t("editDialog.targetWorkspaceLabel")}</Label>
               <Select value={scopeId} onValueChange={(v) => setScopeId(v ?? "")}>
                 <SelectTrigger className="bg-background">
-                  <span>{scopeId ? (projects.find(p => p.id === scopeId)?.name ?? "Select...") : "Select workspace..."}</span>
+                  <span>{scopeId ? (projects.find(p => p.id === scopeId)?.name ?? t("editDialog.targetWorkspacePlaceholder")) : t("editDialog.targetWorkspacePlaceholder")}</span>
                 </SelectTrigger>
                 <SelectContent>
                   {projects.map((p) => (
@@ -249,12 +252,12 @@ export function EditSourceDialog({
           {pendingConfirm && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30 p-3 flex flex-col gap-3">
               <p className="text-sm text-amber-800 dark:text-amber-300">
-                Đổi phòng ban sẽ chạy lại quá trình phân tích AI. Wiki pages cũ sẽ được cập nhật sang phòng ban mới. Tiếp tục?
+                {t("editDialog.confirmDeptChange")}
               </p>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setPendingConfirm(false)}>Huỷ</Button>
+                <Button variant="outline" size="sm" onClick={() => setPendingConfirm(false)}>{t("editDialog.cancelConfirm")}</Button>
                 <Button size="sm" onClick={doSave} className="bg-amber-600 hover:bg-amber-700 text-white">
-                  Xác nhận
+                  {t("editDialog.proceedConfirm")}
                 </Button>
               </div>
             </div>
@@ -267,7 +270,7 @@ export function EditSourceDialog({
           )}
 
           <div className="flex justify-end gap-2 mt-2">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button variant="outline" onClick={onClose}>{tCommon("cancel")}</Button>
             <Button
               disabled={saving || pendingConfirm}
               onClick={handleSave}
@@ -276,9 +279,9 @@ export function EditSourceDialog({
               {saving ? (
                <span className="flex items-center gap-2">
                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                 Saving...
+                 {t("editDialog.saving")}
                </span>
-              ) : "Save"}
+              ) : tCommon("save")}
             </Button>
           </div>
         </div>

@@ -1,0 +1,36 @@
+{
+  "title": "Phòng ban",
+  "description": "Tổ chức nhân viên thành các phòng ban và quản lý quyền truy cập tri thức.",
+  "addDepartment": "Thêm phòng ban",
+  "noDepartments": {
+    "title": "Chưa có phòng ban",
+    "description": "Tạo phòng ban đầu tiên để tổ chức nhân viên"
+  },
+  "employeeCount": "{count, plural, =0 {0 nhân viên} =1 {1 nhân viên} other {# nhân viên}}",
+  "membersButton": "Thành viên",
+  "deleteConfirm": "Xóa phòng ban này và toàn bộ nhân viên trong đó?",
+  "dialog": {
+    "createTitle": "Tạo phòng ban",
+    "editTitle": "Sửa phòng ban",
+    "nameLabel": "Tên",
+    "namePlaceholder": "Ví dụ: Kinh doanh, Kỹ thuật",
+    "descriptionLabel": "Mô tả",
+    "descriptionPlaceholder": "Mô tả tùy chọn...",
+    "saveFailed": "Lưu thất bại",
+    "createButton": "Tạo",
+    "updateButton": "Cập nhật",
+    "saving": "Đang lưu..."
+  },
+  "membersDialog": {
+    "title": "Quản lý thành viên — {deptName}",
+    "addButton": "Thêm",
+    "selectPlaceholder": "Chọn nhân viên để thêm...",
+    "currentMembers": "Thành viên hiện tại ({count})",
+    "noMembers": {
+      "title": "Chưa có thành viên",
+      "description": "Chưa có nhân viên nào được phân công vào phòng ban này."
+    },
+    "addFailedFallback": "Thêm thành viên thất bại",
+    "moveHint": "Để chuyển nhân viên ra khỏi phòng ban này, hãy chỉnh sửa hồ sơ của họ và gán phòng ban mới."
+  }
+}

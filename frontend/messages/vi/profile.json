@@ -1,0 +1,34 @@
+{
+  "title": "Hồ sơ",
+  "description": "Quản lý cài đặt tài khoản của bạn.",
+  "logout": "Đăng xuất",
+  "accountInfo": {
+    "title": "Thông tin tài khoản",
+    "roleLabel": "Vai trò",
+    "departmentLabel": "Phòng ban"
+  },
+  "changePassword": {
+    "title": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "newPasswordPlaceholder": "Tối thiểu 6 ký tự",
+    "updateButton": "Cập nhật mật khẩu",
+    "saving": "Đang lưu...",
+    "successMessage": "Đổi mật khẩu thành công",
+    "failedFallback": "Đổi mật khẩu thất bại"
+  },
+  "mcpToken": {
+    "title": "MCP Token",
+    "description": "Kết nối Claude Desktop với Arkon",
+    "active": "MCP Token đang hoạt động. Token được hiển thị khi tạo — vì lý do bảo mật, bạn không thể xem lại.",
+    "copyToken": "Sao chép token",
+    "copied": "Đã sao chép!",
+    "revoke": "Thu hồi",
+    "revokeConfirm": "Thu hồi MCP token? Claude Desktop sẽ bị ngắt kết nối.",
+    "regenerate": "Tạo lại token",
+    "regenerating": "Đang tạo lại...",
+    "generate": "Tạo MCP Token",
+    "generating": "Đang tạo...",
+    "failedFallback": "Thao tác thất bại"
+  }
+}

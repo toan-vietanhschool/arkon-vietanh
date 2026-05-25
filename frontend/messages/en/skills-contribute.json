@@ -1,0 +1,46 @@
+{
+  "contributeDialog": {
+    "triggerBtn": "Contribute",
+    "titleFork": "Contribute to {skillName}",
+    "titleNew": "Create New Skill",
+    "descriptionFork": "Propose changes to improve this skill.",
+    "descriptionNew": "Propose a brand new skill to the Arkon platform.",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. SRS-writing-skill",
+    "invalidTitle": "Title contains invalid characters. Use only letters, numbers, spaces, - and _.",
+    "visibilityLabel": "Visibility",
+    "visibilityGlobal": "Global (All Departments)",
+    "visibilityDepartment": "Specific Departments",
+    "targetDepartmentsLabel": "Target Departments",
+    "baseVersionLabel": "Base Version",
+    "baseVersionPlaceholder": "Select version",
+    "versionItem": "Version {version}",
+    "submitFork": "Start Improving",
+    "submitNew": "Start Creating",
+    "initializing": "Initializing...",
+    "createFailed": "Failed to create contribution",
+    "duplicateWarning": {
+      "title": "Skill Already Exists",
+      "description": "A skill named \"{name}\" already exists. Would you like to contribute to the existing skill instead?",
+      "confirmBtn": "Yes, contribute to existing",
+      "cancelBtn": "No, I'll change the name"
+    }
+  },
+  "uploadSkillDialog": {
+    "triggerBtn": "Upload Skill",
+    "title": "Upload AI Skill",
+    "description": "Select one or more ZIP packages containing AI skills.",
+    "filesLabel": "Skill Packages (ZIP)",
+    "filesSelected": "{count} file(s) selected",
+    "visibilityLabel": "Visibility",
+    "visibilityGlobal": "Global (All Departments)",
+    "visibilityDepartment": "Specific Departments",
+    "targetDepartmentsLabel": "Target Departments",
+    "conflictTitle": "Duplicate names detected",
+    "conflictDescription": "Existing skills: {names}. Overwrite them?",
+    "conflictConfirmLabel": "I confirm to overwrite",
+    "submitBtn": "Start Upload",
+    "processing": "Processing...",
+    "uploadFailed": "Upload failed"
+  }
+}

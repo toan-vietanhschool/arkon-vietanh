@@ -1,0 +1,34 @@
+{
+  "title": "Profile",
+  "description": "Manage your account settings.",
+  "logout": "Logout",
+  "accountInfo": {
+    "title": "Account Information",
+    "roleLabel": "Role",
+    "departmentLabel": "Department"
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Min 6 characters",
+    "updateButton": "Update Password",
+    "saving": "Saving...",
+    "successMessage": "Password changed successfully",
+    "failedFallback": "Failed"
+  },
+  "mcpToken": {
+    "title": "MCP Token",
+    "description": "Connect your Claude Desktop to Arkon",
+    "active": "MCP Token is active. Your token was shown when generated — it cannot be retrieved again for security.",
+    "copyToken": "Copy Token",
+    "copied": "Copied!",
+    "revoke": "Revoke",
+    "revokeConfirm": "Revoke your MCP token? Claude Desktop will disconnect.",
+    "regenerate": "Regenerate Token",
+    "regenerating": "Regenerating...",
+    "generate": "Generate MCP Token",
+    "generating": "Generating...",
+    "failedFallback": "Failed"
+  }
+}

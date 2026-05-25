@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,8 @@ export function KnowledgeTable({
   search,
   onSearch,
 }: Props) {
+  const t = useTranslations("KnowledgeTable");
+  const tCommon = useTranslations("Common");
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [editSource, setEditSource] = React.useState<Source | null>(null);
   const [reviewPlanSource, setReviewPlanSource] = React.useState<Source | null>(null);
@@ -62,13 +65,13 @@ export function KnowledgeTable({
   const [searchInput, setSearchInput] = React.useState(search);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this document? This cannot be undone.")) return;
+    if (!confirm(t("confirmDelete"))) return;
     setActionError(null);
     try {
       await api(`/api/sources/${id}`, { method: "DELETE" });
       onRefresh();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to delete");
+      setActionError(err instanceof Error ? err.message : t("errors.deleteFailed"));
     }
   };
 
@@ -79,7 +82,7 @@ export function KnowledgeTable({
       await api(`/api/sources/${id}/retry`, { method: "POST" });
       onRefresh();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to retry");
+      setActionError(err instanceof Error ? err.message : t("errors.retryFailed"));
     } finally {
       setRetryingIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
     }
@@ -110,7 +113,7 @@ export function KnowledgeTable({
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search documents..."
+              placeholder={t("searchPlaceholder")}
               className="h-9 pl-9 pr-3 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 w-[260px] placeholder:text-muted-foreground/60"
             />
             {searchInput && (
@@ -125,7 +128,7 @@ export function KnowledgeTable({
           </div>
         </form>
         <span className="text-xs text-muted-foreground tabular-nums">
-          {total} document{total !== 1 ? "s" : ""}
+          {t("documentCount", { count: total })}
         </span>
       </div>
 
@@ -140,22 +143,22 @@ export function KnowledgeTable({
         ) : sources.length === 0 ? (
           <EmptyState
             icon="cloud_upload"
-            title={search ? "No results found" : "No documents found"}
-            description={search ? `No documents matching "${search}"` : "Upload documents to start building your knowledge base."}
+            title={search ? t("emptyState.searchTitle") : t("emptyState.title")}
+            description={search ? t("emptyState.searchDescription", { search }) : t("emptyState.description")}
           />
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Document</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Category</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Visibility</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Department</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Pages</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Wiki</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Contributed By</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Status</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Created</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.document")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.category")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.visibility")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.department")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.pages")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.wiki")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.contributedBy")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.status")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("columns.created")}</TableHead>
                 <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground text-right w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -211,7 +214,7 @@ export function KnowledgeTable({
                         ))}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground/50 italic">Global</span>
+                      <span className="text-xs text-muted-foreground/50 italic">{t("scope.global")}</span>
                     )}
                   </TableCell>
 
@@ -265,14 +268,14 @@ export function KnowledgeTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setEditSource(source)}>
                           <span className="material-symbols-outlined mr-2" style={{ fontSize: 16 }}>edit</span>
-                          Edit
+                          {t("actions.edit")}
                         </DropdownMenuItem>
                         {source.status === "plan_ready" && (
                           <DropdownMenuItem onClick={() => setReviewPlanSource(source)}>
                             <span className="material-symbols-outlined mr-2 text-blue-500" style={{ fontSize: 16 }}>
                               fact_check
                             </span>
-                            Review Plan
+                            {t("actions.reviewPlan")}
                           </DropdownMenuItem>
                         )}
                         {source.status === "error" && (
@@ -283,7 +286,7 @@ export function KnowledgeTable({
                             <span className={`material-symbols-outlined mr-2 ${retryingIds.has(source.id) ? "animate-spin" : ""}`} style={{ fontSize: 16 }}>
                               refresh
                             </span>
-                            {retryingIds.has(source.id) ? "Retrying..." : "Retry"}
+                            {retryingIds.has(source.id) ? t("actions.retrying") : t("actions.retry")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
@@ -292,7 +295,7 @@ export function KnowledgeTable({
                           className="text-destructive"
                         >
                           <span className="material-symbols-outlined mr-2" style={{ fontSize: 16 }}>delete</span>
-                          Delete
+                          {t("actions.delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -308,7 +311,7 @@ export function KnowledgeTable({
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-3">
           <span className="text-xs text-muted-foreground">
-            Page {page} of {totalPages}
+            {t("pagination.pageOf", { page, total: totalPages })}
           </span>
           <div className="flex items-center gap-1">
             <Button

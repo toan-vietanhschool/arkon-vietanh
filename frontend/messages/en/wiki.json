@@ -1,0 +1,69 @@
+{
+  "pageHeader": {
+    "title": "Knowledge Wiki",
+    "description": "Compiled knowledge from your organization's documents."
+  },
+  "searchBtn": "Search",
+  "newPageBtn": "New page",
+  "proposePageBtn": "Propose page",
+  "contributionsBtn": "Contributions",
+  "contributionsTitle": "Drafts you authored and drafts waiting for your review",
+  "graphViewBtn": "Graph View",
+  "createPageTitle": {
+    "direct": "Create a new page in {scopeName}",
+    "propose": "Propose a new page in {scopeName} (reviewer approves)"
+  },
+  "stats": {
+    "pages": "Pages",
+    "updated": "Updated {date}"
+  },
+  "tabs": {
+    "all": "All"
+  },
+  "emptyState": {
+    "title": "Wiki is empty",
+    "description": "Upload and compile documents to start building your knowledge wiki."
+  },
+  "searchDialog": {
+    "placeholder": "Search wiki pages...",
+    "noMatch": "No pages match your search.",
+    "noPages": "No pages yet.",
+    "pageCount": "{count} pages",
+    "keyHintNavigate": "navigate",
+    "keyHintClose": "close"
+  },
+  "pageTree": {
+    "header": "Pages",
+    "filterPlaceholder": "Filter pages...",
+    "noPages": "No pages found.",
+    "expandTitle": "Expand page tree",
+    "collapseTitle": "Collapse",
+    "newPageTitle": {
+      "direct": "New page in {scopeName}",
+      "propose": "Propose new page in {scopeName}"
+    },
+    "createPageAriaLabel": "Create page in {scopeName}",
+    "deleteConfirmTitle": "Click again to confirm delete \"{title}\"",
+    "deleteTitle": "Delete \"{title}\"",
+    "scopeGlobal": "Global",
+    "scopeDepartment": "Department",
+    "scopeWorkspace": "Workspace",
+    "openScopeWiki": "Open {scopeName} wiki",
+    "expandScopeTitle": "Expand",
+    "collapseScopeTitle": "Collapse"
+  },
+  "pageType": {
+    "entity": "Entity",
+    "concept": "Concept",
+    "topic": "Topic",
+    "source": "Source",
+    "index": "Index",
+    "log": "Log",
+    "entityPlural": "Entities",
+    "conceptPlural": "Concepts",
+    "topicPlural": "Topics",
+    "sourcePlural": "Sources",
+    "indexPlural": "Index",
+    "logPlural": "Log"
+  }
+}

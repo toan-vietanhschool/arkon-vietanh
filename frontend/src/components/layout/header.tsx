@@ -2,6 +2,7 @@
 
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/auth";
 import {
   DropdownMenu,
@@ -15,6 +16,7 @@ import {
 export function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const t = useTranslations("Header");
 
   const handleLogout = () => {
     logout();
@@ -41,12 +43,12 @@ export function Header() {
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <span className="material-symbols-outlined mr-2 text-base">person</span>
-                Profile
+                {t("profile")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                 <span className="material-symbols-outlined mr-2 text-base">logout</span>
-                Sign out
+                {t("signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

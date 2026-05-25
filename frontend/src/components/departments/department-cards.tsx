@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -21,10 +22,12 @@ type Props = {
 };
 
 export function DepartmentCards({ departments, loading, onEdit, onRefresh }: Props) {
+  const t = useTranslations("Departments");
+  const tCommon = useTranslations("Common");
   const [scopeDept, setScopeDept] = React.useState<Department | null>(null);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this department and all its employees?")) return;
+    if (!confirm(t("deleteConfirm"))) return;
     await api(`/api/departments/${id}`, { method: "DELETE" });
     onRefresh();
   };
@@ -43,8 +46,8 @@ export function DepartmentCards({ departments, loading, onEdit, onRefresh }: Pro
     return (
       <EmptyState
         icon="business"
-        title="No departments"
-        description="Create your first department to organize employees"
+        title={t("noDepartments.title")}
+        description={t("noDepartments.description")}
       />
     );
   }
@@ -68,7 +71,7 @@ export function DepartmentCards({ departments, loading, onEdit, onRefresh }: Pro
                   {dept.name}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  {dept.employee_count} employee{dept.employee_count !== 1 ? "s" : ""}
+                  {t("employeeCount", { count: dept.employee_count })}
                 </p>
               </div>
             </div>
@@ -88,7 +91,7 @@ export function DepartmentCards({ departments, loading, onEdit, onRefresh }: Pro
               className="text-xs"
             >
               <span className="material-symbols-outlined text-sm mr-1">group</span>
-              Members
+              {t("membersButton")}
             </Button>
             <Button
               variant="ghost"
@@ -97,7 +100,7 @@ export function DepartmentCards({ departments, loading, onEdit, onRefresh }: Pro
               className="text-xs"
             >
               <span className="material-symbols-outlined text-sm mr-1">edit</span>
-              Edit
+              {tCommon("edit")}
             </Button>
             <Button
               variant="ghost"
@@ -106,7 +109,7 @@ export function DepartmentCards({ departments, loading, onEdit, onRefresh }: Pro
               className="text-xs text-destructive hover:text-destructive"
             >
               <span className="material-symbols-outlined text-sm mr-1">delete</span>
-              Delete
+              {tCommon("delete")}
             </Button>
           </div>
         </div>

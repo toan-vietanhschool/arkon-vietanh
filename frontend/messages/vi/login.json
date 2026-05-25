@@ -1,0 +1,11 @@
+{
+  "subtitle": "Trung tâm điều khiển AI doanh nghiệp",
+  "heading": "Đăng nhập",
+  "emailLabel": "Email",
+  "passwordLabel": "Mật khẩu",
+  "passwordPlaceholder": "Nhập mật khẩu",
+  "submitSignIn": "Đăng nhập",
+  "signingIn": "Đang đăng nhập...",
+  "errorFallback": "Đăng nhập thất bại",
+  "versionFooter": "Arkon v0.5 — On-Premise Deployment"
+}

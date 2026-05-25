@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api, apiUpload } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -55,13 +56,13 @@ function getFileExtension(name: string): string {
   return (name.split(".").pop() || "").toLowerCase();
 }
 
-function validateFile(f: File): string | null {
+function validateFile(f: File, t: ReturnType<typeof useTranslations>): string | null {
   const ext = getFileExtension(f.name);
   if (!ACCEPTED_EXTENSIONS.includes(ext) && !ACCEPTED_MIMES.includes(f.type)) {
-    return `Unsupported file type ".${ext}". Accepted: ${ACCEPTED_EXTENSIONS.join(", ")}`;
+    return t("upload.errors.unsupportedType", { ext, accepted: ACCEPTED_EXTENSIONS.join(", ") });
   }
   if (f.size > 50 * 1024 * 1024) {
-    return "File too large. Maximum size is 50 MB.";
+    return t("upload.errors.fileTooLarge");
   }
   return null;
 }
@@ -73,6 +74,8 @@ function formatFileSize(bytes: number): string {
 }
 
 export function UploadDialog({ open, onOpenChange, types, departments, onUploaded }: Props) {
+  const t = useTranslations("Knowledge");
+  const tCommon = useTranslations("Common");
   const [file, setFile] = useState<File | null>(null);
   const [typeId, setTypeId] = useState("");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
@@ -98,7 +101,7 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
   }, [open]);
 
   const handleFile = useCallback((f: File) => {
-    const validationError = validateFile(f);
+    const validationError = validateFile(f, t);
     if (validationError) {
       setError(validationError);
       setFile(null);
@@ -158,7 +161,7 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
       setScopeType("global");
       setScopeId("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t("upload.errors.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -168,13 +171,13 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-heading">Upload Document</DialogTitle>
+          <DialogTitle className="text-xl font-heading">{t("upload.dialogTitle")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 mt-2 overflow-hidden">
           {/* Drag & drop zone */}
           <div className="flex flex-col gap-2 min-w-0">
-            <Label>File</Label>
+            <Label>{t("upload.fileLabel")}</Label>
             <div
               onDrop={handleDrop}
               onDragOver={handleDragOver}
@@ -244,10 +247,10 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-foreground font-medium">
-                      {dragOver ? "Drop file here" : "Drag & drop or click to browse"}
+                      {dragOver ? t("upload.dropActive") : t("upload.dropPrompt")}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      PDF, DOCX, XLSX, CSV, TXT, MD, PPTX · Max 50 MB
+                      {t("upload.fileTypesHint")}
                     </p>
                   </div>
                 </>
@@ -257,18 +260,18 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
 
           {/* Knowledge Type */}
           <div className="flex flex-col gap-2">
-            <Label>Knowledge Type</Label>
+            <Label>{t("upload.knowledgeTypeLabel")}</Label>
             <Select value={typeId} onValueChange={(v) => setTypeId(v ?? "")}>
               <SelectTrigger className="bg-background w-full">
-                {typeId ? (() => { const t = types.find(x => x.id === typeId); return t ? (
+                {typeId ? (() => { const kt = types.find(x => x.id === typeId); return kt ? (
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
-                    <span>{t.name}</span>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: kt.color }} />
+                    <span>{kt.name}</span>
                   </div>
-                ) : <SelectValue placeholder="Select type (optional)" />; })() : <SelectValue placeholder="Select type (optional)" />}
+                ) : <SelectValue placeholder={t("upload.knowledgeTypePlaceholder")} />; })() : <SelectValue placeholder={t("upload.knowledgeTypePlaceholder")} />}
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="">{t("upload.knowledgeTypeNone")}</SelectItem>
                 {types.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
                     <div className="flex items-center gap-2">
@@ -283,13 +286,13 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
 
           {/* Department access control */}
           <div className="flex flex-col gap-1.5">
-            <Label>Departments</Label>
+            <Label>{t("upload.departmentsLabel")}</Label>
             <p className="text-xs text-muted-foreground">
-              Select which departments can access this document. Leave empty for global access.
+              {t("upload.departmentsHint")}
             </p>
             <div className="border rounded-lg p-2 max-h-40 overflow-y-auto bg-background">
               {departments.length === 0 ? (
-                <span className="text-xs text-muted-foreground">No departments available</span>
+                <span className="text-xs text-muted-foreground">{t("upload.noDepartments")}</span>
               ) : (
                 departments.map((d) => (
                   <label
@@ -327,7 +330,7 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
 
           {/* Visibility / Scope */}
           <div className="flex flex-col gap-2">
-            <Label>Visibility</Label>
+            <Label>{t("upload.visibilityLabel")}</Label>
             <Select value={scopeType} onValueChange={(v) => {
               const val = v ?? "global";
               setScopeType(val);
@@ -338,20 +341,20 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
                   <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
                     {scopeType === "global" ? "public" : "folder_special"}
                   </span>
-                  <span className="capitalize">{scopeType === "project" ? "Workspace" : scopeType}</span>
+                  <span className="capitalize">{scopeType === "project" ? t("upload.visibilityWorkspace") : t("upload.visibilityGlobal")}</span>
                 </div>
               </SelectTrigger>
               <SelectContent className="min-w-[220px]">
                 <SelectItem value="global">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined" style={{ fontSize: 14 }}>public</span>
-                    Global
+                    {t("upload.visibilityGlobal")}
                   </div>
                 </SelectItem>
                 <SelectItem value="project">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined" style={{ fontSize: 14 }}>folder_special</span>
-                    Workspace
+                    {t("upload.visibilityWorkspace")}
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -359,17 +362,17 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
             {scopeType === "global" && (
               <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5 mt-0.5">
                 <span className="material-symbols-outlined shrink-0" style={{ fontSize: 13, marginTop: 1 }}>warning</span>
-                Document content will be compiled into the shared wiki and visible to all employees — including those without access to the original file. Only upload if the content is not sensitive.
+                {t("upload.visibilityGlobalWarning")}
               </p>
             )}
           </div>
 
           {scopeType === "project" && (
             <div className="flex flex-col gap-1.5">
-              <Label>Target Workspace</Label>
+              <Label>{t("upload.targetWorkspaceLabel")}</Label>
               <Select value={scopeId} onValueChange={(v) => setScopeId(v ?? "")}>
                 <SelectTrigger className="bg-background">
-                  <span>{scopeId ? (projects.find(p => p.id === scopeId)?.name ?? "Select...") : "Select workspace..."}</span>
+                  <span>{scopeId ? (projects.find(p => p.id === scopeId)?.name ?? t("upload.targetWorkspacePlaceholder")) : t("upload.targetWorkspacePlaceholder")}</span>
                 </SelectTrigger>
                 <SelectContent>
                   {projects.map((p) => (
@@ -391,7 +394,7 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
 
           <div className="flex justify-end gap-2 mt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               disabled={!file || uploading}
@@ -403,10 +406,10 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
                   <span className="material-symbols-outlined animate-spin text-sm">
                     progress_activity
                   </span>
-                  Uploading...
+                  {t("upload.uploading")}
                 </span>
               ) : (
-                "Upload"
+                t("upload.uploadBtn")
               )}
             </Button>
           </div>

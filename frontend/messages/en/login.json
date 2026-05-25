@@ -1,0 +1,11 @@
+{
+  "subtitle": "Enterprise AI Control Center",
+  "heading": "Sign in",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "passwordPlaceholder": "Enter password",
+  "submitSignIn": "Sign in",
+  "signingIn": "Signing in...",
+  "errorFallback": "Login failed",
+  "versionFooter": "Arkon v0.5 — On-Premise Deployment"
+}

@@ -1,0 +1,85 @@
+{
+  "searchPlaceholder": "Search documents...",
+  "documentCount": "{count, plural, =1 {1 document} other {# documents}}",
+  "columns": {
+    "document": "Document",
+    "category": "Category",
+    "visibility": "Visibility",
+    "department": "Department",
+    "pages": "Pages",
+    "wiki": "Wiki",
+    "contributedBy": "Contributed By",
+    "status": "Status",
+    "created": "Created"
+  },
+  "scope": {
+    "global": "Global"
+  },
+  "emptyState": {
+    "title": "No documents found",
+    "description": "Upload documents to start building your knowledge base.",
+    "searchTitle": "No results found",
+    "searchDescription": "No documents matching \"{search}\""
+  },
+  "actions": {
+    "edit": "Edit",
+    "reviewPlan": "Review Plan",
+    "retry": "Retry",
+    "retrying": "Retrying...",
+    "delete": "Delete"
+  },
+  "pagination": {
+    "pageOf": "Page {page} of {total}"
+  },
+  "confirmDelete": "Delete this document? This cannot be undone.",
+  "errors": {
+    "deleteFailed": "Failed to delete",
+    "retryFailed": "Failed to retry"
+  },
+  "status": {
+    "planReady": "Review Plan"
+  },
+  "editDialog": {
+    "title": "Edit Document",
+    "titleLabel": "Title",
+    "knowledgeTypeLabel": "Knowledge Type",
+    "knowledgeTypePlaceholder": "No type",
+    "departmentsLabel": "Departments",
+    "departmentsHint": "Select which departments can access this document. Leave empty for global access.",
+    "noDepartments": "No departments available",
+    "visibilityLabel": "Visibility",
+    "visibilityGlobal": "Global",
+    "visibilityWorkspace": "Workspace",
+    "visibilityGlobalWarning": "Document content will be compiled into the shared wiki and visible to all employees — including those without access to the original file. Only use Global if the content is not sensitive.",
+    "targetWorkspaceLabel": "Target Workspace",
+    "targetWorkspacePlaceholder": "Select workspace...",
+    "saving": "Saving...",
+    "confirmDeptChange": "Changing department will re-run the AI analysis. Existing wiki pages will be updated to the new department. Continue?",
+    "confirmDeptChangeTitle": "Confirm department change",
+    "cancelConfirm": "Cancel",
+    "proceedConfirm": "Confirm",
+    "saveFailed": "Failed to save"
+  },
+  "planReviewDialog": {
+    "title": "Review Compilation Plan",
+    "subtitle": "{sourceTitle} — approve to start writing wiki pages, or reject to stop.",
+    "pagesToCreate": "{count, plural, =1 {1 page} other {# pages}} to create",
+    "pagesToUpdate": "{count, plural, =1 {1 page} other {# pages}} to update",
+    "plannerNote": "Planner note: ",
+    "entityMore": "+{count} more",
+    "feedbackPlaceholder": "Feedback or correction for the AI (e.g. 'Page X already exists, it should be UPDATE not CREATE'). Required to regenerate.",
+    "feedbackHint": "Write feedback then click Regenerate to have AI redo the plan, or click Approve to proceed as-is.",
+    "regenerating": "Regenerating plan with your feedback… this can take 30–90 seconds.",
+    "regeneratingLong": "Regenerating plan with your feedback — this can take up to a minute.",
+    "feedbackRequired": "Please describe what should be changed before regenerating.",
+    "regenerateBtn": "Regenerate",
+    "regeneratingBtn": "Regenerating...",
+    "rejectBtn": "Reject",
+    "confirmRejectBtn": "Confirm Reject",
+    "approveBtn": "Approve & Compile",
+    "approveFailed": "Failed to approve plan",
+    "rejectFailed": "Failed to reject plan",
+    "regenerateFailed": "Failed to regenerate plan",
+    "loadFailed": "Failed to load plan"
+  }
+}

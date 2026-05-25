@@ -1,0 +1,62 @@
+{
+  "headline": {
+    "waitingRevise": "Chờ {author} chỉnh sửa",
+    "withdrawn": "Đã rút lại bởi {author}",
+    "pending": "Bản nháp chờ duyệt bởi {author}"
+  },
+  "round": "vòng {round}",
+  "conflict": "xung đột — trang đã tiến lên v{base} → v{page}",
+  "authorStats": "{approved}✓ · {pct}%",
+  "reviewerAsked": "Người duyệt yêu cầu:",
+  "suggestedReviewers": "Người duyệt gợi ý:",
+  "suggestedReviewerItem": "{name} ({score})",
+  "compareWith": "So sánh với:",
+  "currentPage": "Trang hiện tại",
+  "draftBy": "Bản nháp của {author}",
+  "draftByRound": "Bản nháp của {author} (vòng {round})",
+  "emptyContent": "Nội dung trống.",
+  "tabs": {
+    "diff": "Diff",
+    "proposed": "Đề xuất",
+    "current": "Trang hiện tại"
+  },
+  "meta": {
+    "slug": "Slug:",
+    "type": "Loại:",
+    "scope": "Phạm vi:",
+    "tags": "Thẻ:"
+  },
+  "noteLabel": {
+    "requestChanges": "Yêu cầu chỉnh sửa — ghi chú cho tác giả (bắt buộc)",
+    "reject": "Lý do từ chối (bắt buộc)"
+  },
+  "notePlaceholder": {
+    "requestChanges": "Giải thích những gì tác giả cần thay đổi trước khi nộp lại…",
+    "reject": "Cho cộng tác viên biết lý do bản nháp bị từ chối…"
+  },
+  "charMin": "{current}/{min} ký tự tối thiểu",
+  "noteLengthError": "Vui lòng viết ít nhất {min} ký tự.",
+  "actions": {
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "confirmReject": "Xác nhận từ chối",
+    "requestChanges": "Yêu cầu chỉnh sửa",
+    "sendBack": "Gửi lại",
+    "cancel": "Hủy",
+    "withdraw": "Rút lại",
+    "editResubmit": "Sửa & nộp lại"
+  },
+  "status": {
+    "ownWithdrawn": "Bạn đã rút lại bản nháp này.",
+    "waitingAuthor": "Chờ tác giả nộp lại.",
+    "noLongerInReview": "Bản nháp này không còn trong quá trình xem xét."
+  },
+  "withdrawConfirm": "Rút lại bản nháp? Bản nháp sẽ bị xóa khỏi hàng đợi xem xét.",
+  "diff": {
+    "noChanges": "Không có thay đổi giữa trang hiện tại và nội dung đề xuất.",
+    "splitCurrent": "Hiện tại",
+    "splitProposed": "Đề xuất",
+    "changed": "đã thay đổi",
+    "unchanged": "không thay đổi"
+  }
+}

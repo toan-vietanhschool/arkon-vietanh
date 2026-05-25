@@ -1,0 +1,13 @@
+{
+  "sectionOrgKnowledge": "Org Knowledge",
+  "sectionOrganization": "Organization",
+  "sectionSystem": "System",
+  "workspaces": "Workspaces",
+  "newWorkspace": "New Workspace",
+  "loadingWorkspaces": "Loading…",
+  "noWorkspaces": "No workspaces",
+  "moreWorkspaces": "{count} more…",
+  "profile": "Profile",
+  "signOut": "Sign out",
+  "footerMeta": "On-Premise · Internal"
+}

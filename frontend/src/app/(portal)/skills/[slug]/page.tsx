@@ -1,6 +1,7 @@
 "use client";
 
 import { api, apiUpload, ApiError } from "@/lib/api";
+import { useTranslations } from "next-intl";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
@@ -33,6 +34,7 @@ interface SkillVersion {
 }
 
 export default function SkillDetailPage() {
+  const t = useTranslations("Skills");
   const { slug } = useParams();
   const router = useRouter();
   const { canAccess, hasPermission } = useAuth();
@@ -84,12 +86,12 @@ export default function SkillDetailPage() {
   }, [slug]);
 
   const handleDelete = async () => {
-    if (!skill || !confirm(`Are you sure you want to delete ${skill.name}?`)) return;
+    if (!skill || !confirm(t("confirmDelete", { name: skill.name }))) return;
     try {
       await api(`/api/skills/${skill.slug}`, { method: "DELETE" });
       router.push("/skills");
     } catch (error) {
-      alert("Failed to delete skill");
+      alert(t("deleteFailed"));
     }
   };
 
@@ -145,42 +147,42 @@ export default function SkillDetailPage() {
 
   const handleSubmitContribution = async () => {
     if (!activeContributionId) return;
-    if (!confirm("Are you sure you want to submit this contribution for review?")) return;
-    
+    if (!confirm(t("contributionEditor.confirmSubmit"))) return;
+
     try {
       await api(`/api/skill-contributions/${activeContributionId}/submit`, { method: "POST" });
-      alert("Contribution submitted successfully!");
+      alert(t("contributionEditor.submitSuccess"));
       setActiveContributionId(null);
       window.location.reload();
     } catch (err) {
       console.error("Failed to submit contribution:", err);
-      alert("Submit failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("contributionEditor.submitFailed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
-  
+
   const handleApprove = async (id: string) => {
-    if (!confirm("Are you sure you want to APPROVE and MERGE this contribution?")) return;
+    if (!confirm(t("reviewEditor.confirmApprove"))) return;
     try {
       await api(`/api/skill-contributions/${id}/approve`, { method: "POST" });
-      alert("Contribution approved and merged successfully!");
+      alert(t("reviewEditor.approveSuccess"));
       setReviewContributionId(null);
       window.location.reload(); // Reload to see changes
     } catch (err) {
-      alert("Approval failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("reviewEditor.approveFailed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
       setReviewContributionId(null);
       setPendingContributions(prev => prev.filter(c => c.id !== id));
     }
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm("Are you sure you want to REJECT this contribution?")) return;
+    if (!confirm(t("reviewEditor.confirmReject"))) return;
     try {
       await api(`/api/skill-contributions/${id}/reject`, { method: "POST" });
-      alert("Contribution rejected.");
+      alert(t("reviewEditor.rejectSuccess"));
       setReviewContributionId(null);
       setPendingContributions(prev => prev.filter(c => c.id !== id));
     } catch (err) {
-      alert("Rejection failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("reviewEditor.rejectFailed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
       setReviewContributionId(null);
       setPendingContributions(prev => prev.filter(c => c.id !== id));
     }
@@ -201,21 +203,21 @@ export default function SkillDetailPage() {
       return (
         <div className="flex flex-col gap-8 py-12 animate-in fade-in duration-500">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <button 
+            <button
               onClick={() => router.push("/skills")}
               className="flex items-center hover:text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-base mr-1">arrow_back</span>
-              Back to Skills
+              {t("detail.backToSkills")}
             </button>
           </div>
           <EmptyState
             icon="search_off"
-            title="Skill Not Found"
-            description={`We couldn't find a skill with the identifier "${slug}". It might have been deleted or moved.`}
+            title={t("detail.notFound.title")}
+            description={t("detail.notFound.description", { slug: String(slug) })}
             action={
               <Button onClick={() => router.push("/skills")} variant="outline" className="mt-4 shadow-sahara rounded-xl font-bold uppercase tracking-widest text-[11px] h-11 px-8">
-                Return to Library
+                {t("detail.notFound.returnBtn")}
               </Button>
             }
           />
@@ -237,12 +239,12 @@ export default function SkillDetailPage() {
   return (
     <div className="flex flex-col gap-8 pb-12 animate-in fade-in duration-500">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button 
+        <button
           onClick={() => router.push("/skills")}
           className="flex items-center hover:text-primary transition-colors"
         >
           <span className="material-symbols-outlined text-base mr-1">arrow_back</span>
-          Back to Skills
+          {t("detail.backToSkills")}
         </button>
       </div>
 
@@ -303,7 +305,7 @@ export default function SkillDetailPage() {
 
           <div className="bg-card rounded-xl border border-border p-8 space-y-8">
             <section>
-              <h4 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-wider">Status</h4>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-wider">{t("detail.sidebar.statusLabel")}</h4>
               <div className="flex items-center gap-3">
                 <Badge 
                   variant="outline"
@@ -321,38 +323,38 @@ export default function SkillDetailPage() {
             
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Version History</h4>
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("detail.sidebar.versionHistoryLabel")}</h4>
                 {viewingVersion !== skill.current_version && (
                   <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-[10px] font-bold">
-                    PREVIEWING OLD
+                    {t("detail.sidebar.previewingOld")}
                   </Badge>
                 )}
               </div>
               <div className="space-y-3">
-                <Select 
-                  value={viewingVersion?.toString() || ""} 
+                <Select
+                  value={viewingVersion?.toString() || ""}
                   onValueChange={(v) => setViewingVersion(v ? parseInt(v) : null)}
                 >
                   <SelectTrigger className="w-full bg-secondary/5 border-primary/20 h-10">
-                    <SelectValue placeholder="Select version" />
+                    <SelectValue placeholder={t("detail.sidebar.versionItem", { version: "" })} />
                   </SelectTrigger>
                   <SelectContent sideOffset={4} className="max-h-60">
                     {versions.map((v) => (
                       <SelectItem key={v.version_number} value={v.version_number.toString()}>
-                        Version {v.version_number} 
-                        {v.version_number === skill.current_version && " (Latest)"}
+                        {t("detail.sidebar.versionItem", { version: v.version_number })}
+                        {v.version_number === skill.current_version && t("detail.sidebar.versionLatest")}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
                   {!skill.is_system && canAccess("skill", "edit") && viewingVersion !== skill.current_version && (
-                    <Button 
+                    <Button
                       className="w-full bg-primary text-primary-foreground shadow-sahara font-bold text-[11px] uppercase tracking-wider h-10 animate-in fade-in slide-in-from-top-1"
                       onClick={handleSetLatest}
                       disabled={isSettingLatest}
                     >
-                      {isSettingLatest ? "Setting..." : "Set as Official Latest"}
+                      {isSettingLatest ? t("detail.sidebar.settingLatest") : t("detail.sidebar.setLatestBtn")}
                     </Button>
                   )}
               </div>
@@ -410,23 +412,23 @@ export default function SkillDetailPage() {
                     <span className="material-symbols-outlined text-primary">edit_note</span>
                   </div>
                   <div>
-                    <DialogTitle className="text-xl font-serif">Editing Contribution</DialogTitle>
-                    <p className="text-xs text-muted-foreground font-manrope">Draft Mode</p>
+                    <DialogTitle className="text-xl font-serif">{t("contributionEditor.editingTitle")}</DialogTitle>
+                    <p className="text-xs text-muted-foreground font-manrope">{t("contributionEditor.draftMode")}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button 
+                  <button
                     id="force-submit-button"
                     onClick={handleSubmitContribution}
                     className="h-8 px-4 flex items-center justify-center bg-[#c2652a] text-white rounded-lg font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg transition-all"
                   >
-                    Contribute
+                    {t("contributionEditor.contributeBtn")}
                   </button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={async () => {
-                      if (!confirm("Are you sure you want to delete this draft contribution? This action cannot be undone.")) return;
+                      if (!confirm(t("contributionEditor.confirmDeleteDraft"))) return;
                       try {
                         const { api } = await import("@/lib/api");
                         await api(`/api/skill-contributions/${activeContributionId}`, { method: "DELETE" });
@@ -434,20 +436,20 @@ export default function SkillDetailPage() {
                         window.location.reload();
                       } catch (err) {
                         console.error("Failed to delete contribution:", err);
-                        alert("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
+                        alert(t("contributionEditor.deleteFailed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
                       }
                     }}
                     className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
-                    title="Delete Draft"
+                    title={t("contributionEditor.deleteDraftTitle")}
                   >
                     <span className="material-symbols-outlined text-lg">delete</span>
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setActiveContributionId(null)}
                     className="h-8 w-8 hover:bg-muted transition-all"
-                    title="Close Editor"
+                    title={t("contributionEditor.closeEditorTitle")}
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
                   </Button>
@@ -474,38 +476,38 @@ export default function SkillDetailPage() {
                     <span className="material-symbols-outlined text-primary">rate_review</span>
                   </div>
                   <div>
-                    <DialogTitle className="text-xl font-serif">Review Contribution</DialogTitle>
+                    <DialogTitle className="text-xl font-serif">{t("reviewEditor.reviewTitle")}</DialogTitle>
                     <p className="text-xs text-muted-foreground font-manrope">
-                      Submitted by <span className="font-bold text-foreground">{pendingContributions.find(c => c.id === reviewContributionId)?.contributor_name || "Unknown"}</span>
+                      {t("reviewEditor.submittedBy")} <span className="font-bold text-foreground">{pendingContributions.find(c => c.id === reviewContributionId)?.contributor_name || t("reviewEditor.unknownContributor")}</span>
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleReject(reviewContributionId)}
                     className="h-8 gap-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
                   >
                     <span className="material-symbols-outlined text-sm">close</span>
-                    Reject
+                    {t("reviewEditor.rejectBtn")}
                   </Button>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
+                  <Button
+                    variant="default"
+                    size="sm"
                     onClick={() => handleApprove(reviewContributionId)}
                     className="h-8 gap-2 bg-[#c2652a] text-white hover:opacity-90 shadow-lg transition-all font-bold"
                   >
                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                    Approve & Merge
+                    {t("reviewEditor.approveMergeBtn")}
                   </Button>
                   <div className="w-px h-6 bg-border mx-1" />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setReviewContributionId(null)}
                     className="h-8 w-8 hover:bg-muted transition-all"
-                    title="Close Reviewer"
+                    title={t("reviewEditor.closeReviewerTitle")}
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
                   </Button>

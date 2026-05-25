@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,17 +34,19 @@ type Props = {
 };
 
 export function ProjectList({ projects, loading, isAdmin, onEdit, onOpen, onRefresh }: Props) {
+  const t = useTranslations("Projects");
+  const tCommon = useTranslations("Common");
   const [error, setError] = React.useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this project? Members will lose access to its documents.")) return;
+    if (!confirm(t("deleteConfirm"))) return;
     setError(null);
     try {
       await api(`/api/projects/${id}`, { method: "DELETE" });
       window.dispatchEvent(new Event("workspaces-changed"));
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
+      setError(err instanceof Error ? err.message : t("deleteFailed"));
     }
   };
 
@@ -62,8 +65,8 @@ export function ProjectList({ projects, loading, isAdmin, onEdit, onOpen, onRefr
       <div className="bg-card rounded-xl border border-border shadow-sahara">
         <EmptyState
           icon="workspaces"
-          title="No workspaces yet"
-          description="Create a workspace to organize projects or customer engagements"
+          title={t("noWorkspaces.title")}
+          description={t("noWorkspaces.description")}
         />
       </div>
     );
@@ -103,7 +106,9 @@ export function ProjectList({ projects, loading, isAdmin, onEdit, onOpen, onRefr
                       : "text-sky-600 border-sky-300"
                   }`}
                 >
-                  {project.workspace_type === "customer" ? "Customer" : "Project"}
+                  {project.workspace_type === "customer"
+                    ? t("workspaceType.customer")
+                    : t("workspaceType.project")}
                 </Badge>
                 <Badge
                   variant="outline"
@@ -113,7 +118,9 @@ export function ProjectList({ projects, loading, isAdmin, onEdit, onOpen, onRefr
                       : "text-muted-foreground border-muted"
                   }
                 >
-                  {project.status}
+                  {project.status === "active"
+                    ? t("status.active")
+                    : t("status.archived")}
                 </Badge>
 
                 {isAdmin && (
@@ -125,14 +132,14 @@ export function ProjectList({ projects, loading, isAdmin, onEdit, onOpen, onRefr
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(project); }}>
                           <span className="material-symbols-outlined text-base mr-2">edit</span>
-                          Edit
+                          {tCommon("edit")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }}
                           className="text-destructive focus:text-destructive"
                         >
                           <span className="material-symbols-outlined text-base mr-2">delete</span>
-                          Delete
+                          {tCommon("delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -144,11 +151,11 @@ export function ProjectList({ projects, loading, isAdmin, onEdit, onOpen, onRefr
             <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">group</span>
-                {project.member_count} members
+                {t("memberCount", { count: project.member_count })}
               </span>
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">description</span>
-                {project.source_count} docs
+                {t("docCount", { count: project.source_count })}
               </span>
             </div>
           </div>

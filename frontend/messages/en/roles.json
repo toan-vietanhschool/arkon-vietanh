@@ -1,0 +1,32 @@
+{
+  "title": "Roles",
+  "description": "Define permission sets that can be assigned to employees.",
+  "createRole": "Create Role",
+  "noRoles": {
+    "title": "No roles",
+    "description": "Create roles to assign permissions to employees"
+  },
+  "systemBadge": "System",
+  "noPermissions": "No permissions",
+  "deleteConfirm": "Delete role \"{name}\"? Employees assigned to this role will lose it.",
+  "deleteFailed": "Delete failed",
+  "dialog": {
+    "createTitle": "Create Role",
+    "editTitle": "Edit Role",
+    "nameLabel": "Name",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Optional",
+    "permissionsLabel": "Permissions",
+    "permissionsSelected": "{selected} of {total} selected",
+    "saveFailed": "Save failed",
+    "createButton": "Create",
+    "updateButton": "Update",
+    "saving": "Saving..."
+  },
+  "workspaceRole": {
+    "viewer": "Viewer",
+    "contributor": "Contributor",
+    "editor": "Editor",
+    "admin": "Admin"
+  }
+}

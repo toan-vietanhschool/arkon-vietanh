@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -32,6 +33,7 @@ export function preprocessWikilinks(md: string): string {
 }
 
 function CopyButton({ text }: { text: string }) {
+  const t = useTranslations("WikiPage.content");
   const [copied, setCopied] = React.useState(false);
   return (
     <button
@@ -41,7 +43,7 @@ function CopyButton({ text }: { text: string }) {
         setTimeout(() => setCopied(false), 2000);
       }}
       className="absolute top-2 right-2 opacity-0 group-hover/code:opacity-100 transition-opacity px-2 py-1 rounded-md bg-muted/80 hover:bg-muted text-xs text-muted-foreground hover:text-foreground border border-border"
-      title="Copy code"
+      title={t("copyCode")}
     >
       <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
         {copied ? "check" : "content_copy"}
@@ -110,6 +112,8 @@ export function WikiContent({
     return () => observer.disconnect();
   }, [headings]);
 
+  const t = useTranslations("WikiPage.content");
+
   return (
     <div className="relative">
       {/* Table of Contents — only show when enough headings */}
@@ -117,7 +121,7 @@ export function WikiContent({
         <div className="mb-8 rounded-xl border border-border bg-card/50 px-5 py-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
             <span className="material-symbols-outlined" style={{ fontSize: 13 }}>toc</span>
-            Contents
+            {t("contents")}
           </p>
           <nav className="flex flex-col gap-0.5">
             {headings.map((h) => (

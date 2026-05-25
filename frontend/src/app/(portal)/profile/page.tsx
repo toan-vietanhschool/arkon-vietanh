@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
@@ -12,6 +13,7 @@ import { McpTokenCard } from "@/components/profile/mcp-token-card";
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
+  const t = useTranslations("Profile");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -32,11 +34,11 @@ export default function ProfilePage() {
           new_password: newPassword,
         },
       });
-      setMessage("Password changed successfully");
+      setMessage(t("changePassword.successMessage"));
       setCurrentPassword("");
       setNewPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      setError(err instanceof Error ? err.message : t("changePassword.failedFallback"));
     } finally {
       setSaving(false);
     }
@@ -46,13 +48,13 @@ export default function ProfilePage() {
 
   return (
     <>
-      <PageHeader 
-        title="Profile" 
-        description="Manage your account settings."
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
         action={
           <Button variant="destructive" onClick={logout}>
             <span className="material-symbols-outlined text-base mr-1">logout</span>
-            Logout
+            {t("logout")}
           </Button>
         }
       />
@@ -61,7 +63,7 @@ export default function ProfilePage() {
         {/* Profile Info */}
         <div className="bg-card rounded-xl p-6 border border-border shadow-sahara">
           <h3 className="text-lg font-semibold text-foreground mb-4">
-            Account Information
+            {t("accountInfo.title")}
           </h3>
 
           <div className="flex flex-col gap-4">
@@ -77,13 +79,13 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
               <div>
-                <p className="text-xs text-muted-foreground">Role</p>
+                <p className="text-xs text-muted-foreground">{t("accountInfo.roleLabel")}</p>
                 <Badge variant="outline" className="mt-1 capitalize">
                   {user.role}
                 </Badge>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Department</p>
+                <p className="text-xs text-muted-foreground">{t("accountInfo.departmentLabel")}</p>
                 <p className="text-sm font-medium mt-1">{user.department_name}</p>
               </div>
             </div>
@@ -93,12 +95,12 @@ export default function ProfilePage() {
         {/* Change Password */}
         <div className="bg-card rounded-xl p-6 border border-border shadow-sahara">
           <h3 className="text-lg font-semibold text-foreground mb-4">
-            Change Password
+            {t("changePassword.title")}
           </h3>
 
           <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="current-pw" className="text-xs">Current Password</Label>
+              <Label htmlFor="current-pw" className="text-xs">{t("changePassword.currentPassword")}</Label>
               <Input
                 id="current-pw"
                 type="password"
@@ -109,7 +111,7 @@ export default function ProfilePage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="new-pw" className="text-xs">New Password</Label>
+              <Label htmlFor="new-pw" className="text-xs">{t("changePassword.newPassword")}</Label>
               <Input
                 id="new-pw"
                 type="password"
@@ -117,7 +119,7 @@ export default function ProfilePage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 minLength={6}
-                placeholder="Min 6 characters"
+                placeholder={t("changePassword.newPasswordPlaceholder")}
                 className="bg-background"
               />
             </div>
@@ -138,7 +140,7 @@ export default function ProfilePage() {
               disabled={saving}
               className="bg-primary text-primary-foreground hover:bg-primary/90 self-start"
             >
-              {saving ? "Saving..." : "Update Password"}
+              {saving ? t("changePassword.saving") : t("changePassword.updateButton")}
             </Button>
           </form>
         </div>

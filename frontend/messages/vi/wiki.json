@@ -1,0 +1,69 @@
+{
+  "pageHeader": {
+    "title": "Wiki kiến thức",
+    "description": "Kiến thức tổng hợp từ tài liệu của tổ chức."
+  },
+  "searchBtn": "Tìm kiếm",
+  "newPageBtn": "Trang mới",
+  "proposePageBtn": "Đề xuất trang",
+  "contributionsBtn": "Đóng góp",
+  "contributionsTitle": "Bản nháp bạn đã tạo và bản nháp chờ bạn duyệt",
+  "graphViewBtn": "Xem đồ thị",
+  "createPageTitle": {
+    "direct": "Tạo trang mới trong {scopeName}",
+    "propose": "Đề xuất trang mới trong {scopeName} (cần duyệt)"
+  },
+  "stats": {
+    "pages": "Trang",
+    "updated": "Cập nhật {date}"
+  },
+  "tabs": {
+    "all": "Tất cả"
+  },
+  "emptyState": {
+    "title": "Wiki chưa có nội dung",
+    "description": "Tải lên và tổng hợp tài liệu để bắt đầu xây dựng wiki kiến thức."
+  },
+  "searchDialog": {
+    "placeholder": "Tìm kiếm trang wiki...",
+    "noMatch": "Không tìm thấy trang nào phù hợp.",
+    "noPages": "Chưa có trang nào.",
+    "pageCount": "{count} trang",
+    "keyHintNavigate": "điều hướng",
+    "keyHintClose": "đóng"
+  },
+  "pageTree": {
+    "header": "Trang",
+    "filterPlaceholder": "Lọc trang...",
+    "noPages": "Không tìm thấy trang nào.",
+    "expandTitle": "Mở rộng cây trang",
+    "collapseTitle": "Thu gọn",
+    "newPageTitle": {
+      "direct": "Trang mới trong {scopeName}",
+      "propose": "Đề xuất trang mới trong {scopeName}"
+    },
+    "createPageAriaLabel": "Tạo trang trong {scopeName}",
+    "deleteConfirmTitle": "Nhấn lại để xác nhận xóa \"{title}\"",
+    "deleteTitle": "Xóa \"{title}\"",
+    "scopeGlobal": "Toàn cục",
+    "scopeDepartment": "Phòng ban",
+    "scopeWorkspace": "Workspace",
+    "openScopeWiki": "Mở wiki {scopeName}",
+    "expandScopeTitle": "Mở rộng",
+    "collapseScopeTitle": "Thu gọn"
+  },
+  "pageType": {
+    "entity": "Thực thể",
+    "concept": "Khái niệm",
+    "topic": "Chủ đề",
+    "source": "Nguồn",
+    "index": "Mục lục",
+    "log": "Nhật ký",
+    "entityPlural": "Thực thể",
+    "conceptPlural": "Khái niệm",
+    "topicPlural": "Chủ đề",
+    "sourcePlural": "Nguồn",
+    "indexPlural": "Mục lục",
+    "logPlural": "Nhật ký"
+  }
+}

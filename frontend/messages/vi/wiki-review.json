@@ -1,0 +1,117 @@
+{
+  "queueTitle": "Hàng đợi xem xét",
+  "shortcutsHint": "Phím tắt",
+  "tabs": {
+    "toReview": "Cần xem xét",
+    "mine": "Của tôi"
+  },
+  "statusFilter": {
+    "pending": "Chờ duyệt",
+    "needs_revision": "Cần chỉnh sửa",
+    "approved": "Đã duyệt",
+    "rejected": "Đã từ chối"
+  },
+  "scopeGlobal": "Toàn cục",
+  "allScopes": "Tất cả phạm vi ({count})",
+  "scopeFilterTitle": "Lọc theo phạm vi",
+  "draftCount": "{count, plural, =1 {1 bản nháp} other {# bản nháp}}",
+  "draftCountFiltered": "{filtered} / {total, plural, =1 {1 bản nháp} other {# bản nháp}}",
+  "loading": "Đang tải…",
+  "refresh": "Làm mới",
+  "queueEmpty": {
+    "title": "Hàng đợi trống",
+    "descriptionScope": "Không có bản nháp trong phạm vi này. Chuyển sang 'Tất cả phạm vi' để xem các bản khác.",
+    "descriptionStatus": "Không có bản nháp ở trạng thái {status}."
+  },
+  "listItem": {
+    "new": "mới",
+    "conflict": "xung đột",
+    "aiStatus": "AI: {status}"
+  },
+  "center": {
+    "selectPrompt": "Chọn một bản nháp từ hàng đợi.",
+    "newPageBadge": "trang mới",
+    "conflict": "xung đột — base v{base} → trang v{page}",
+    "openPage": "mở trang ↗",
+    "loadingPage": "Đang tải trang hiện tại…",
+    "emptyContent": "Nội dung trống.",
+    "tabs": {
+      "diff": "Diff",
+      "proposed": "Đề xuất",
+      "current": "Trang hiện tại"
+    },
+    "compareWith": "So sánh với:",
+    "compareCurrent": "Trang hiện tại",
+    "compareDraft": "Bản nháp của {author}",
+    "compareDraftRound": "Bản nháp của {author} (r{round})"
+  },
+  "rightPane": {
+    "noSelection": "Chưa chọn bản nháp.",
+    "sectionAuthor": "Tác giả",
+    "authorUnknown": "Không rõ",
+    "authorStats": "{approved}✓ · {pct}% độ chính xác",
+    "authorStatsTitle": "{approved} duyệt · {rejected} từ chối",
+    "authorStatsWithRevision": "{approved} duyệt · {rejected} từ chối · {revision} trả lại",
+    "firstContribution": "đóng góp lần đầu",
+    "sectionSubmitted": "Đã nộp",
+    "round": "vòng {round}",
+    "reviewerAsked": "Người duyệt yêu cầu:",
+    "sectionSuggestedPage": "Trang đề xuất",
+    "tags": "Thẻ: {tags}",
+    "sectionSuggestedReviewers": "Người duyệt gợi ý",
+    "sectionAiPreview": "Kiểm tra AI",
+    "ownDraft": "Đây là bản nháp của bạn.",
+    "draftStatus": "Bản nháp ở trạng thái {status}.",
+    "waitingResubmit": "Chờ tác giả nộp lại.",
+    "counter": "{current} / {total}"
+  },
+  "actions": {
+    "approve": "Duyệt",
+    "approveKey": "A",
+    "requestChanges": "Yêu cầu chỉnh sửa",
+    "requestChangesKey": "C",
+    "reject": "Từ chối",
+    "rejectKey": "R",
+    "withdraw": "Rút lại",
+    "confirmReject": "Xác nhận từ chối",
+    "sendBack": "Gửi lại",
+    "cancel": "Hủy",
+    "cancelKey": "Esc"
+  },
+  "note": {
+    "rejectLabel": "Lý do từ chối",
+    "requestChangesLabel": "Cần thay đổi gì?",
+    "rejectPlaceholder": "Cho cộng tác viên biết lý do bị từ chối…",
+    "requestChangesPlaceholder": "Giải thích những gì cần sửa trước khi nộp lại…",
+    "charMin": "{current}/{min} ký tự tối thiểu"
+  },
+  "shortcuts": {
+    "title": "Phím tắt",
+    "close": "Đóng",
+    "nextDraft": "Bản nháp tiếp theo",
+    "prevDraft": "Bản nháp trước",
+    "approveCurrent": "Duyệt bản nháp hiện tại",
+    "requestChanges": "Yêu cầu chỉnh sửa (focus ghi chú)",
+    "reject": "Từ chối (focus ghi chú)",
+    "cancelAction": "Hủy hành động đang chờ",
+    "toggleHelp": "Bật/tắt trợ giúp này",
+    "disabledInField": "Phím tắt bị tắt khi focus ở ô nhập liệu.",
+    "keys": {
+      "nextDraft": "j / ↓",
+      "prevDraft": "k / ↑",
+      "approve": "a",
+      "requestChanges": "c",
+      "reject": "r",
+      "cancel": "Esc",
+      "help": "?"
+    }
+  },
+  "withdrawConfirm": "Rút lại bản nháp? Bản nháp sẽ bị xóa khỏi hàng đợi xem xét.",
+  "errors": {
+    "approveFailed": "Phê duyệt thất bại",
+    "actionFailed": "Thao tác thất bại",
+    "recheckFailed": "Kiểm tra lại thất bại",
+    "withdrawFailed": "Rút lại thất bại",
+    "noteLengthError": "Vui lòng viết ít nhất {min} ký tự."
+  }
+}

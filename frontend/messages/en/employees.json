@@ -1,0 +1,84 @@
+{
+  "title": "Employees",
+  "description": "Manage user accounts and MCP access tokens.",
+  "addEmployee": "Add Employee",
+  "searchPlaceholder": "Search by name or email...",
+  "employeeCount": "{count, plural, =0 {0 employees} =1 {1 employee} other {# employees}}",
+  "noEmployees": {
+    "title": "No employees",
+    "description": "Add employees to give them access to the knowledge base."
+  },
+  "noResults": {
+    "title": "No results found",
+    "description": "No employees matching \"{search}\""
+  },
+  "table": {
+    "employee": "Employee",
+    "systemRole": "System Role",
+    "position": "Position",
+    "department": "Department",
+    "status": "Status",
+    "mcpToken": "MCP Token"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "mcpConnected": "Connected",
+  "pagination": {
+    "page": "Page {page} of {total}"
+  },
+  "actions": {
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "revokeToken": "Revoke Token",
+    "generateToken": "Generate Token",
+    "delete": "Delete",
+    "actionFailedFallback": "Action failed",
+    "revokeTokenConfirm": "Revoke this employee's MCP token?",
+    "revokeTokenFailed": "Failed to revoke token",
+    "generateTokenFailed": "Failed to generate token",
+    "deleteFailed": "Failed to delete",
+    "deleteConfirm": "Delete this employee? This cannot be undone."
+  },
+  "tokenDialog": {
+    "title": "MCP Token Generated",
+    "instruction": "Copy this token and share it securely with the employee. It will not be shown again.",
+    "copyToken": "Copy Token",
+    "done": "Done"
+  },
+  "systemRoleLabel": {
+    "admin": "Admin",
+    "employee": "Employee"
+  },
+  "dialog": {
+    "createTitle": "Add Employee",
+    "editTitle": "Edit Employee",
+    "nameLabel": "Name",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "passwordLabelEdit": "Password (leave blank to keep current)",
+    "passwordPlaceholderEdit": "••••••••",
+    "passwordPlaceholderCreate": "Min 8 characters",
+    "systemRoleLabel": "System Role",
+    "departmentLabel": "Department",
+    "positionLabel": "Position",
+    "positionNone": "None",
+    "createNewDepartment": "Create new department...",
+    "createNewPosition": "Create new position...",
+    "saveFailed": "Save failed",
+    "passwordRequired": "Password is required",
+    "createButton": "Create",
+    "updateButton": "Update",
+    "saving": "Saving...",
+    "inlineCreate": {
+      "createDepartmentTitle": "Create Department",
+      "departmentNameLabel": "Department Name",
+      "createPositionTitle": "Create Position",
+      "positionNameLabel": "Position Name",
+      "createButton": "Create",
+      "saving": "Saving..."
+    }
+  }
+}

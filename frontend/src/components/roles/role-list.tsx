@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,15 +16,17 @@ type Props = {
 };
 
 export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Props) {
+  const t = useTranslations("Roles");
+  const tCommon = useTranslations("Common");
   const labelMap = Object.fromEntries(permissions.map((p) => [p.key, p.label]));
 
   const handleDelete = async (role: Role) => {
-    if (!confirm(`Delete role "${role.name}"? Employees assigned to this role will lose it.`)) return;
+    if (!confirm(t("deleteConfirm", { name: role.name }))) return;
     try {
       await api(`/api/roles/${role.id}`, { method: "DELETE" });
       onRefresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Delete failed");
+      alert(err instanceof Error ? err.message : t("deleteFailed"));
     }
   };
 
@@ -42,8 +45,8 @@ export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Pro
       <div className="bg-card rounded-xl border border-border">
         <EmptyState
           icon="admin_panel_settings"
-          title="No roles"
-          description="Create roles to assign permissions to employees"
+          title={t("noRoles.title")}
+          description={t("noRoles.description")}
         />
       </div>
     );
@@ -60,7 +63,7 @@ export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Pro
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">{role.name}</span>
               {role.is_system && (
-                <Badge variant="secondary" className="text-xs">System</Badge>
+                <Badge variant="secondary" className="text-xs">{t("systemBadge")}</Badge>
               )}
             </div>
             {role.description && (
@@ -68,7 +71,7 @@ export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Pro
             )}
             <div className="flex flex-wrap gap-1.5 mt-1">
               {role.permissions.length === 0 ? (
-                <span className="text-xs text-muted-foreground">No permissions</span>
+                <span className="text-xs text-muted-foreground">{t("noPermissions")}</span>
               ) : (
                 role.permissions.map((p) => (
                   <Badge key={p} variant="outline" className="text-xs font-normal">
@@ -82,7 +85,7 @@ export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Pro
           <div className="flex items-center gap-2 shrink-0">
             <Button variant="outline" size="sm" onClick={() => onEdit(role)}>
               <span className="material-symbols-outlined text-base mr-1">edit</span>
-              Edit
+              {tCommon("edit")}
             </Button>
             {!role.is_system && (
               <Button
@@ -92,7 +95,7 @@ export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Pro
                 onClick={() => handleDelete(role)}
               >
                 <span className="material-symbols-outlined text-base mr-1">delete</span>
-                Delete
+                {tCommon("delete")}
               </Button>
             )}
           </div>

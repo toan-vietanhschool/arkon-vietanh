@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,8 @@ export function EmployeeTable({
   search,
   onSearch,
 }: Props) {
+  const t = useTranslations("Employees");
+  const tCommon = useTranslations("Common");
   const [actionError, setActionError] = useState<string | null>(null);
   const [tokenDialog, setTokenDialog] = useState<{ token: string; instructions: string } | null>(null);
   const [scopeEmployee, setScopeEmployee] = useState<Employee | null>(null);
@@ -78,7 +81,7 @@ export function EmployeeTable({
       await api(`/api/employees/${id}/toggle`, { method: "PATCH" });
       onRefresh();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Action failed");
+      setActionError(err instanceof Error ? err.message : t("actions.actionFailedFallback"));
     }
   };
 
@@ -92,29 +95,29 @@ export function EmployeeTable({
       setTokenDialog(data);
       onRefresh();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to generate token");
+      setActionError(err instanceof Error ? err.message : t("actions.generateTokenFailed"));
     }
   };
 
   const handleRevokeToken = async (id: string) => {
-    if (!confirm("Revoke this employee's MCP token?")) return;
+    if (!confirm(t("actions.revokeTokenConfirm"))) return;
     setActionError(null);
     try {
       await api(`/api/employees/${id}/token`, { method: "DELETE" });
       onRefresh();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to revoke token");
+      setActionError(err instanceof Error ? err.message : t("actions.revokeTokenFailed"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this employee? This cannot be undone.")) return;
+    if (!confirm(t("actions.deleteConfirm"))) return;
     setActionError(null);
     try {
       await api(`/api/employees/${id}`, { method: "DELETE" });
       onRefresh();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to delete");
+      setActionError(err instanceof Error ? err.message : t("actions.deleteFailed"));
     }
   };
 
@@ -143,7 +146,7 @@ export function EmployeeTable({
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by name or email..."
+              placeholder={t("searchPlaceholder")}
               className="h-9 pl-9 pr-3 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 w-[280px] placeholder:text-muted-foreground/60"
             />
             {searchInput && (
@@ -158,7 +161,7 @@ export function EmployeeTable({
           </div>
         </form>
         <span className="text-xs text-muted-foreground tabular-nums">
-          {total} employee{total !== 1 ? "s" : ""}
+          {t("employeeCount", { count: total })}
         </span>
       </div>
 
@@ -173,19 +176,19 @@ export function EmployeeTable({
         ) : employees.length === 0 ? (
           <EmptyState
             icon="group"
-            title={search ? "No results found" : "No employees"}
-            description={search ? `No employees matching "${search}"` : "Add employees to give them access to the knowledge base."}
+            title={search ? t("noResults.title") : t("noEmployees.title")}
+            description={search ? t("noResults.description", { search }) : t("noEmployees.description")}
           />
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Employee</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">System Role</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Position</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Department</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Status</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">MCP Token</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("table.employee")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("table.systemRole")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("table.position")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("table.department")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("table.status")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{t("table.mcpToken")}</TableHead>
                 <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground text-right w-[60px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -211,7 +214,7 @@ export function EmployeeTable({
                       variant={emp.role === "admin" ? "default" : "secondary"}
                       className="text-[10px] capitalize h-5 px-2"
                     >
-                      {emp.role}
+                      {emp.role === "admin" ? t("systemRoleLabel.admin") : t("systemRoleLabel.employee")}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -230,7 +233,7 @@ export function EmployeeTable({
                         }`} />
                       <span className={`text-xs ${emp.is_active ? "text-green-700" : "text-muted-foreground"
                         }`}>
-                        {emp.is_active ? "Active" : "Inactive"}
+                        {emp.is_active ? t("status.active") : t("status.inactive")}
                       </span>
                     </div>
                   </TableCell>
@@ -238,7 +241,7 @@ export function EmployeeTable({
                     {emp.has_token ? (
                       <span className="text-xs text-green-600 flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm filled">vpn_key</span>
-                        Connected
+                        {t("mcpConnected")}
                       </span>
                     ) : (
                       <span className="text-xs text-muted-foreground/50">—</span>
@@ -253,24 +256,24 @@ export function EmployeeTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onEdit(emp)}>
                           <span className="material-symbols-outlined text-base mr-2" style={{ fontSize: 16 }}>edit</span>
-                          Edit
+                          {tCommon("edit")}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggle(emp.id)}>
                           <span className="material-symbols-outlined text-base mr-2" style={{ fontSize: 16 }}>
                             {emp.is_active ? "lock" : "lock_open"}
                           </span>
-                          {emp.is_active ? "Deactivate" : "Activate"}
+                          {emp.is_active ? t("actions.deactivate") : t("actions.activate")}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {emp.has_token ? (
                           <DropdownMenuItem onClick={() => handleRevokeToken(emp.id)}>
                             <span className="material-symbols-outlined text-base mr-2" style={{ fontSize: 16 }}>vpn_key_off</span>
-                            Revoke Token
+                            {t("actions.revokeToken")}
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem onClick={() => handleGenerateToken(emp.id)}>
                             <span className="material-symbols-outlined text-base mr-2" style={{ fontSize: 16 }}>vpn_key</span>
-                            Generate Token
+                            {t("actions.generateToken")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
@@ -279,7 +282,7 @@ export function EmployeeTable({
                           className="text-destructive"
                         >
                           <span className="material-symbols-outlined text-base mr-2 " style={{ fontSize: 16 }}>delete</span>
-                          Delete
+                          {tCommon("delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -295,7 +298,7 @@ export function EmployeeTable({
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <span className="text-xs text-muted-foreground">
-            Page {page} of {totalPages}
+            {t("pagination.page", { page, total: totalPages })}
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -360,12 +363,12 @@ export function EmployeeTable({
           <DialogHeader>
             <DialogTitle className="text-xl flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">vpn_key</span>
-              MCP Token Generated
+              {t("tokenDialog.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 mt-2">
             <p className="text-sm text-muted-foreground">
-              Copy this token and share it securely with the employee. It will not be shown again.
+              {t("tokenDialog.instruction")}
             </p>
             <div className="bg-secondary rounded-lg px-4 py-3 font-mono text-sm break-all select-all">
               {tokenDialog?.token}
@@ -383,13 +386,13 @@ export function EmployeeTable({
                 }}
               >
                 <span className="material-symbols-outlined text-base mr-1">content_copy</span>
-                Copy Token
+                {t("tokenDialog.copyToken")}
               </Button>
               <Button
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => setTokenDialog(null)}
               >
-                Done
+                {t("tokenDialog.done")}
               </Button>
             </div>
           </div>

@@ -1,7 +1,9 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Source } from "./types";
 
 export function StatusDot({ source }: { source: Source }) {
+  const t = useTranslations("KnowledgeTable");
   const colors: Record<string, string> = {
     ready: "bg-green-500",
     processing: "bg-yellow-500",
@@ -11,7 +13,7 @@ export function StatusDot({ source }: { source: Source }) {
   };
 
   const labels: Record<string, string> = {
-    plan_ready: "Review Plan",
+    plan_ready: t("status.planReady"),
   };
 
   const status = source.status;

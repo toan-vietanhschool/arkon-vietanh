@@ -1,0 +1,53 @@
+{
+  "tabs": {
+    "edit": "Edit",
+    "preview": "Preview"
+  },
+  "markdownLabel": "Markdown",
+  "previewEmpty": "Nothing to preview.",
+  "toolbar": {
+    "bold": "Bold (Ctrl+B)",
+    "italic": "Italic (Ctrl+I)",
+    "inlineCode": "Inline code",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "bulletList": "Bullet list",
+    "numberedList": "Numbered list",
+    "blockquote": "Blockquote",
+    "codeBlock": "Code block",
+    "link": "Link",
+    "wikilink": "Wikilink — type [[ to pick a page",
+    "horizontalRule": "Horizontal rule"
+  },
+  "wikilinkAutocomplete": {
+    "header": "Link to page",
+    "keyHint": "↑↓ Enter",
+    "noMatch": "No pages match \"{query}\"."
+  },
+  "createDialog": {
+    "titleDirect": "Create new page",
+    "titlePropose": "Propose new page",
+    "descDirect": "The page is created immediately and added to the index.",
+    "descPropose": "An editor will review the proposal before the page is materialised.",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Fire Safety Procedure",
+    "slugLabel": "Slug",
+    "slugSubLabel": "(URL identifier)",
+    "slugPlaceholder": "fire-safety-procedure",
+    "pageTypeLabel": "Page type",
+    "scopeLabel": "Scope",
+    "contentLabel": "Content",
+    "contentPlaceholder": "# Overview\n\nUse [[wikilinks]] to reference other pages.",
+    "reviewerNoteLabel": "Note for reviewer",
+    "reviewerNoteSubLabel": "(optional)",
+    "reviewerNotePlaceholder": "One line: why does this page need to exist?",
+    "validationError": "Title, slug, and content are required.",
+    "submitDirect": "Create page",
+    "submitPropose": "Submit proposal",
+    "saving": "Saving…"
+  },
+  "editor": {
+    "defaultNotePlaceholder": "Optional — describe what you changed",
+    "saveFailed": "Save failed"
+  }
+}

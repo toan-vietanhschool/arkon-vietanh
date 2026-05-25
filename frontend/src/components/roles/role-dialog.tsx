@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,8 @@ type Props = {
 };
 
 export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: Props) {
+  const t = useTranslations("Roles");
+  const tCommon = useTranslations("Common");
   const isEdit = !!role;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -96,7 +99,7 @@ export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: P
       onSaved();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : t("dialog.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -115,14 +118,14 @@ export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: P
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {isEdit ? "Edit Role" : "Create Role"}
+            {isEdit ? t("dialog.editTitle") : t("dialog.createTitle")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5 mt-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="role-name">Name</Label>
+              <Label htmlFor="role-name">{t("dialog.nameLabel")}</Label>
               <Input
                 id="role-name"
                 value={name}
@@ -134,12 +137,12 @@ export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: P
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="role-desc">Description</Label>
+              <Label htmlFor="role-desc">{t("dialog.descriptionLabel")}</Label>
               <Input
                 id="role-desc"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional"
+                placeholder={t("dialog.descriptionPlaceholder")}
                 className="bg-background"
               />
             </div>
@@ -147,9 +150,9 @@ export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: P
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <Label className="text-base">Permissions</Label>
+              <Label className="text-base">{t("dialog.permissionsLabel")}</Label>
               <span className="text-xs text-muted-foreground">
-                {selected.size} of {permissions.length} selected
+                {t("dialog.permissionsSelected", { selected: selected.size, total: permissions.length })}
               </span>
             </div>
 
@@ -233,14 +236,18 @@ export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: P
 
           <div className="flex justify-end gap-2 mt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
               disabled={saving}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {saving ? "Saving..." : isEdit ? "Update" : "Create"}
+              {saving
+                ? t("dialog.saving")
+                : isEdit
+                  ? t("dialog.updateButton")
+                  : t("dialog.createButton")}
             </Button>
           </div>
         </form>

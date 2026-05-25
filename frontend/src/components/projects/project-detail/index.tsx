@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ type Props = {
 
 export function ProjectDetail({ project, isAdmin, onBack }: Props) {
   const { getWorkspaceRole } = useAuth();
+  const t = useTranslations("Projects");
   const [members, setMembers] = useState<Member[]>([]);
   const [sources, setSources] = useState<ProjectSource[]>([]);
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
@@ -64,18 +66,18 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
     // confusing to flag as "Failed to load project details".
     if (mRes.status === "rejected" || sRes.status === "rejected") {
       console.error("Project core load failed", mRes, sRes);
-      setError("Failed to load project details");
+      setError(t("detail.loadFailed"));
     } else {
       setError(null);
     }
-  }, [project.id, canAdminWorkspace, canEditWorkspace]);
+  }, [project.id, canAdminWorkspace, canEditWorkspace, t]);
 
   const loadWiki = useCallback(async () => {
     setWikiLoading(true);
     try {
       const pages = await api<WikiPageSummary[]>(`/api/projects/${project.id}/wiki?limit=200`);
       setWikiPages(pages);
-      
+
       try {
         const idxData = await api<{ content_md: string }>(`/api/projects/${project.id}/wiki/index`);
         setWikiIndexMd(idxData.content_md);
@@ -123,9 +125,9 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
   const availableSources = allSources;
 
   const tabConfig = [
-    { key: "wiki" as const, label: "Wiki", count: wikiPages.length, icon: "auto_stories" },
-    { key: "sources" as const, label: "Documents", count: sources.length, icon: "description" },
-    { key: "members" as const, label: "Members", count: members.length, icon: "group" },
+    { key: "wiki" as const, label: t("detail.tabs.wiki"), count: wikiPages.length, icon: "auto_stories" },
+    { key: "sources" as const, label: t("detail.tabs.sources"), count: sources.length, icon: "description" },
+    { key: "members" as const, label: t("detail.tabs.members"), count: members.length, icon: "group" },
   ];
 
   return (
@@ -136,7 +138,7 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
         <div className="flex items-center gap-3 pb-3 shrink-0">
           <Button variant="ghost" size="sm" onClick={onBack} className="h-8 px-2">
             <span className="material-symbols-outlined text-base">arrow_back</span>
-            <span className="ml-1 text-sm">Back</span>
+            <span className="ml-1 text-sm">{t("detail.back")}</span>
           </Button>
           <div className="w-px h-5 bg-border" />
           <span className="material-symbols-outlined text-primary text-lg">
@@ -151,7 +153,7 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
                 variant="outline"
                 className={project.status === "active" ? "text-green-600 border-green-300 text-xs" : "text-muted-foreground text-xs"}
               >
-                {project.status}
+                {project.status === "active" ? t("status.active") : t("status.archived")}
               </Badge>
             </div>
             {project.description && (
@@ -162,18 +164,18 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
 
         {/* Right: tabs flush to bottom of header row */}
         <div className="flex items-end gap-1 flex-1 justify-end">
-          {tabConfig.map((t) => (
+          {tabConfig.map((tab_) => (
             <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === t.key
+              key={tab_.key}
+              onClick={() => setTab(tab_.key)}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === tab_.key
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
             >
-              <span className="material-symbols-outlined text-base">{t.icon}</span>
-              {t.label}
-              <span className="ml-1 tabular-nums text-xs text-muted-foreground">{t.count}</span>
+              <span className="material-symbols-outlined text-base">{tab_.icon}</span>
+              {tab_.label}
+              <span className="ml-1 tabular-nums text-xs text-muted-foreground">{tab_.count}</span>
             </button>
           ))}
         </div>
@@ -189,7 +191,7 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
       {/* ================================================================ */}
       {/* Content Area                                                     */}
       {/* ================================================================ */}
-      
+
       {tab === "members" && (
         <MembersTab
           project={project}

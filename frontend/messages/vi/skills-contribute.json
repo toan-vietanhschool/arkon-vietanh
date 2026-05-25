@@ -1,0 +1,46 @@
+{
+  "contributeDialog": {
+    "triggerBtn": "Đóng góp",
+    "titleFork": "Đóng góp vào {skillName}",
+    "titleNew": "Tạo kỹ năng mới",
+    "descriptionFork": "Đề xuất các thay đổi để cải thiện kỹ năng này.",
+    "descriptionNew": "Đề xuất một kỹ năng hoàn toàn mới cho nền tảng Arkon.",
+    "titleLabel": "Tiêu đề",
+    "titlePlaceholder": "Ví dụ: SRS-writing-skill",
+    "invalidTitle": "Tiêu đề chứa ký tự không hợp lệ. Chỉ dùng chữ cái, số, khoảng trắng, - và _.",
+    "visibilityLabel": "Hiển thị",
+    "visibilityGlobal": "Toàn cục (Tất cả phòng ban)",
+    "visibilityDepartment": "Phòng ban cụ thể",
+    "targetDepartmentsLabel": "Phòng ban đích",
+    "baseVersionLabel": "Phiên bản cơ sở",
+    "baseVersionPlaceholder": "Chọn phiên bản",
+    "versionItem": "Phiên bản {version}",
+    "submitFork": "Bắt đầu cải thiện",
+    "submitNew": "Bắt đầu tạo",
+    "initializing": "Đang khởi tạo...",
+    "createFailed": "Tạo đóng góp thất bại",
+    "duplicateWarning": {
+      "title": "Kỹ năng đã tồn tại",
+      "description": "Một kỹ năng tên \"{name}\" đã tồn tại. Bạn có muốn đóng góp vào kỹ năng hiện có không?",
+      "confirmBtn": "Có, đóng góp vào kỹ năng hiện có",
+      "cancelBtn": "Không, tôi sẽ đổi tên"
+    }
+  },
+  "uploadSkillDialog": {
+    "triggerBtn": "Tải lên kỹ năng",
+    "title": "Tải lên kỹ năng AI",
+    "description": "Chọn một hoặc nhiều gói ZIP chứa kỹ năng AI.",
+    "filesLabel": "Gói kỹ năng (ZIP)",
+    "filesSelected": "{count} tệp đã chọn",
+    "visibilityLabel": "Hiển thị",
+    "visibilityGlobal": "Toàn cục (Tất cả phòng ban)",
+    "visibilityDepartment": "Phòng ban cụ thể",
+    "targetDepartmentsLabel": "Phòng ban đích",
+    "conflictTitle": "Phát hiện tên trùng lặp",
+    "conflictDescription": "Kỹ năng đã tồn tại: {names}. Ghi đè chúng?",
+    "conflictConfirmLabel": "Tôi xác nhận ghi đè",
+    "submitBtn": "Bắt đầu tải lên",
+    "processing": "Đang xử lý...",
+    "uploadFailed": "Tải lên thất bại"
+  }
+}

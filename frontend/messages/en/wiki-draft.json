@@ -1,0 +1,62 @@
+{
+  "headline": {
+    "waitingRevise": "Waiting for {author} to revise",
+    "withdrawn": "Withdrawn by {author}",
+    "pending": "Pending draft by {author}"
+  },
+  "round": "round {round}",
+  "conflict": "conflict — page advanced past v{base} to v{page}",
+  "authorStats": "{approved}✓ · {pct}%",
+  "reviewerAsked": "Reviewer asked:",
+  "suggestedReviewers": "Suggested reviewers:",
+  "suggestedReviewerItem": "{name} ({score})",
+  "compareWith": "Compare with:",
+  "currentPage": "Current page",
+  "draftBy": "Draft by {author}",
+  "draftByRound": "Draft by {author} (round {round})",
+  "emptyContent": "Empty content.",
+  "tabs": {
+    "diff": "Diff",
+    "proposed": "Proposed",
+    "current": "Current page"
+  },
+  "meta": {
+    "slug": "Slug:",
+    "type": "Type:",
+    "scope": "Scope:",
+    "tags": "Tags:"
+  },
+  "noteLabel": {
+    "requestChanges": "Request changes — note to author (required)",
+    "reject": "Rejection reason (required)"
+  },
+  "notePlaceholder": {
+    "requestChanges": "Explain what the author should change before resubmitting…",
+    "reject": "Tell the contributor why this draft was rejected…"
+  },
+  "charMin": "{current}/{min} characters minimum",
+  "noteLengthError": "Please write at least {min} characters.",
+  "actions": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "confirmReject": "Confirm reject",
+    "requestChanges": "Request changes",
+    "sendBack": "Send back",
+    "cancel": "Cancel",
+    "withdraw": "Withdraw",
+    "editResubmit": "Edit & resubmit"
+  },
+  "status": {
+    "ownWithdrawn": "You withdrew this draft.",
+    "waitingAuthor": "Waiting for the author to resubmit.",
+    "noLongerInReview": "This draft is no longer in review."
+  },
+  "withdrawConfirm": "Withdraw this draft? It will be removed from the review queue.",
+  "diff": {
+    "noChanges": "No changes between the current page and the proposed content.",
+    "splitCurrent": "Current",
+    "splitProposed": "Proposed",
+    "changed": "changed",
+    "unchanged": "unchanged"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "tabs": {
+    "edit": "Soạn thảo",
+    "preview": "Xem trước"
+  },
+  "markdownLabel": "Markdown",
+  "previewEmpty": "Chưa có nội dung để xem trước.",
+  "toolbar": {
+    "bold": "In đậm (Ctrl+B)",
+    "italic": "In nghiêng (Ctrl+I)",
+    "inlineCode": "Code nội tuyến",
+    "heading2": "Tiêu đề 2",
+    "heading3": "Tiêu đề 3",
+    "bulletList": "Danh sách dấu chấm",
+    "numberedList": "Danh sách đánh số",
+    "blockquote": "Trích dẫn",
+    "codeBlock": "Khối code",
+    "link": "Liên kết",
+    "wikilink": "Wikilink — gõ [[ để chọn trang",
+    "horizontalRule": "Đường kẻ ngang"
+  },
+  "wikilinkAutocomplete": {
+    "header": "Liên kết đến trang",
+    "keyHint": "↑↓ Enter",
+    "noMatch": "Không tìm thấy trang nào cho \"{query}\"."
+  },
+  "createDialog": {
+    "titleDirect": "Tạo trang mới",
+    "titlePropose": "Đề xuất trang mới",
+    "descDirect": "Trang được tạo ngay lập tức và thêm vào mục lục.",
+    "descPropose": "Người duyệt sẽ xem xét đề xuất trước khi trang được tạo.",
+    "titleLabel": "Tiêu đề",
+    "titlePlaceholder": "vd. Quy trình an toàn phòng cháy",
+    "slugLabel": "Slug",
+    "slugSubLabel": "(định danh URL)",
+    "slugPlaceholder": "quy-trinh-an-toan-phong-chay",
+    "pageTypeLabel": "Loại trang",
+    "scopeLabel": "Phạm vi",
+    "contentLabel": "Nội dung",
+    "contentPlaceholder": "# Tổng quan\n\nDùng [[wikilinks]] để liên kết đến trang khác.",
+    "reviewerNoteLabel": "Ghi chú cho người duyệt",
+    "reviewerNoteSubLabel": "(tùy chọn)",
+    "reviewerNotePlaceholder": "Tóm tắt: tại sao trang này cần tồn tại?",
+    "validationError": "Tiêu đề, slug và nội dung là bắt buộc.",
+    "submitDirect": "Tạo trang",
+    "submitPropose": "Nộp đề xuất",
+    "saving": "Đang lưu…"
+  },
+  "editor": {
+    "defaultNotePlaceholder": "Tùy chọn — mô tả những gì bạn đã thay đổi",
+    "saveFailed": "Lưu thất bại"
+  }
+}

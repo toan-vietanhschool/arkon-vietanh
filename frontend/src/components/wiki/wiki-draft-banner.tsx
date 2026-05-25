@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { DraftResponse } from "@/types/wiki";
 import { WikiContent } from "./wiki-content";
@@ -39,6 +40,7 @@ export function WikiDraftBanner({
   onResubmitDraft,
   onWithdrawn,
 }: Props) {
+  const t = useTranslations("WikiDraft");
   const [idx, setIdx] = React.useState(0);
   const [tab, setTab] = React.useState<BannerTab>("diff");
   const [actionMode, setActionMode] = React.useState<ReviewerAction | null>(null);
@@ -63,7 +65,7 @@ export function WikiDraftBanner({
   const isOwnDraft = !!currentUserId && draft.author_id === currentUserId;
 
   const handleWithdraw = async () => {
-    if (!window.confirm("Withdraw this draft? It will be removed from the review queue.")) return;
+    if (!window.confirm(t("withdrawConfirm"))) return;
     setBusy(true);
     setError(null);
     try {
@@ -71,7 +73,7 @@ export function WikiDraftBanner({
       onWithdrawn?.(draft.id);
       setIdx((i) => Math.max(0, i - 1));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Withdraw failed");
+      setError(err instanceof Error ? err.message : t("actions.withdraw") + " failed");
     } finally {
       setBusy(false);
     }
@@ -121,7 +123,7 @@ export function WikiDraftBanner({
       setIdx((i) => Math.max(0, i - 1));
       resetForm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Approve failed");
+      setError(err instanceof Error ? err.message : t("actions.approve") + " failed");
     } finally {
       setBusy(false);
     }
@@ -129,7 +131,7 @@ export function WikiDraftBanner({
 
   const handleNoteSubmit = async () => {
     if (note.trim().length < MIN_NOTE_LENGTH) {
-      setError(`Please write at least ${MIN_NOTE_LENGTH} characters explaining your decision.`);
+      setError(t("noteLengthError", { min: MIN_NOTE_LENGTH }));
       return;
     }
     setBusy(true);
@@ -151,18 +153,33 @@ export function WikiDraftBanner({
       resetForm();
       setIdx((i) => Math.max(0, i - 1));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Action failed");
+      setError(err instanceof Error ? err.message : t("actions.sendBack") + " failed");
     } finally {
       setBusy(false);
     }
   };
 
-  const authorLabel = draft.author_name ?? "Unknown";
   const dateLabel = new Date(draft.created_at).toLocaleDateString(undefined, {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+
+  const headlineLabel = isNeedsRevision
+    ? t("headline.waitingRevise", { author: draft.author_name ?? "?" })
+    : isWithdrawn
+    ? t("headline.withdrawn", { author: draft.author_name ?? "?" })
+    : t("headline.pending", { author: draft.author_name ?? "?" });
+
+  const notePrompt =
+    actionMode === "request_changes"
+      ? t("notePlaceholder.requestChanges")
+      : t("notePlaceholder.reject");
+
+  const noteLabel =
+    actionMode === "request_changes"
+      ? t("noteLabel.requestChanges")
+      : t("noteLabel.reject");
 
   // Color palette differs by draft state so reviewers can scan the queue.
   const palette = isNeedsRevision
@@ -193,22 +210,6 @@ export function WikiDraftBanner({
         primaryBtn: "bg-amber-600 hover:bg-amber-700 text-white",
       };
 
-  const headlineLabel = isNeedsRevision
-    ? `Waiting for ${authorLabel} to revise`
-    : isWithdrawn
-    ? `Withdrawn by ${authorLabel}`
-    : `Pending draft by ${authorLabel}`;
-
-  const notePrompt =
-    actionMode === "request_changes"
-      ? "Explain what the author should change before resubmitting…"
-      : "Tell the contributor why this draft was rejected…";
-
-  const noteLabel =
-    actionMode === "request_changes"
-      ? "Request changes — note to author (required)"
-      : "Rejection reason (required)";
-
   return (
     <div className={`rounded-xl border ${palette.wrap} overflow-hidden shadow-sm`}>
       {/* Header */}
@@ -222,12 +223,12 @@ export function WikiDraftBanner({
             <span className={`font-normal ${palette.muted}`}>· {dateLabel}</span>
             {draft.revision_round > 0 && (
               <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${palette.chip}`}>
-                round {draft.revision_round}
+                {t("round", { round: draft.revision_round })}
               </span>
             )}
             {hasConflict && (
               <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">
-                conflict — page advanced past v{draft.base_version ?? "?"} to v{draft.page_version}
+                {t("conflict", { base: draft.base_version ?? "?", page: draft.page_version })}
               </span>
             )}
             {draft.author_stats && draft.author_stats.total_reviewed > 0 && (() => {
@@ -246,15 +247,18 @@ export function WikiDraftBanner({
                   : tier === "ok"
                   ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200"
                   : "bg-muted text-muted-foreground";
+              // Tooltip keys are shared — reuse the same WikiDraft namespace keys
+              // rather than duplicating in WikiDraft. These use plain concatenation
+              // since the banner doesn't have access to WikiReview namespace.
+              const statsTitle = s.needs_revision
+                ? `${s.approved} ✓ · ${s.rejected} ✗ · ${s.needs_revision} ↩`
+                : `${s.approved} ✓ · ${s.rejected} ✗`;
               return (
                 <span
                   className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded tabular-nums ${cls}`}
-                  title={
-                    `${s.approved} approved · ${s.rejected} rejected` +
-                    (s.needs_revision ? ` · ${s.needs_revision} returned` : "")
-                  }
+                  title={statsTitle}
                 >
-                  {s.approved}✓ · {pct}%
+                  {t("authorStats", { approved: s.approved, pct })}
                 </span>
               );
             })()}
@@ -264,14 +268,14 @@ export function WikiDraftBanner({
           )}
           {isNeedsRevision && draft.last_returned_note && (
             <p className={`text-xs ${palette.muted} mt-1`}>
-              <span className="font-medium">Reviewer asked:</span> {draft.last_returned_note}
+              <span className="font-medium">{t("reviewerAsked")}</span> {draft.last_returned_note}
             </p>
           )}
           {draft.suggested_reviewers && draft.suggested_reviewers.length > 0 && (
             <p className={`text-xs ${palette.muted} mt-1`}>
-              <span className="font-medium">Suggested reviewers:</span>{" "}
+              <span className="font-medium">{t("suggestedReviewers")}</span>{" "}
               {draft.suggested_reviewers
-                .map((r) => `${r.name || r.email || "?"} (${r.score})`)
+                .map((r) => t("suggestedReviewerItem", { name: r.name || r.email || "?", score: r.score }))
                 .join(", ")}
             </p>
           )}
@@ -305,13 +309,13 @@ export function WikiDraftBanner({
       {isCreate && draft.suggested_metadata && (
         <div className={`px-4 pt-3 text-xs ${palette.muted} space-y-0.5`}>
           <p>
-            <span className="font-medium">Slug:</span> <code>{draft.suggested_metadata.slug}</code> ·{" "}
-            <span className="font-medium">Type:</span> {draft.suggested_metadata.page_type} ·{" "}
-            <span className="font-medium">Scope:</span> {draft.suggested_metadata.scope_type}
+            <span className="font-medium">{t("meta.slug")}</span> <code>{draft.suggested_metadata.slug}</code> ·{" "}
+            <span className="font-medium">{t("meta.type")}</span> {draft.suggested_metadata.page_type} ·{" "}
+            <span className="font-medium">{t("meta.scope")}</span> {draft.suggested_metadata.scope_type}
           </p>
           {!!draft.suggested_metadata.knowledge_type_slugs?.length && (
             <p>
-              <span className="font-medium">Tags:</span>{" "}
+              <span className="font-medium">{t("meta.tags")}</span>{" "}
               {draft.suggested_metadata.knowledge_type_slugs.join(", ")}
             </p>
           )}
@@ -323,16 +327,16 @@ export function WikiDraftBanner({
         {(isCreate
           ? (["proposed"] as const)
           : (["diff", "proposed", "current"] as const)
-        ).map((t) => (
+        ).map((tabKey) => (
           <button
-            key={t}
+            key={tabKey}
             type="button"
-            onClick={() => setTab(t)}
+            onClick={() => setTab(tabKey)}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors capitalize ${
-              tab === t ? palette.chip : palette.chipHover
+              tab === tabKey ? palette.chip : palette.chipHover
             }`}
           >
-            {t === "proposed" ? "Proposed" : t === "current" ? "Current page" : "Diff"}
+            {tabKey === "proposed" ? t("tabs.proposed") : tabKey === "current" ? t("tabs.current") : t("tabs.diff")}
           </button>
         ))}
       </div>
@@ -343,19 +347,20 @@ export function WikiDraftBanner({
           page, so concurrent contributions are easier to reconcile. */}
       {tab === "diff" && !isCreate && drafts.length > 1 && (
         <div className={`px-4 pt-2 text-[11px] ${palette.muted} flex items-center gap-2`}>
-          <span>Compare with:</span>
+          <span>{t("compareWith")}</span>
           <select
             value={compareWithDraftId}
             onChange={(e) => setCompareWithDraftId(e.target.value)}
             className="h-6 rounded border border-current/20 bg-white/60 dark:bg-black/20 px-1.5 text-[11px] focus:outline-none"
           >
-            <option value="">Current page</option>
+            <option value="">{t("currentPage")}</option>
             {drafts
               .filter((d) => d.id !== draft.id && d.draft_kind !== "create")
               .map((d) => (
                 <option key={d.id} value={d.id}>
-                  Draft by {d.author_name || "unknown"}
-                  {d.revision_round > 0 ? ` (round ${d.revision_round + 1})` : ""}
+                  {d.revision_round > 0
+                    ? t("draftByRound", { author: d.author_name || "?", round: d.revision_round + 1 })
+                    : t("draftBy", { author: d.author_name || "?" })}
                 </option>
               ))}
           </select>
@@ -379,7 +384,7 @@ export function WikiDraftBanner({
           draft.content_md.trim() ? (
             <WikiContent markdown={draft.content_md} />
           ) : (
-            <p className={`text-sm ${palette.muted} italic`}>Empty content.</p>
+            <p className={`text-sm ${palette.muted} italic`}>{t("emptyContent")}</p>
           )
         ) : (
           <div className="text-xs">
@@ -406,7 +411,7 @@ export function WikiDraftBanner({
             className={`w-full rounded-lg border ${palette.tabBorder} bg-white/70 dark:bg-black/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-current/20 resize-none placeholder:opacity-60`}
           />
           <p className={`text-[11px] ${palette.muted} mt-1`}>
-            {note.trim().length}/{MIN_NOTE_LENGTH} characters minimum
+            {t("charMin", { current: note.trim().length, min: MIN_NOTE_LENGTH })}
           </p>
         </div>
       ) : null}
@@ -426,7 +431,7 @@ export function WikiDraftBanner({
               disabled={busy}
               className={`border ${palette.tabBorder}`}
             >
-              Cancel
+              {t("actions.cancel")}
             </Button>
             <Button
               size="sm"
@@ -442,7 +447,7 @@ export function WikiDraftBanner({
                   {actionMode === "reject" ? "cancel" : "edit_note"}
                 </span>
               )}
-              {actionMode === "reject" ? "Confirm Reject" : "Send back"}
+              {actionMode === "reject" ? t("actions.confirmReject") : t("actions.sendBack")}
             </Button>
           </>
         ) : isOwnDraft ? (
@@ -458,7 +463,7 @@ export function WikiDraftBanner({
                 className={`gap-1.5 ${palette.primaryBtn}`}
               >
                 <span className="material-symbols-outlined text-sm">edit</span>
-                Edit & resubmit
+                {t("actions.editResubmit")}
               </Button>
             )}
             {!isWithdrawn && (
@@ -474,20 +479,20 @@ export function WikiDraftBanner({
                 ) : (
                   <span className="material-symbols-outlined text-sm mr-1">remove_circle</span>
                 )}
-                Withdraw
+                {t("actions.withdraw")}
               </Button>
             )}
             {isWithdrawn && (
               <p className={`text-xs ${palette.muted} italic`}>
-                You withdrew this draft.
+                {t("status.ownWithdrawn")}
               </p>
             )}
           </>
         ) : isNeedsRevision || isWithdrawn ? (
           <p className={`text-xs ${palette.muted} italic`}>
             {isNeedsRevision
-              ? "Waiting for the author to resubmit."
-              : "This draft is no longer in review."}
+              ? t("status.waitingAuthor")
+              : t("status.noLongerInReview")}
           </p>
         ) : (
           <>
@@ -499,7 +504,7 @@ export function WikiDraftBanner({
               className={`border ${palette.tabBorder} ${palette.text} ${palette.hover}`}
             >
               <span className="material-symbols-outlined text-sm mr-1">edit_note</span>
-              Request changes
+              {t("actions.requestChanges")}
             </Button>
             <Button
               variant="outline"
@@ -509,7 +514,7 @@ export function WikiDraftBanner({
               className={`border ${palette.tabBorder} ${palette.text} ${palette.hover}`}
             >
               <span className="material-symbols-outlined text-sm mr-1">cancel</span>
-              Reject
+              {t("actions.reject")}
             </Button>
             <Button
               size="sm"
@@ -522,7 +527,7 @@ export function WikiDraftBanner({
               ) : (
                 <span className="material-symbols-outlined text-sm">check_circle</span>
               )}
-              Approve
+              {t("actions.approve")}
             </Button>
           </>
         )}
