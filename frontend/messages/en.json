@@ -1,0 +1,43 @@
+{
+  "Common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "noResults": "No results",
+    "error": "Something went wrong"
+  },
+  "Nav": {
+    "wiki": "Wiki",
+    "review": "Review",
+    "knowledge": "Knowledge",
+    "skills": "Skills",
+    "projects": "Workspaces",
+    "employees": "Employees",
+    "departments": "Departments",
+    "settings": "Settings",
+    "audit": "Audit log",
+    "stats": "Stats",
+    "logout": "Sign out",
+    "language": "Language"
+  },
+  "Auth": {
+    "signIn": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submitSignIn": "Sign in",
+    "signingIn": "Signing in...",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "LocaleSwitcher": {
+    "label": "Language",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  }
+}

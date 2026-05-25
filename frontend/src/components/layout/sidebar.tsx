@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 
 /* ─── Types ─── */
 
@@ -434,10 +435,11 @@ export function Sidebar() {
       </div>
 
       {/* Bottom meta */}
-      <div className="px-3 py-2 border-t border-black/[0.04]">
+      <div className="px-3 py-2 border-t border-black/[0.04] flex items-center justify-between gap-2">
         <span className="text-[10px] text-muted-foreground/40 font-medium">
           On-Premise · Internal
         </span>
+        <LocaleSwitcher />
       </div>
     </nav>
   );

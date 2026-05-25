@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
@@ -9,13 +11,16 @@ export const metadata: Metadata = {
     "Centralized knowledge management and access control for Claude ecosystem",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -29,9 +34,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <AuthProvider>
-          <TooltipProvider>{children}</TooltipProvider>
-        </AuthProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <AuthProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </AuthProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
