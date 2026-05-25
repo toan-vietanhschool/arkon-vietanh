@@ -452,8 +452,18 @@ async def apply_create(
     embedding: Optional[list[float]] = None,
     scope_type: str = "global",
     scope_id: Optional[uuid.UUID] = None,
+    revision_change_type: str = "agent_compile",
+    revision_draft_id: Optional[uuid.UUID] = None,
+    revision_changed_by_id: Optional[uuid.UUID] = None,
+    revision_change_note: Optional[str] = None,
 ) -> WikiPage:
-    """Insert a new page in the given scope. Conflicts raise — caller should use update."""
+    """Insert a new page in the given scope. Conflicts raise — caller should use update.
+
+    The initial v1 revision row is written here. Callers that want to attribute
+    the revision differently (e.g. draft approval) pass `revision_change_type`
+    + reviewer/draft fields instead of inserting a second revision themselves —
+    `uq_wiki_revisions_page_version` forbids two rows for the same (page, v=1).
+    """
     page = WikiPage(
         slug=slug,
         title=title,
@@ -473,7 +483,11 @@ async def apply_create(
     await refresh_links(session, page.id, slug, content_md)
     session.add(WikiPageRevision(
         page_id=page.id, version=page.version,
-        content_md=content_md, change_type="agent_compile",
+        content_md=content_md,
+        change_type=revision_change_type,
+        draft_id=revision_draft_id,
+        changed_by_id=revision_changed_by_id,
+        change_note=revision_change_note,
     ))
     return page
 
@@ -924,17 +938,14 @@ async def approve_draft(
             content_md=final_content, summary="",
             knowledge_type_slugs=list(kt_slugs), source_ids=[],
             scope_type=scope_type, scope_id=scope_id,
+            # apply_create writes the v1 revision; attribute it to the approval
+            # path instead of the default "agent_compile" since this came from
+            # a reviewer accepting a contributor's create-draft.
+            revision_change_type="draft_approved_create",
+            revision_draft_id=draft.id,
+            revision_changed_by_id=reviewer_id,
+            revision_change_note=reviewer_note,
         )
-        # Tag the create-approval revision with reviewer context.
-        session.add(WikiPageRevision(
-            page_id=page.id,
-            version=page.version,
-            content_md=final_content,
-            change_type="draft_approved_create",
-            draft_id=draft.id,
-            changed_by_id=reviewer_id,
-            change_note=reviewer_note,
-        ))
         # Backfill draft.page_id so subsequent UI reads can join cleanly.
         draft.page_id = page.id
     else:
