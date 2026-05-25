@@ -1,0 +1,23 @@
+{
+  "embedding.title": "Mô hình Embedding",
+  "embedding.subtitle": "Chọn mô hình và lưu API key.",
+  "embedding.loading": "Đang tải catalog embedding…",
+  "embedding.migratingTo": "Đang chuyển sang <model/> — {done}/{total} trang",
+  "embedding.migrationFailed": "Chuyển đổi thất bại:",
+  "embedding.migrationFailedUnknown": "không xác định",
+  "apiKey.label": "API key cho {provider}",
+  "apiKey.saved": "đã lưu",
+  "apiKey.replacePlaceholder": "Thay thế key hiện tại…",
+  "apiKey.pastePlaceholder": "Dán API key",
+  "badge.active": "Đang dùng",
+  "action.save": "Lưu",
+  "action.saving": "Đang lưu…",
+  "action.switchAndSave": "Chuyển & Lưu",
+  "action.saved": "Đã lưu",
+  "action.cancel": "Hủy",
+  "catalog.loading": "Đang tải {title}…",
+  "catalog.loadFailed": "Không thể tải {title}",
+  "saveFailed": "Lưu thất bại",
+  "cancelFailed": "Hủy thất bại",
+  "loadFailed": "Tải catalog embedding thất bại"
+}

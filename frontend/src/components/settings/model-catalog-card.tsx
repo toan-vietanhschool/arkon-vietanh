@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
@@ -48,6 +49,8 @@ export function ModelCatalogCard({
   apiKeyConfigKey: string; // e.g. "llm_api_key" or "vision_api_key"
   renderMeta?: (spec: ModelSpec) => React.ReactNode;
 }) {
+  const t = useTranslations("SettingsModels");
+
   const [catalog, setCatalog] = useState<CatalogResp | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [maskedKey, setMaskedKey] = useState<string>("");
@@ -74,7 +77,7 @@ export function ModelCatalogCard({
       setApiKey(masked);
       setSelected((prev) => prev ?? c.active_spec_id ?? c.specs[0]?.id ?? null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : `Failed to load ${title}`);
+      setError(e instanceof Error ? e.message : t("catalog.loadFailed", { title }));
     }
   }
 
@@ -108,7 +111,7 @@ export function ModelCatalogCard({
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
+      setError(e instanceof Error ? e.message : t("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -117,7 +120,9 @@ export function ModelCatalogCard({
   if (!catalog) {
     return (
       <div className="bg-card rounded-xl p-6 border border-border shadow-sahara">
-        <p className="text-sm text-muted-foreground">Loading {title.toLowerCase()}…</p>
+        <p className="text-sm text-muted-foreground">
+          {t("catalog.loading", { title: title.toLowerCase() })}
+        </p>
       </div>
     );
   }
@@ -162,7 +167,7 @@ export function ModelCatalogCard({
                   </span>
                   {isActive && (
                     <span className="text-[10px] uppercase tracking-wide bg-green-500/15 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded">
-                      Active
+                      {t("badge.active")}
                     </span>
                   )}
                 </div>
@@ -184,9 +189,11 @@ export function ModelCatalogCard({
       {selectedSpec && (
         <div className="mb-4 flex flex-col gap-1.5">
           <Label className="text-xs">
-            API key
+            {t("apiKey.label", { provider: selectedSpec.provider })}
             {selectedSpec.api_key_configured && (
-              <span className="ml-2 text-green-600 dark:text-green-400">✓ saved</span>
+              <span className="ml-2 text-green-600 dark:text-green-400">
+                ✓ {t("apiKey.saved")}
+              </span>
             )}
           </Label>
           <Input
@@ -200,7 +207,9 @@ export function ModelCatalogCard({
               if (!apiKey) setApiKey(maskedKey);
             }}
             placeholder={
-              selectedSpec.api_key_configured ? "Replace existing key…" : "Paste API key"
+              selectedSpec.api_key_configured
+                ? t("apiKey.replacePlaceholder")
+                : t("apiKey.pastePlaceholder")
             }
             className="bg-background"
           />
@@ -213,12 +222,16 @@ export function ModelCatalogCard({
           onClick={handleSave}
           className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
         >
-          {saving ? "Saving…" : willSwitch ? "Switch & Save" : "Save"}
+          {saving
+            ? t("action.saving")
+            : willSwitch
+              ? t("action.switchAndSave")
+              : t("action.save")}
         </button>
         {saved && (
           <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
             <span className="material-symbols-outlined text-sm">check_circle</span>
-            Saved
+            {t("action.saved")}
           </span>
         )}
         {error && <p className="text-xs text-destructive">{error}</p>}

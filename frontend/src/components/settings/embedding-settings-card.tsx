@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
@@ -38,6 +39,8 @@ type JobResp = {
 };
 
 export function EmbeddingSettingsCard() {
+  const t = useTranslations("SettingsModels");
+
   const [catalog, setCatalog] = useState<CatalogResp | null>(null);
   const [status, setStatus] = useState<StatusResp | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -63,10 +66,10 @@ export function EmbeddingSettingsCard() {
   useEffect(() => {
     const job = status?.current_job;
     if (!job || (job.status !== "pending" && job.status !== "running")) return;
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       void refreshStatus();
     }, 2000);
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, [status?.current_job?.id, status?.current_job?.status]);
 
   async function refresh() {
@@ -86,7 +89,7 @@ export function EmbeddingSettingsCard() {
       setMaskedKeys(masked);
       if (!selected) setSelected(c.active_spec_id ?? c.specs[0]?.id ?? null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load embedding catalog");
+      setError(e instanceof Error ? e.message : t("loadFailed"));
     }
   }
 
@@ -138,7 +141,7 @@ export function EmbeddingSettingsCard() {
       }
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
+      setError(e instanceof Error ? e.message : t("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -152,14 +155,14 @@ export function EmbeddingSettingsCard() {
       });
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Cancel failed");
+      setError(e instanceof Error ? e.message : t("cancelFailed"));
     }
   }
 
   if (!catalog || !status) {
     return (
       <div className="bg-card rounded-xl p-6 border border-border shadow-sahara">
-        <p className="text-sm text-muted-foreground">Loading embedding catalog…</p>
+        <p className="text-sm text-muted-foreground">{t("embedding.loading")}</p>
       </div>
     );
   }
@@ -171,9 +174,9 @@ export function EmbeddingSettingsCard() {
           <span className="material-symbols-outlined text-primary text-base">data_array</span>
         </div>
         <div className="flex-1">
-          <h3 className="text-base font-semibold text-foreground">Embedding Model</h3>
+          <h3 className="text-base font-semibold text-foreground">{t("embedding.title")}</h3>
           <p className="text-xs text-muted-foreground">
-            Choose a model and save its API key.
+            {t("embedding.subtitle")}
           </p>
         </div>
       </div>
@@ -183,10 +186,14 @@ export function EmbeddingSettingsCard() {
         <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
           <div className="flex items-center justify-between text-xs mb-1.5">
             <span>
-              Migrating to <strong>{job.model_spec_id}</strong> — {job.done_pages}/{job.total_pages} pages
+              {t.rich("embedding.migratingTo", {
+                model: () => <strong>{job.model_spec_id}</strong>,
+                done: job.done_pages,
+                total: job.total_pages,
+              })}
             </span>
             <button onClick={cancelJob} className="text-xs underline hover:no-underline">
-              Cancel
+              {t("action.cancel")}
             </button>
           </div>
           <div className="h-2 rounded bg-blue-100 dark:bg-blue-900 overflow-hidden">
@@ -204,7 +211,8 @@ export function EmbeddingSettingsCard() {
 
       {job?.status === "failed" && (
         <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-xs">
-          <strong>Migration failed:</strong> {job.error_message || "unknown"}
+          <strong>{t("embedding.migrationFailed")}</strong>{" "}
+          {job.error_message || t("embedding.migrationFailedUnknown")}
         </div>
       )}
 
@@ -232,7 +240,7 @@ export function EmbeddingSettingsCard() {
               <span className="text-xs text-muted-foreground">{spec.provider}</span>
               {isActive && (
                 <span className="text-[10px] uppercase tracking-wide bg-green-500/15 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded">
-                  Active
+                  {t("badge.active")}
                 </span>
               )}
             </label>
@@ -244,9 +252,11 @@ export function EmbeddingSettingsCard() {
       {selectedSpec && (
         <div className="mb-4 flex flex-col gap-1.5">
           <Label className="text-xs">
-            API key for {selectedSpec.provider}
+            {t("apiKey.label", { provider: selectedSpec.provider })}
             {selectedSpec.api_key_configured && (
-              <span className="ml-2 text-green-600 dark:text-green-400">✓ saved</span>
+              <span className="ml-2 text-green-600 dark:text-green-400">
+                ✓ {t("apiKey.saved")}
+              </span>
             )}
           </Label>
           <Input
@@ -257,7 +267,9 @@ export function EmbeddingSettingsCard() {
               if (isMaskedKey) setApiKey("");
             }}
             placeholder={
-              selectedSpec.api_key_configured ? "Replace existing key…" : "Paste API key"
+              selectedSpec.api_key_configured
+                ? t("apiKey.replacePlaceholder")
+                : t("apiKey.pastePlaceholder")
             }
             className="bg-background"
           />
@@ -271,7 +283,7 @@ export function EmbeddingSettingsCard() {
           onClick={handleSave}
           className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? t("action.saving") : t("action.save")}
         </button>
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>

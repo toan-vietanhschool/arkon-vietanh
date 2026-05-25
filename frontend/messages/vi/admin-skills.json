@@ -1,0 +1,24 @@
+{
+  "pageTitle": "Quản lý đóng góp",
+  "pageDescription": "Xem xét và phê duyệt các đề xuất kỹ năng AI từ nhóm.",
+  "noPending": "Hiện chưa có đóng góp nào đang chờ.",
+  "noDescription": "Không có mô tả.",
+  "pendingReview": "Chờ xem xét",
+  "reviewButton": "Xem xét",
+  "dialog": {
+    "title": "Xem xét đóng góp",
+    "submittedBy": "Đã nộp bởi {name}",
+    "reject": "Từ chối",
+    "approveAndMerge": "Duyệt & Hợp nhất"
+  },
+  "confirm": {
+    "approve": "Bạn có chắc muốn DUYỆT và HỢP NHẤT đóng góp này không?",
+    "reject": "Bạn có chắc muốn TỪ CHỐI đóng góp này không?"
+  },
+  "alert": {
+    "approveSuccess": "Đóng góp đã được duyệt và hợp nhất thành công!",
+    "rejectSuccess": "Đóng góp đã bị từ chối.",
+    "approveFailed": "Phê duyệt thất bại: {error}",
+    "rejectFailed": "Từ chối thất bại: {error}"
+  }
+}

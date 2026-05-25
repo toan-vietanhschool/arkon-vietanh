@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 
 /* ──────────────────────────────────────────────────────────────────────── */
 /* Small SVG charts used by the Statistics dashboard.                        */
@@ -20,10 +21,12 @@ export function LineChart({
   color?: string;
   label?: string;
 }) {
+  const t = useTranslations("Stats");
+
   if (!data.length) {
     return (
       <div className="h-[120px] flex items-center justify-center text-xs text-muted-foreground/60">
-        No data
+        {t("noData")}
       </div>
     );
   }
@@ -50,13 +53,13 @@ export function LineChart({
       {label && <div className="text-xs text-muted-foreground mb-1">{label}</div>}
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto block">
         {/* horizontal grid */}
-        {[0.25, 0.5, 0.75].map((t) => (
+        {[0.25, 0.5, 0.75].map((ratio) => (
           <line
-            key={t}
+            key={ratio}
             x1={pad.left}
             x2={width - pad.right}
-            y1={pad.top + t * (height - pad.top - pad.bottom)}
-            y2={pad.top + t * (height - pad.top - pad.bottom)}
+            y1={pad.top + ratio * (height - pad.top - pad.bottom)}
+            y2={pad.top + ratio * (height - pad.top - pad.bottom)}
             stroke="currentColor"
             strokeOpacity={0.07}
           />
@@ -89,7 +92,7 @@ export function BarList({
   items,
   valueKey = "count",
   labelKey = "name",
-  emptyText = "No data",
+  emptyText,
   color = "#2a7ec2",
   maxItems = 10,
 }: {
@@ -100,8 +103,11 @@ export function BarList({
   color?: string;
   maxItems?: number;
 }) {
+  const t = useTranslations("Stats");
+  const resolvedEmptyText = emptyText ?? t("noData");
+
   if (!items?.length) {
-    return <div className="text-xs text-muted-foreground/60 px-1 py-3">{emptyText}</div>;
+    return <div className="text-xs text-muted-foreground/60 px-1 py-3">{resolvedEmptyText}</div>;
   }
   const sliced = items.slice(0, maxItems);
   const max = Math.max(1, ...sliced.map((i) => Number(i[valueKey] ?? 0)));

@@ -1,0 +1,79 @@
+{
+  "pageTitle": "Thống kê",
+  "pageDescription": "Sức khoẻ tri thức, tốc độ đóng góp, lượt dùng MCP và phân tích khoảng trống. Số liệu lấy từ lượt tổng hợp hàng ngày — kích hoạt lại để làm mới ngày cụ thể.",
+  "refresh": "Làm mới",
+  "computing": "Đang tính…",
+  "rollup": "Tổng hợp {date}",
+  "failedToLoad": "Không thể tải số liệu thống kê",
+  "backfillFailed": "Tổng hợp thất bại",
+  "exportCsv": "Xuất CSV",
+  "filterFrom": "Từ ngày",
+  "filterTo": "Đến ngày",
+  "noData": "Không có dữ liệu",
+  "tabs": {
+    "overview": "Tổng quan",
+    "content": "Nội dung",
+    "contribution": "Đóng góp",
+    "usage": "Sử dụng",
+    "gaps": "Khoảng trống"
+  },
+  "kpi": {
+    "totalWikiPages": "Tổng trang wiki",
+    "stalePages": "Trang lỗi thời (30n)",
+    "orphanPages": "Trang mồ côi",
+    "pagesUpdatedToday": "Trang cập nhật hôm nay",
+    "draftsPending": "Bản nháp chờ duyệt",
+    "avgTimeToReview": "Thời gian duyệt trung bình",
+    "plansAwaitingReview": "Kế hoạch chờ xem xét",
+    "deniedAccessToday": "Truy cập bị từ chối (hôm nay)",
+    "mcpActiveUsersToday": "Người dùng MCP (hôm nay)",
+    "mcpWau": "WAU của MCP",
+    "mcpQueriesToday": "Truy vấn MCP (hôm nay)",
+    "zeroResultQueriesToday": "Truy vấn không có kết quả (hôm nay)"
+  },
+  "overview": {
+    "topGapTitle": "Khoảng trống tri thức hàng đầu",
+    "askedCount": "Đã hỏi {count} lần. Mẫu: \"{sample}\"",
+    "noGaps": "Không có truy vấn không kết quả — cơ sở tri thức đang bao phủ đầy đủ.",
+    "topContributorTitle": "Người đóng góp hàng đầu (30 ngày qua)",
+    "draftsSubmitted": "{count} bản nháp đã nộp",
+    "noDrafts": "Không có bản nháp trong khoảng thời gian này.",
+    "asOf": "Tính đến {date}"
+  },
+  "content": {
+    "pagesUpdatedPerDay": "Trang cập nhật mỗi ngày",
+    "revisionsPerDay": "Số lần sửa đổi mỗi ngày",
+    "stalePages": "Trang lỗi thời (>30 ngày, ảnh chụp)",
+    "orphanPages": "Trang mồ côi (ảnh chụp)",
+    "pagesByType": "Trang theo loại",
+    "topEditedPages": "Trang được sửa nhiều nhất"
+  },
+  "contribution": {
+    "draftsCreatedPerDay": "Bản nháp tạo mỗi ngày",
+    "draftsApprovedRejected": "Bản nháp được duyệt / từ chối",
+    "pendingDrafts": "Bản nháp chờ duyệt (ảnh chụp)",
+    "avgTimeToReview": "Thời gian duyệt trung bình (giây)",
+    "topContributors": "Người đóng góp hàng đầu",
+    "topReviewers": "Người xem xét hàng đầu",
+    "bySource": "Theo nguồn",
+    "approved": "Đã duyệt",
+    "rejected": "Đã từ chối"
+  },
+  "usage": {
+    "mcpQueriesPerDay": "Truy vấn MCP mỗi ngày",
+    "zeroResultQueries": "Truy vấn không có kết quả",
+    "dailyActiveUsers": "Người dùng hoạt động hàng ngày",
+    "avgLatency": "Độ trễ trung bình (ms)",
+    "queriesByTool": "Truy vấn theo công cụ",
+    "topEmployeesByQueryCount": "Nhân viên dùng nhiều nhất"
+  },
+  "gaps": {
+    "tableTitle": "Khoảng trống tri thức hàng đầu (truy vấn không kết quả)",
+    "colTopic": "Chủ đề (đã chuẩn hoá)",
+    "colCount": "Số lần",
+    "colSampleQueries": "Truy vấn mẫu",
+    "colAction": "Hành động",
+    "createDraft": "Tạo bản nháp →",
+    "noGaps": "Không có truy vấn không kết quả trong khoảng thời gian này — cơ sở tri thức đang bao phủ đầy đủ nội dung mọi người tìm kiếm."
+  }
+}

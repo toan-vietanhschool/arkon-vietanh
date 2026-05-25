@@ -1,0 +1,24 @@
+{
+  "pageTitle": "Contribution management",
+  "pageDescription": "Review and approve AI skill proposals from the team.",
+  "noPending": "No pending contributions at the moment.",
+  "noDescription": "No description provided.",
+  "pendingReview": "Pending Review",
+  "reviewButton": "Review",
+  "dialog": {
+    "title": "Review contribution",
+    "submittedBy": "Submitted by {name}",
+    "reject": "Reject",
+    "approveAndMerge": "Approve & Merge"
+  },
+  "confirm": {
+    "approve": "Are you sure you want to APPROVE and MERGE this contribution?",
+    "reject": "Are you sure you want to REJECT this contribution?"
+  },
+  "alert": {
+    "approveSuccess": "Contribution approved and merged successfully!",
+    "rejectSuccess": "Contribution rejected.",
+    "approveFailed": "Approval failed: {error}",
+    "rejectFailed": "Rejection failed: {error}"
+  }
+}

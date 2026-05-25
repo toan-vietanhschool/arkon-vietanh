@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/shared/page-header";
@@ -25,6 +26,7 @@ type Contribution = {
 export default function AdminContributionsPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const t = useTranslations("AdminSkills");
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeContributionId, setActiveContributionId] = useState<string | null>(null);
@@ -51,34 +53,34 @@ export default function AdminContributionsPage() {
   }, [user, router, loadContributions]);
 
   const handleApprove = async (id: string) => {
-    if (!confirm("Are you sure you want to APPROVE and MERGE this contribution?")) return;
+    if (!confirm(t("confirm.approve"))) return;
     try {
       await api(`/api/skill-contributions/${id}/approve`, { method: "POST" });
-      alert("Contribution approved and merged successfully!");
+      alert(t("alert.approveSuccess"));
       setActiveContributionId(null);
       loadContributions();
     } catch (err) {
-      alert("Approval failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("alert.approveFailed", { error: err instanceof Error ? err.message : "Unknown error" }));
     }
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm("Are you sure you want to REJECT this contribution?")) return;
+    if (!confirm(t("confirm.reject"))) return;
     try {
       await api(`/api/skill-contributions/${id}/reject`, { method: "POST" });
-      alert("Contribution rejected.");
+      alert(t("alert.rejectSuccess"));
       setActiveContributionId(null);
       loadContributions();
     } catch (err) {
-      alert("Rejection failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("alert.rejectFailed", { error: err instanceof Error ? err.message : "Unknown error" }));
     }
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader 
-        title="Contribution Management" 
-        description="Review and approve AI skill proposals from the team."
+      <PageHeader
+        title={t("pageTitle")}
+        description={t("pageDescription")}
       />
 
       <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
@@ -89,7 +91,7 @@ export default function AdminContributionsPage() {
         ) : contributions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-4">
             <span className="material-symbols-outlined text-6xl opacity-20">rate_review</span>
-            <p>No pending contributions at the moment.</p>
+            <p>{t("noPending")}</p>
           </div>
         ) : (
           <div className="divide-y divide-border/50">
@@ -101,7 +103,7 @@ export default function AdminContributionsPage() {
                   </div>
                   <div>
                     <h3 className="font-serif text-lg font-bold group-hover:text-primary transition-colors">{c.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{c.description || "No description provided."}</p>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{c.description || t("noDescription")}</p>
                     <div className="flex items-center gap-3 mt-3 text-xs">
                       <span className="flex items-center gap-1 text-muted-foreground">
                         <span className="material-symbols-outlined text-sm">person</span>
@@ -112,20 +114,20 @@ export default function AdminContributionsPage() {
                         {new Date(c.created_at).toLocaleDateString()}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold uppercase tracking-wider text-[10px]">
-                        Pending Review
+                        {t("pendingReview")}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setActiveContributionId(c.id)}
                     className="gap-2 border-primary/20 hover:bg-primary/5 text-primary"
                   >
                     <span className="material-symbols-outlined text-sm">visibility</span>
-                    Review
+                    {t("reviewButton")}
                   </Button>
                 </div>
               </div>
@@ -144,35 +146,35 @@ export default function AdminContributionsPage() {
                     <span className="material-symbols-outlined text-primary">rate_review</span>
                   </div>
                   <div>
-                    <DialogTitle className="text-xl font-serif">Review Contribution</DialogTitle>
+                    <DialogTitle className="text-xl font-serif">{t("dialog.title")}</DialogTitle>
                     <p className="text-xs text-muted-foreground font-manrope">
-                      Submitted by <span className="font-bold text-foreground">{contributions.find(c => c.id === activeContributionId)?.contributor_name}</span>
+                      {t("dialog.submittedBy", { name: contributions.find(c => c.id === activeContributionId)?.contributor_name ?? "" })}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleReject(activeContributionId)}
                     className="h-8 gap-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
                   >
                     <span className="material-symbols-outlined text-sm">close</span>
-                    Reject
+                    {t("dialog.reject")}
                   </Button>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
+                  <Button
+                    variant="default"
+                    size="sm"
                     onClick={() => handleApprove(activeContributionId)}
                     className="h-8 gap-2 bg-[#c2652a] text-white hover:opacity-90 shadow-lg transition-all font-bold"
                   >
                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                    Approve & Merge
+                    {t("dialog.approveAndMerge")}
                   </Button>
                   <div className="w-px h-6 bg-border mx-1" />
-                  <Button 
-                    variant="ghost" 
-                    size="icon-sm" 
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setActiveContributionId(null)}
                     className="hover:bg-muted transition-all"
                   >

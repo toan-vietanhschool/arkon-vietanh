@@ -1,0 +1,8 @@
+{
+  "title": "Settings",
+  "description": "Configure AI providers for embedding, LLM, and vision processing.",
+  "llm.title": "LLM Model",
+  "llm.description": "Used for entity extraction, planning, and wiki compilation.",
+  "vision.title": "Vision Model",
+  "vision.description": "Used for image analysis during document ingestion."
+}

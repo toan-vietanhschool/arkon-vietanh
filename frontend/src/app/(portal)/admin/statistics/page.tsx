@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,7 @@ function KpiCard({
 /* ──────────────────────────────────────────────────────────────────────── */
 
 export default function StatisticsPage() {
+  const t = useTranslations("Stats");
   const [tab, setTab] = useState<TabKey>("overview");
   const [fromDate, setFromDate] = useState<string>(isoDaysAgo(30));
   const [toDate, setToDate] = useState<string>(isoDaysAgo(1));
@@ -139,11 +141,11 @@ export default function StatisticsPage() {
       setUsage(us);
       setGaps(gp);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load statistics");
+      setError(e instanceof Error ? e.message : t("failedToLoad"));
     } finally {
       setLoading(false);
     }
-  }, [range]);
+  }, [range, t]);
 
   useEffect(() => {
     loadAll();
@@ -155,7 +157,7 @@ export default function StatisticsPage() {
       await api(`/api/admin/stats/rollup?target=${toDate}`, { method: "POST" });
       await loadAll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Backfill failed");
+      setError(e instanceof Error ? e.message : t("backfillFailed"));
     } finally {
       setBackfilling(false);
     }
@@ -179,24 +181,26 @@ export default function StatisticsPage() {
       });
   };
 
+  const tabKeys: TabKey[] = ["overview", "content", "contribution", "usage", "gaps"];
+
   return (
     <>
       <PageHeader
-        title="Statistics"
-        description="Knowledge health, contribution velocity, MCP usage and gap analysis. Numbers come from the daily rollup — re-trigger to refresh a specific day."
+        title={t("pageTitle")}
+        description={t("pageDescription")}
         action={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => loadAll()} disabled={loading}>
               <span className={`material-symbols-outlined text-base mr-2 ${loading ? "animate-spin" : ""}`}>
                 refresh
               </span>
-              Refresh
+              {t("refresh")}
             </Button>
             <Button variant="outline" onClick={triggerBackfill} disabled={backfilling}>
               <span className={`material-symbols-outlined text-base mr-2 ${backfilling ? "animate-spin" : ""}`}>
                 calculate
               </span>
-              {backfilling ? "Computing…" : `Rollup ${toDate}`}
+              {backfilling ? t("computing") : t("rollup", { date: toDate })}
             </Button>
           </div>
         }
@@ -205,7 +209,7 @@ export default function StatisticsPage() {
       {/* Filter bar */}
       <div className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border bg-card p-3">
         <div>
-          <label className="block text-[11px] uppercase tracking-wide text-muted-foreground mb-1">From</label>
+          <label className="block text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{t("filterFrom")}</label>
           <input
             type="date"
             value={fromDate}
@@ -214,7 +218,7 @@ export default function StatisticsPage() {
           />
         </div>
         <div>
-          <label className="block text-[11px] uppercase tracking-wide text-muted-foreground mb-1">To</label>
+          <label className="block text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{t("filterTo")}</label>
           <input
             type="date"
             value={toDate}
@@ -223,15 +227,15 @@ export default function StatisticsPage() {
           />
         </div>
         <div className="flex gap-1 ml-auto">
-          {(["overview", "content", "contribution", "usage", "gaps"] as TabKey[]).map((t) => (
+          {tabKeys.map((tabKey) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
               className={`px-3 h-9 text-sm rounded-md border transition-colors ${
-                tab === t ? "bg-foreground text-background border-foreground" : "bg-background hover:bg-black/[0.03]"
+                tab === tabKey ? "bg-foreground text-background border-foreground" : "bg-background hover:bg-black/[0.03]"
               }`}
             >
-              {t[0].toUpperCase() + t.slice(1)}
+              {t(`tabs.${tabKey}`)}
             </button>
           ))}
         </div>
@@ -260,29 +264,30 @@ export default function StatisticsPage() {
 /* ──────────────────────────────────────────────────────────────────────── */
 
 function OverviewTab({ data }: { data: OverviewResponse | null }) {
+  const t = useTranslations("Stats");
   if (!data) return <SkeletonGrid />;
   const k = data.kpis;
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard label="Total wiki pages" value={fmtNumber(k["wiki.pages.total"])} icon="auto_stories" />
+        <KpiCard label={t("kpi.totalWikiPages")} value={fmtNumber(k["wiki.pages.total"])} icon="auto_stories" />
         <KpiCard
-          label="Stale pages (30d)"
+          label={t("kpi.stalePages")}
           value={fmtNumber(k["wiki.pages.stale_30d"])}
           icon="hourglass_empty"
           tone={k["wiki.pages.stale_30d"] && k["wiki.pages.stale_30d"]! > 0 ? "warn" : "default"}
         />
-        <KpiCard label="Orphan pages" value={fmtNumber(k["wiki.pages.orphan"])} icon="link_off" tone={k["wiki.pages.orphan"] && k["wiki.pages.orphan"]! > 0 ? "warn" : "default"} />
-        <KpiCard label="Pages updated today" value={fmtNumber(k["wiki.pages.updated"])} icon="edit_note" />
-        <KpiCard label="Drafts pending" value={fmtNumber(k["draft.pending"])} icon="rate_review" />
-        <KpiCard label="Avg time-to-review" value={fmtDuration(k["draft.time_to_review_avg_seconds"])} icon="schedule" />
-        <KpiCard label="Plans awaiting review" value={fmtNumber(k["compile_plan.pending_review"])} icon="task_alt" />
-        <KpiCard label="Denied access (today)" value={fmtNumber(k["audit.denied"])} icon="block" tone={k["audit.denied"] && k["audit.denied"]! > 0 ? "warn" : "default"} />
-        <KpiCard label="MCP active users (today)" value={fmtNumber(k["mcp.active_users"])} icon="person" />
-        <KpiCard label="MCP WAU" value={fmtNumber(k["mcp.weekly_active_users"])} icon="group" />
-        <KpiCard label="MCP queries (today)" value={fmtNumber(k["mcp.queries.total"])} icon="search" />
+        <KpiCard label={t("kpi.orphanPages")} value={fmtNumber(k["wiki.pages.orphan"])} icon="link_off" tone={k["wiki.pages.orphan"] && k["wiki.pages.orphan"]! > 0 ? "warn" : "default"} />
+        <KpiCard label={t("kpi.pagesUpdatedToday")} value={fmtNumber(k["wiki.pages.updated"])} icon="edit_note" />
+        <KpiCard label={t("kpi.draftsPending")} value={fmtNumber(k["draft.pending"])} icon="rate_review" />
+        <KpiCard label={t("kpi.avgTimeToReview")} value={fmtDuration(k["draft.time_to_review_avg_seconds"])} icon="schedule" />
+        <KpiCard label={t("kpi.plansAwaitingReview")} value={fmtNumber(k["compile_plan.pending_review"])} icon="task_alt" />
+        <KpiCard label={t("kpi.deniedAccessToday")} value={fmtNumber(k["audit.denied"])} icon="block" tone={k["audit.denied"] && k["audit.denied"]! > 0 ? "warn" : "default"} />
+        <KpiCard label={t("kpi.mcpActiveUsersToday")} value={fmtNumber(k["mcp.active_users"])} icon="person" />
+        <KpiCard label={t("kpi.mcpWau")} value={fmtNumber(k["mcp.weekly_active_users"])} icon="group" />
+        <KpiCard label={t("kpi.mcpQueriesToday")} value={fmtNumber(k["mcp.queries.total"])} icon="search" />
         <KpiCard
-          label="Zero-result queries (today)"
+          label={t("kpi.zeroResultQueriesToday")}
           value={fmtNumber(k["mcp.queries.zero_result"])}
           icon="search_off"
           tone={k["mcp.queries.zero_result"] && k["mcp.queries.zero_result"]! > 0 ? "warn" : "default"}
@@ -291,32 +296,37 @@ function OverviewTab({ data }: { data: OverviewResponse | null }) {
 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-xl border bg-card p-4">
-          <div className="text-sm font-medium mb-2">Top knowledge gap</div>
+          <div className="text-sm font-medium mb-2">{t("overview.topGapTitle")}</div>
           {data.top_gap_topic ? (
             <>
               <div className="text-lg">{data.top_gap_topic.normalized || "—"}</div>
               <div className="text-xs text-muted-foreground mt-1">
-                Asked {data.top_gap_topic.count} times. Sample: “{data.top_gap_topic.samples?.[0] || ""}”
+                {t("overview.askedCount", {
+                  count: data.top_gap_topic.count ?? 0,
+                  sample: data.top_gap_topic.samples?.[0] || "",
+                })}
               </div>
             </>
           ) : (
-            <div className="text-sm text-muted-foreground">No zero-result queries — KB is covering everything.</div>
+            <div className="text-sm text-muted-foreground">{t("overview.noGaps")}</div>
           )}
         </div>
         <div className="rounded-xl border bg-card p-4">
-          <div className="text-sm font-medium mb-2">Top contributor (last 30d)</div>
+          <div className="text-sm font-medium mb-2">{t("overview.topContributorTitle")}</div>
           {data.top_contributor ? (
             <>
               <div className="text-lg">{data.top_contributor.name || "—"}</div>
-              <div className="text-xs text-muted-foreground mt-1">{data.top_contributor.count} drafts submitted</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {t("overview.draftsSubmitted", { count: data.top_contributor.count ?? 0 })}
+              </div>
             </>
           ) : (
-            <div className="text-sm text-muted-foreground">No drafts in the window.</div>
+            <div className="text-sm text-muted-foreground">{t("overview.noDrafts")}</div>
           )}
         </div>
       </div>
 
-      <div className="text-[11px] text-muted-foreground">As of {data.as_of}</div>
+      <div className="text-[11px] text-muted-foreground">{t("overview.asOf", { date: data.as_of })}</div>
     </div>
   );
 }
@@ -339,30 +349,32 @@ function seriesPoints(data: SectionResponse | null, key: string): { date: string
 }
 
 function ExportButton({ onClick }: { onClick: () => void }) {
+  const t = useTranslations("Stats");
   return (
     <button onClick={onClick} className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
-      Export CSV
+      {t("exportCsv")}
     </button>
   );
 }
 
 function ContentTab({ data, onExport }: { data: SectionResponse | null; onExport: () => void }) {
+  const t = useTranslations("Stats");
   if (!data) return <SkeletonGrid />;
   const byType = data.latest_lists["wiki.pages.by_type"] || [];
   const topPages = data.latest_lists["wiki.top_pages"] || [];
   return (
     <div className="space-y-4">
       <div className="grid md:grid-cols-2 gap-4">
-        <Card title="Pages updated per day"><LineChart data={seriesPoints(data, "wiki.pages.updated")} /></Card>
-        <Card title="Revisions per day"><LineChart data={seriesPoints(data, "wiki.revisions.daily")} color="#c2652a" /></Card>
-        <Card title="Stale pages (>30d, snapshot)"><LineChart data={seriesPoints(data, "wiki.pages.stale_30d")} color="#a04848" /></Card>
-        <Card title="Orphan pages (snapshot)"><LineChart data={seriesPoints(data, "wiki.pages.orphan")} color="#8a6dba" /></Card>
+        <Card title={t("content.pagesUpdatedPerDay")}><LineChart data={seriesPoints(data, "wiki.pages.updated")} /></Card>
+        <Card title={t("content.revisionsPerDay")}><LineChart data={seriesPoints(data, "wiki.revisions.daily")} color="#c2652a" /></Card>
+        <Card title={t("content.stalePages")}><LineChart data={seriesPoints(data, "wiki.pages.stale_30d")} color="#a04848" /></Card>
+        <Card title={t("content.orphanPages")}><LineChart data={seriesPoints(data, "wiki.pages.orphan")} color="#8a6dba" /></Card>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
-        <Card title="Pages by type">
+        <Card title={t("content.pagesByType")}>
           <BarList items={byType.map((b) => ({ name: (b.dimensions as { page_type?: string } | null)?.page_type || b.page_type || "—", count: Number(b.count ?? 0) }))} />
         </Card>
-        <Card title="Top edited pages" action={<ExportButton onClick={onExport} />}>
+        <Card title={t("content.topEditedPages")} action={<ExportButton onClick={onExport} />}>
           <BarList items={topPages.map((p) => ({ name: p.title || p.slug, count: Number(p.revisions ?? 0) }))} />
         </Card>
       </div>
@@ -371,6 +383,7 @@ function ContentTab({ data, onExport }: { data: SectionResponse | null; onExport
 }
 
 function ContributionTab({ data, onExport }: { data: SectionResponse | null; onExport: () => void }) {
+  const t = useTranslations("Stats");
   if (!data) return <SkeletonGrid />;
   const topAuthors = data.latest_lists["draft.top_contributors"] || [];
   const topReviewers = data.latest_lists["draft.top_reviewers"] || [];
@@ -378,24 +391,24 @@ function ContributionTab({ data, onExport }: { data: SectionResponse | null; onE
   return (
     <div className="space-y-4">
       <div className="grid md:grid-cols-2 gap-4">
-        <Card title="Drafts created per day"><LineChart data={seriesPoints(data, "draft.created")} /></Card>
-        <Card title="Drafts approved / rejected">
-          <LineChart data={seriesPoints(data, "draft.approved")} color="#3d8a4e" label="Approved" />
-          <LineChart data={seriesPoints(data, "draft.rejected")} color="#a04848" label="Rejected" />
+        <Card title={t("contribution.draftsCreatedPerDay")}><LineChart data={seriesPoints(data, "draft.created")} /></Card>
+        <Card title={t("contribution.draftsApprovedRejected")}>
+          <LineChart data={seriesPoints(data, "draft.approved")} color="#3d8a4e" label={t("contribution.approved")} />
+          <LineChart data={seriesPoints(data, "draft.rejected")} color="#a04848" label={t("contribution.rejected")} />
         </Card>
-        <Card title="Pending drafts (snapshot)"><LineChart data={seriesPoints(data, "draft.pending")} color="#c2652a" /></Card>
-        <Card title="Avg time-to-review (seconds)">
+        <Card title={t("contribution.pendingDrafts")}><LineChart data={seriesPoints(data, "draft.pending")} color="#c2652a" /></Card>
+        <Card title={t("contribution.avgTimeToReview")}>
           <LineChart data={seriesPoints(data, "draft.time_to_review_avg_seconds")} />
         </Card>
       </div>
       <div className="grid md:grid-cols-3 gap-4">
-        <Card title="Top contributors" action={<ExportButton onClick={onExport} />}>
+        <Card title={t("contribution.topContributors")} action={<ExportButton onClick={onExport} />}>
           <BarList items={topAuthors as Array<Record<string, unknown>>} labelKey="name" valueKey="count" />
         </Card>
-        <Card title="Top reviewers">
+        <Card title={t("contribution.topReviewers")}>
           <BarList items={topReviewers as Array<Record<string, unknown>>} labelKey="name" valueKey="count" />
         </Card>
-        <Card title="By source">
+        <Card title={t("contribution.bySource")}>
           <BarList
             items={bySource.map((b) => ({
               name: (b.dimensions as { source?: string } | null)?.source || "—",
@@ -409,22 +422,23 @@ function ContributionTab({ data, onExport }: { data: SectionResponse | null; onE
 }
 
 function UsageTab({ data, onExport }: { data: SectionResponse | null; onExport: () => void }) {
+  const t = useTranslations("Stats");
   if (!data) return <SkeletonGrid />;
   const byTool = data.latest_lists["mcp.queries.by_tool"] || [];
   const topEmp = data.latest_lists["mcp.top_employees"] || [];
   return (
     <div className="space-y-4">
       <div className="grid md:grid-cols-2 gap-4">
-        <Card title="MCP queries per day"><LineChart data={seriesPoints(data, "mcp.queries.total")} /></Card>
-        <Card title="Zero-result queries"><LineChart data={seriesPoints(data, "mcp.queries.zero_result")} color="#a04848" /></Card>
-        <Card title="Daily active users"><LineChart data={seriesPoints(data, "mcp.active_users")} color="#3d8a4e" /></Card>
-        <Card title="Avg latency (ms)"><LineChart data={seriesPoints(data, "mcp.latency_ms_avg")} color="#8a6dba" /></Card>
+        <Card title={t("usage.mcpQueriesPerDay")}><LineChart data={seriesPoints(data, "mcp.queries.total")} /></Card>
+        <Card title={t("usage.zeroResultQueries")}><LineChart data={seriesPoints(data, "mcp.queries.zero_result")} color="#a04848" /></Card>
+        <Card title={t("usage.dailyActiveUsers")}><LineChart data={seriesPoints(data, "mcp.active_users")} color="#3d8a4e" /></Card>
+        <Card title={t("usage.avgLatency")}><LineChart data={seriesPoints(data, "mcp.latency_ms_avg")} color="#8a6dba" /></Card>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
-        <Card title="Queries by tool" action={<ExportButton onClick={onExport} />}>
+        <Card title={t("usage.queriesByTool")} action={<ExportButton onClick={onExport} />}>
           <BarList items={byTool as Array<Record<string, unknown>>} labelKey="tool_name" valueKey="count" />
         </Card>
-        <Card title="Top employees by query count">
+        <Card title={t("usage.topEmployeesByQueryCount")}>
           <BarList items={topEmp as Array<Record<string, unknown>>} labelKey="name" valueKey="count" />
         </Card>
       </div>
@@ -433,27 +447,28 @@ function UsageTab({ data, onExport }: { data: SectionResponse | null; onExport: 
 }
 
 function GapsTab({ data, onExport }: { data: { items: GapItem[] } | null; onExport: () => void }) {
+  const t = useTranslations("Stats");
   if (!data) return <SkeletonGrid />;
   if (!data.items.length) {
     return (
       <div className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
-        No zero-result queries in this window — your KB is covering what people search for.
+        {t("gaps.noGaps")}
       </div>
     );
   }
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b">
-        <div className="text-sm font-medium">Top knowledge gaps (zero-result queries)</div>
+        <div className="text-sm font-medium">{t("gaps.tableTitle")}</div>
         <ExportButton onClick={onExport} />
       </div>
       <table className="w-full text-sm">
         <thead className="text-[11px] uppercase tracking-wide text-muted-foreground bg-black/[0.02]">
           <tr>
-            <th className="text-left px-4 py-2 font-medium">Topic (normalized)</th>
-            <th className="text-right px-4 py-2 font-medium">Count</th>
-            <th className="text-left px-4 py-2 font-medium">Sample queries</th>
-            <th className="text-right px-4 py-2 font-medium">Action</th>
+            <th className="text-left px-4 py-2 font-medium">{t("gaps.colTopic")}</th>
+            <th className="text-right px-4 py-2 font-medium">{t("gaps.colCount")}</th>
+            <th className="text-left px-4 py-2 font-medium">{t("gaps.colSampleQueries")}</th>
+            <th className="text-right px-4 py-2 font-medium">{t("gaps.colAction")}</th>
           </tr>
         </thead>
         <tbody>
@@ -463,7 +478,7 @@ function GapsTab({ data, onExport }: { data: { items: GapItem[] } | null; onExpo
               <td className="px-4 py-2 text-right tabular-nums">{g.count}</td>
               <td className="px-4 py-2 text-xs text-muted-foreground">
                 {g.samples.slice(0, 2).map((s, idx) => (
-                  <div key={idx} className="truncate max-w-[420px]">“{s}”</div>
+                  <div key={idx} className="truncate max-w-[420px]">"{s}"</div>
                 ))}
               </td>
               <td className="px-4 py-2 text-right">
@@ -471,7 +486,7 @@ function GapsTab({ data, onExport }: { data: { items: GapItem[] } | null; onExpo
                   href={`/wiki?new=1&title=${encodeURIComponent(g.samples[0] || g.normalized)}`}
                   className="text-xs text-foreground/80 hover:text-foreground underline-offset-2 hover:underline"
                 >
-                  Create draft →
+                  {t("gaps.createDraft")}
                 </a>
               </td>
             </tr>
