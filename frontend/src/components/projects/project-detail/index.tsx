@@ -220,6 +220,8 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
           wikiPages={wikiPages}
           wikiLoading={wikiLoading}
           wikiIndexMd={wikiIndexMd}
+          onWikiChanged={loadWiki}
+          canEdit={canEditWorkspace}
         />
       )}
     </div>

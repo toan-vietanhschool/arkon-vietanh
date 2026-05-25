@@ -30,7 +30,9 @@ from app.database.models import (
     Project,
     ProjectMember,
     ProjectSource,
+    ProjectWikiPage,
     Source,
+    WikiPage,
     WorkspaceRole,
 )
 from app.services.auth_service import (
@@ -940,21 +942,37 @@ async def list_workspace_wiki(
     db: AsyncSession = Depends(get_db),
     current_user: Employee = Depends(get_current_user),
 ):
-    """List wiki pages scoped to this workspace. Requires workspace membership."""
+    """List wiki pages visible inside this workspace. Includes pages whose home
+    scope is this workspace AND pages pinned via `project_wiki_pages`. Requires
+    workspace membership.
+    """
     await _get_project_or_404(db, project_id)
     await _require_workspace_member(db, current_user, project_id)
 
     pid = uuid.UUID(project_id)
-    from app.services import wiki_service
-    pages = await wiki_service.list_pages(
-        db,
-        page_type=page_type,
-        limit=limit,
-        scope_type="project",
-        scope_id=pid,
+
+    # Native: pages this workspace owns.
+    native_stmt = select(WikiPage).where(
+        WikiPage.scope_type == "project",
+        WikiPage.scope_id == pid,
     )
-    return [
-        {
+    if page_type:
+        native_stmt = native_stmt.where(WikiPage.page_type == page_type)
+    native_rows = (await db.execute(native_stmt.limit(limit))).scalars().all()
+
+    # Pinned: pages this workspace pinned from elsewhere (typically global).
+    pinned_stmt = (
+        select(WikiPage)
+        .join(ProjectWikiPage, ProjectWikiPage.page_id == WikiPage.id)
+        .where(ProjectWikiPage.project_id == pid)
+    )
+    if page_type:
+        pinned_stmt = pinned_stmt.where(WikiPage.page_type == page_type)
+    pinned_rows = (await db.execute(pinned_stmt.limit(limit))).scalars().all()
+    pinned_ids = {p.id for p in pinned_rows}
+
+    def serialize(p: WikiPage, is_pinned: bool) -> dict:
+        return {
             "slug": p.slug,
             "title": p.title,
             "page_type": p.page_type,
@@ -965,9 +983,121 @@ async def list_workspace_wiki(
             "scope_id": str(p.scope_id) if p.scope_id else None,
             "version": p.version or 1,
             "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            "is_pinned": is_pinned,
         }
-        for p in pages
+
+    return [serialize(p, False) for p in native_rows] + [
+        serialize(p, True) for p in pinned_rows if p.id in pinned_ids
     ]
+
+
+class PinPageBody(BaseModel):
+    page_id: str
+
+
+@router.get("/projects/{project_id}/wiki/pinnable")
+async def list_pinnable_wiki_pages(
+    project_id: str,
+    search: Optional[str] = None,
+    scope_type: str = "global",
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    _user: Employee = Depends(get_current_user),
+):
+    """Wiki pages that the workspace can pin — i.e. not already pinned here AND
+    not native to this workspace. Defaults to global scope; pass ?scope_type=
+    department for cross-department pinning later if we ever expose it.
+
+    Workspace editor+ — same role that performs the pin.
+    """
+    await _get_project_or_404(db, project_id)
+    await _require_workspace_role(db, _user, project_id, WorkspaceRole.EDITOR.value)
+
+    pid = uuid.UUID(project_id)
+    pinned_ids_stmt = select(ProjectWikiPage.page_id).where(
+        ProjectWikiPage.project_id == pid
+    )
+    stmt = (
+        select(WikiPage)
+        .where(
+            WikiPage.scope_type == scope_type,
+            WikiPage.id.notin_(pinned_ids_stmt),
+            # Reserved/system slugs aren't useful as pin targets.
+            ~WikiPage.slug.in_(("_index", "_log")),
+        )
+        .order_by(WikiPage.updated_at.desc())
+        .limit(max(1, min(limit, 500)))
+    )
+    if search:
+        like = f"%{search.strip()}%"
+        stmt = stmt.where(WikiPage.title.ilike(like) | WikiPage.slug.ilike(like))
+
+    rows = (await db.execute(stmt)).scalars().all()
+    return [
+        {
+            "id": str(p.id),
+            "slug": p.slug,
+            "title": p.title,
+            "page_type": p.page_type,
+            "summary": p.summary,
+            "scope_type": p.scope_type,
+            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+        }
+        for p in rows
+    ]
+
+
+@router.post("/projects/{project_id}/wiki/pinned", status_code=201)
+async def pin_workspace_wiki_page(
+    project_id: str,
+    body: PinPageBody,
+    db: AsyncSession = Depends(get_db),
+    current_user: Employee = Depends(get_current_user),
+):
+    """Pin an external wiki page (typically global) into this workspace's wiki."""
+    await _get_project_or_404(db, project_id)
+    await _require_workspace_role(db, current_user, project_id, WorkspaceRole.EDITOR.value)
+
+    pid = uuid.UUID(project_id)
+    page_uuid = uuid.UUID(body.page_id)
+
+    page = await db.get(WikiPage, page_uuid)
+    if not page:
+        raise HTTPException(404, "Wiki page not found")
+    if page.scope_type == "project" and page.scope_id == pid:
+        raise HTTPException(400, "Page is already owned by this workspace; nothing to pin")
+
+    existing = await db.get(ProjectWikiPage, (pid, page_uuid))
+    if existing:
+        raise HTTPException(409, "Page already pinned to this workspace")
+
+    db.add(ProjectWikiPage(
+        project_id=pid,
+        page_id=page_uuid,
+        pinned_by_id=current_user.id,
+    ))
+    await db.commit()
+    return {"pinned": True, "page_id": str(page_uuid)}
+
+
+@router.delete("/projects/{project_id}/wiki/pinned/{page_id}")
+async def unpin_workspace_wiki_page(
+    project_id: str,
+    page_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: Employee = Depends(get_current_user),
+):
+    """Remove a pinned page from this workspace's wiki view."""
+    await _require_workspace_role(db, current_user, project_id, WorkspaceRole.EDITOR.value)
+
+    pid = uuid.UUID(project_id)
+    page_uuid = uuid.UUID(page_id)
+    pwp = await db.get(ProjectWikiPage, (pid, page_uuid))
+    if not pwp:
+        raise HTTPException(404, "Page not pinned to this workspace")
+    await db.delete(pwp)
+    await db.commit()
+    return {"unpinned": True}
 
 
 @router.get("/projects/{project_id}/wiki/index")

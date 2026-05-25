@@ -756,6 +756,37 @@ class ProjectMember(Base):
     )
 
 
+class ProjectWikiPage(Base):
+    """Pins an external wiki page (e.g. global) into a workspace.
+
+    A workspace's wiki tab will list the union of its native pages
+    (scope_type='project', scope_id=this) AND every page pinned via this
+    join table. Pinned pages remain owned by their home scope — edits to
+    the original propagate immediately to every workspace that pinned it.
+    """
+    __tablename__ = "project_wiki_pages"
+
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    page_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("wiki_pages.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    pinned_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+    pinned_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("employees.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        Index("ix_project_wiki_pages_page_id", "page_id"),
+    )
+
+
 class ProjectSource(Base):
     """Associates a source document with a project."""
     __tablename__ = "project_sources"
