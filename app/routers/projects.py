@@ -742,7 +742,25 @@ async def add_project_source(
     )
     db.add(ps)
     await db.flush()
-    return {"added": True}
+
+    # If the source has already finished the MRP pipeline, the wiki pages it
+    # produced only live in its primary scope (global / department). Re-run
+    # REFINE+VERIFY+COMMIT so `_resolve_wiki_scopes` picks up the new
+    # workspace linkage and materialises the same pages inside this workspace's
+    # wiki. In-flight sources don't need this — their pending COMMIT will see
+    # the link when it runs.
+    recompile_enqueued = False
+    if source.status == "ready":
+        pool = await _get_arq_pool()
+        job = await pool.enqueue_job("ingest_refine_task", str(source.id))
+        if job:
+            source.status = "processing"
+            source.progress_message = "Re-compiling into workspace…"
+            source.job_id = job.job_id
+            recompile_enqueued = True
+            await db.flush()
+
+    return {"added": True, "recompile_enqueued": recompile_enqueued}
 
 
 @router.delete("/projects/{project_id}/sources/{source_id}")
@@ -761,6 +779,10 @@ async def remove_project_source(
     ps = await db.get(ProjectSource, (pid, sid))
     if ps:
         await db.delete(ps)
+        # NOTE: any wiki pages this link previously materialised inside the
+        # workspace stay behind as orphans (source_ids still references the
+        # unlinked source). A future pass should sweep them — for now editors
+        # can delete them manually. Tracked as a known follow-up.
         return {"removed": True}
 
     # 2. Check owned source (scope_type=project, scope_id=project_id)
