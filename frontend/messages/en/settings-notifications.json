@@ -1,0 +1,23 @@
+{
+  "title": "Notification channels",
+  "description": "Fan out in-app notifications to email and outbound webhooks. Disabled by default.",
+  "smtp.legend": "Email (SMTP)",
+  "smtp.enabled": "Enabled",
+  "smtp.host": "Host",
+  "smtp.port": "Port",
+  "smtp.username": "Username",
+  "smtp.password": "Password",
+  "smtp.fromAddress": "From address",
+  "smtp.fromPlaceholder": "Arkon <noreply@your-org.example>",
+  "smtp.passwordUnchanged": "(unchanged)",
+  "smtp.useTls": "Use STARTTLS",
+  "smtp.save": "Save SMTP settings",
+  "webhook.legend": "Outbound webhook",
+  "webhook.enabled": "Enabled",
+  "webhook.description": "Every notification event is POSTed as JSON to this URL. If you set a secret, Arkon signs each payload with HMAC-SHA256 in the <code>X-Arkon-Signature</code> header.",
+  "webhook.endpointUrl": "Endpoint URL",
+  "webhook.secret": "HMAC secret (optional)",
+  "webhook.save": "Save webhook settings",
+  "savedAt": "Saved at {time}.",
+  "saveFailed": "Save failed"
+}

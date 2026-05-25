@@ -1,0 +1,46 @@
+{
+  "title": "Audit log",
+  "description": "Review access control decisions and policy evaluations across the system.",
+  "refresh": "Refresh",
+  "loadError": "Failed to load audit logs",
+  "pagination": {
+    "pageOf": "Page {page} of {totalPages}",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "table": {
+    "timestamp": "Timestamp",
+    "principal": "Principal",
+    "action": "Action",
+    "resource": "Resource",
+    "decision": "Decision"
+  },
+  "emptyState": {
+    "title": "No audit logs found",
+    "description": "Access control events will appear here."
+  },
+  "principalFallback": "System",
+  "action": {
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "login": "Login",
+    "logout": "Logout",
+    "read": "Read",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+  "decision": {
+    "ALLOW": "Allow",
+    "DENY": "Deny"
+  },
+  "resourceType": {
+    "employee": "Employee",
+    "wiki_draft": "Wiki draft",
+    "source": "Document",
+    "project": "Workspace",
+    "department": "Department",
+    "role": "Role",
+    "skill": "Skill"
+  }
+}

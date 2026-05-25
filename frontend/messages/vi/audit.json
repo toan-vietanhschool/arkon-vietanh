@@ -1,0 +1,46 @@
+{
+  "title": "Nhật ký kiểm tra",
+  "description": "Xem lại các quyết định kiểm soát truy cập và đánh giá chính sách trong toàn hệ thống.",
+  "refresh": "Làm mới",
+  "loadError": "Không thể tải nhật ký kiểm tra",
+  "pagination": {
+    "pageOf": "Trang {page} / {totalPages}",
+    "previous": "Trước",
+    "next": "Sau"
+  },
+  "table": {
+    "timestamp": "Thời gian",
+    "principal": "Người thực hiện",
+    "action": "Hành động",
+    "resource": "Đối tượng",
+    "decision": "Quyết định"
+  },
+  "emptyState": {
+    "title": "Không tìm thấy nhật ký",
+    "description": "Các sự kiện kiểm soát truy cập sẽ xuất hiện tại đây."
+  },
+  "principalFallback": "Hệ thống",
+  "action": {
+    "create": "Tạo",
+    "update": "Cập nhật",
+    "delete": "Xóa",
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "read": "Xem",
+    "approve": "Duyệt",
+    "reject": "Từ chối"
+  },
+  "decision": {
+    "ALLOW": "Cho phép",
+    "DENY": "Từ chối"
+  },
+  "resourceType": {
+    "employee": "Nhân viên",
+    "wiki_draft": "Bản nháp wiki",
+    "source": "Tài liệu",
+    "project": "Workspace",
+    "department": "Phòng ban",
+    "role": "Vai trò",
+    "skill": "Kỹ năng"
+  }
+}

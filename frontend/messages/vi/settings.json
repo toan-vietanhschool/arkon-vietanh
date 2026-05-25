@@ -1,0 +1,8 @@
+{
+  "title": "Cài đặt",
+  "description": "Cấu hình nhà cung cấp AI cho embedding, LLM và xử lý ảnh.",
+  "llm.title": "Mô hình LLM",
+  "llm.description": "Dùng để trích xuất thực thể, lập kế hoạch và biên soạn wiki.",
+  "vision.title": "Mô hình Vision",
+  "vision.description": "Dùng để phân tích ảnh khi nhập tài liệu."
+}

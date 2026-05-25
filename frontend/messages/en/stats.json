@@ -1,0 +1,79 @@
+{
+  "pageTitle": "Statistics",
+  "pageDescription": "Knowledge health, contribution velocity, MCP usage and gap analysis. Numbers come from the daily rollup — re-trigger to refresh a specific day.",
+  "refresh": "Refresh",
+  "computing": "Computing…",
+  "rollup": "Rollup {date}",
+  "failedToLoad": "Failed to load statistics",
+  "backfillFailed": "Backfill failed",
+  "exportCsv": "Export CSV",
+  "filterFrom": "From",
+  "filterTo": "To",
+  "noData": "No data",
+  "tabs": {
+    "overview": "Overview",
+    "content": "Content",
+    "contribution": "Contribution",
+    "usage": "Usage",
+    "gaps": "Gaps"
+  },
+  "kpi": {
+    "totalWikiPages": "Total wiki pages",
+    "stalePages": "Stale pages (30d)",
+    "orphanPages": "Orphan pages",
+    "pagesUpdatedToday": "Pages updated today",
+    "draftsPending": "Drafts pending",
+    "avgTimeToReview": "Avg time-to-review",
+    "plansAwaitingReview": "Plans awaiting review",
+    "deniedAccessToday": "Denied access (today)",
+    "mcpActiveUsersToday": "MCP active users (today)",
+    "mcpWau": "MCP WAU",
+    "mcpQueriesToday": "MCP queries (today)",
+    "zeroResultQueriesToday": "Zero-result queries (today)"
+  },
+  "overview": {
+    "topGapTitle": "Top knowledge gap",
+    "askedCount": "Asked {count} times. Sample: \"{sample}\"",
+    "noGaps": "No zero-result queries — KB is covering everything.",
+    "topContributorTitle": "Top contributor (last 30d)",
+    "draftsSubmitted": "{count} drafts submitted",
+    "noDrafts": "No drafts in the window.",
+    "asOf": "As of {date}"
+  },
+  "content": {
+    "pagesUpdatedPerDay": "Pages updated per day",
+    "revisionsPerDay": "Revisions per day",
+    "stalePages": "Stale pages (>30d, snapshot)",
+    "orphanPages": "Orphan pages (snapshot)",
+    "pagesByType": "Pages by type",
+    "topEditedPages": "Top edited pages"
+  },
+  "contribution": {
+    "draftsCreatedPerDay": "Drafts created per day",
+    "draftsApprovedRejected": "Drafts approved / rejected",
+    "pendingDrafts": "Pending drafts (snapshot)",
+    "avgTimeToReview": "Avg time-to-review (seconds)",
+    "topContributors": "Top contributors",
+    "topReviewers": "Top reviewers",
+    "bySource": "By source",
+    "approved": "Approved",
+    "rejected": "Rejected"
+  },
+  "usage": {
+    "mcpQueriesPerDay": "MCP queries per day",
+    "zeroResultQueries": "Zero-result queries",
+    "dailyActiveUsers": "Daily active users",
+    "avgLatency": "Avg latency (ms)",
+    "queriesByTool": "Queries by tool",
+    "topEmployeesByQueryCount": "Top employees by query count"
+  },
+  "gaps": {
+    "tableTitle": "Top knowledge gaps (zero-result queries)",
+    "colTopic": "Topic (normalized)",
+    "colCount": "Count",
+    "colSampleQueries": "Sample queries",
+    "colAction": "Action",
+    "createDraft": "Create draft →",
+    "noGaps": "No zero-result queries in this window — your KB is covering what people search for."
+  }
+}

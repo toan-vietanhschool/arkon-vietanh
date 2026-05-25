@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmbeddingSettingsCard } from "@/components/settings/embedding-settings-card";
@@ -50,6 +51,7 @@ function visionMeta(s: ModelSpec) {
 export default function SettingsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const t = useTranslations("Settings");
 
   useEffect(() => {
     if (user && user.role !== "admin") {
@@ -70,16 +72,16 @@ export default function SettingsPage() {
   return (
     <>
       <PageHeader
-        title="Settings"
-        description="Configure AI providers for embedding, LLM, and vision processing."
+        title={t("title")}
+        description={t("description")}
       />
 
       <div className="flex flex-col gap-6">
         <EmbeddingSettingsCard />
 
         <ModelCatalogCard
-          title="LLM Model"
-          description="Used for entity extraction, planning, and wiki compilation."
+          title={t("llm.title")}
+          description={t("llm.description")}
           icon="psychology"
           catalogUrl="/api/settings/llm/catalog"
           switchUrl="/api/settings/llm/switch"
@@ -88,8 +90,8 @@ export default function SettingsPage() {
         />
 
         <ModelCatalogCard
-          title="Vision Model"
-          description="Used for image analysis during document ingestion."
+          title={t("vision.title")}
+          description={t("vision.description")}
           icon="visibility"
           catalogUrl="/api/settings/vision/catalog"
           switchUrl="/api/settings/vision/switch"

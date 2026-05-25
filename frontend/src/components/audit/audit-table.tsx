@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   Table,
   TableBody,
@@ -31,6 +32,8 @@ type Props = {
 };
 
 export function AuditTable({ logs, loading }: Props) {
+  const t = useTranslations("Audit");
+
   if (loading) {
     return (
       <div className="bg-card rounded-xl border border-border shadow-sahara flex items-center justify-center py-16">
@@ -46,8 +49,8 @@ export function AuditTable({ logs, loading }: Props) {
       <div className="bg-card rounded-xl border border-border shadow-sahara">
         <EmptyState
           icon="policy"
-          title="No audit logs found"
-          description="Access control events will appear here."
+          title={t("emptyState.title")}
+          description={t("emptyState.description")}
         />
       </div>
     );
@@ -58,11 +61,11 @@ export function AuditTable({ logs, loading }: Props) {
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="text-xs uppercase tracking-wider">Timestamp</TableHead>
-            <TableHead className="text-xs uppercase tracking-wider">Principal</TableHead>
-            <TableHead className="text-xs uppercase tracking-wider">Action</TableHead>
-            <TableHead className="text-xs uppercase tracking-wider">Resource</TableHead>
-            <TableHead className="text-xs uppercase tracking-wider">Decision</TableHead>
+            <TableHead className="text-xs uppercase tracking-wider">{t("table.timestamp")}</TableHead>
+            <TableHead className="text-xs uppercase tracking-wider">{t("table.principal")}</TableHead>
+            <TableHead className="text-xs uppercase tracking-wider">{t("table.action")}</TableHead>
+            <TableHead className="text-xs uppercase tracking-wider">{t("table.resource")}</TableHead>
+            <TableHead className="text-xs uppercase tracking-wider">{t("table.decision")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -73,7 +76,7 @@ export function AuditTable({ logs, loading }: Props) {
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">{log.principal_name || "System/Unknown"}</span>
+                  <span className="text-sm font-medium">{log.principal_name || t("principalFallback")}</span>
                   <span className="text-xs text-muted-foreground">{log.principal_email || log.principal_id.slice(0, 8) + '...'}</span>
                 </div>
               </TableCell>
@@ -88,12 +91,12 @@ export function AuditTable({ logs, loading }: Props) {
                       : "border-blue-200 text-blue-700 bg-blue-50/50"
                   }`}
                 >
-                  {log.action}
+                  {t(`action.${log.action.toLowerCase()}`)}
                 </Badge>
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="text-sm capitalize">{log.resource_type}</span>
+                  <span className="text-sm">{t(`resourceType.${log.resource_type}`)}</span>
                   {log.resource_id && (
                     <span className="text-xs text-muted-foreground font-mono">
                       {log.resource_id.length > 20 ? log.resource_id.slice(0, 8) + '...' : log.resource_id}
@@ -111,7 +114,7 @@ export function AuditTable({ logs, loading }: Props) {
                         : "border-red-200 text-red-700 bg-red-50/50"
                     }`}
                   >
-                    {log.decision.toUpperCase()}
+                    {t(`decision.${log.decision.toUpperCase()}`)}
                   </Badge>
                   {log.reason && (
                     <span className="text-xs text-muted-foreground max-w-[200px] truncate" title={log.reason}>

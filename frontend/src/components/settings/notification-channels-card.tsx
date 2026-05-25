@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,8 @@ const WEBHOOK_KEYS = [
 ] as const;
 
 export function NotificationChannelsCard() {
+  const t = useTranslations("SettingsNotifications");
+
   const [settings, setSettings] = React.useState<Settings>({});
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState(false);
@@ -62,7 +65,7 @@ export function NotificationChannelsCard() {
       });
       setSavedAt(Date.now());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : t("saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -78,9 +81,9 @@ export function NotificationChannelsCard() {
           campaign
         </span>
         <div>
-          <h2 className="font-semibold">Notification channels</h2>
+          <h2 className="font-semibold">{t("title")}</h2>
           <p className="text-sm text-muted-foreground">
-            Fan out in-app notifications to email and outbound webhooks. Disabled by default.
+            {t("description")}
           </p>
         </div>
       </div>
@@ -90,7 +93,7 @@ export function NotificationChannelsCard() {
       {/* SMTP */}
       <fieldset className="rounded-lg border border-border p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <legend className="text-sm font-medium px-1">Email (SMTP)</legend>
+          <legend className="text-sm font-medium px-1">{t("smtp.legend")}</legend>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="checkbox"
@@ -98,12 +101,12 @@ export function NotificationChannelsCard() {
               onChange={(e) => update("smtp_enabled", e.target.checked ? "true" : "false")}
               disabled={loading}
             />
-            Enabled
+            {t("smtp.enabled")}
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
-            <Label htmlFor="smtp-host">Host</Label>
+            <Label htmlFor="smtp-host">{t("smtp.host")}</Label>
             <Input
               id="smtp-host"
               value={settings.smtp_host || ""}
@@ -113,7 +116,7 @@ export function NotificationChannelsCard() {
             />
           </div>
           <div className="grid gap-1">
-            <Label htmlFor="smtp-port">Port</Label>
+            <Label htmlFor="smtp-port">{t("smtp.port")}</Label>
             <Input
               id="smtp-port"
               value={settings.smtp_port || ""}
@@ -123,7 +126,7 @@ export function NotificationChannelsCard() {
             />
           </div>
           <div className="grid gap-1">
-            <Label htmlFor="smtp-user">Username</Label>
+            <Label htmlFor="smtp-user">{t("smtp.username")}</Label>
             <Input
               id="smtp-user"
               value={settings.smtp_username || ""}
@@ -132,23 +135,23 @@ export function NotificationChannelsCard() {
             />
           </div>
           <div className="grid gap-1">
-            <Label htmlFor="smtp-pass">Password</Label>
+            <Label htmlFor="smtp-pass">{t("smtp.password")}</Label>
             <Input
               id="smtp-pass"
               type="password"
               value={settings.smtp_password || ""}
               onChange={(e) => update("smtp_password", e.target.value)}
-              placeholder={settings.smtp_password === "" ? "(unchanged)" : ""}
+              placeholder={settings.smtp_password === "" ? t("smtp.passwordUnchanged") : ""}
               disabled={!smtpEnabled || loading}
             />
           </div>
           <div className="grid gap-1 col-span-2">
-            <Label htmlFor="smtp-from">From address</Label>
+            <Label htmlFor="smtp-from">{t("smtp.fromAddress")}</Label>
             <Input
               id="smtp-from"
               value={settings.smtp_from || ""}
               onChange={(e) => update("smtp_from", e.target.value)}
-              placeholder='Arkon <noreply@your-org.example>'
+              placeholder={t("smtp.fromPlaceholder")}
               disabled={!smtpEnabled || loading}
             />
           </div>
@@ -160,11 +163,11 @@ export function NotificationChannelsCard() {
             onChange={(e) => update("smtp_use_tls", e.target.checked ? "true" : "false")}
             disabled={!smtpEnabled || loading}
           />
-          Use STARTTLS
+          {t("smtp.useTls")}
         </label>
         <div className="flex justify-end">
           <Button size="sm" onClick={() => save(SMTP_KEYS)} disabled={busy || loading}>
-            Save SMTP settings
+            {t("smtp.save")}
           </Button>
         </div>
       </fieldset>
@@ -172,7 +175,7 @@ export function NotificationChannelsCard() {
       {/* Webhook */}
       <fieldset className="rounded-lg border border-border p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <legend className="text-sm font-medium px-1">Outbound webhook</legend>
+          <legend className="text-sm font-medium px-1">{t("webhook.legend")}</legend>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="checkbox"
@@ -180,15 +183,16 @@ export function NotificationChannelsCard() {
               onChange={(e) => update("webhook_enabled", e.target.checked ? "true" : "false")}
               disabled={loading}
             />
-            Enabled
+            {t("webhook.enabled")}
           </label>
         </div>
         <p className="text-xs text-muted-foreground">
-          Every notification event is POSTed as JSON to this URL. If you set a secret, Arkon
-          signs each payload with HMAC-SHA256 in the <code>X-Arkon-Signature</code> header.
+          {t.rich("webhook.description", {
+            code: (chunks) => <code>{chunks}</code>,
+          })}
         </p>
         <div className="grid gap-1">
-          <Label htmlFor="wh-url">Endpoint URL</Label>
+          <Label htmlFor="wh-url">{t("webhook.endpointUrl")}</Label>
           <Input
             id="wh-url"
             value={settings.webhook_url || ""}
@@ -198,7 +202,7 @@ export function NotificationChannelsCard() {
           />
         </div>
         <div className="grid gap-1">
-          <Label htmlFor="wh-secret">HMAC secret (optional)</Label>
+          <Label htmlFor="wh-secret">{t("webhook.secret")}</Label>
           <Input
             id="wh-secret"
             type="password"
@@ -209,14 +213,14 @@ export function NotificationChannelsCard() {
         </div>
         <div className="flex justify-end">
           <Button size="sm" onClick={() => save(WEBHOOK_KEYS)} disabled={busy || loading}>
-            Save webhook settings
+            {t("webhook.save")}
           </Button>
         </div>
       </fieldset>
 
       {savedAt && (
         <p className="text-xs text-muted-foreground">
-          Saved at {new Date(savedAt).toLocaleTimeString()}.
+          {t("savedAt", { time: new Date(savedAt).toLocaleTimeString() })}
         </p>
       )}
     </div>

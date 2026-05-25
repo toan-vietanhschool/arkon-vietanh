@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { AuditTable, AuditLogEntry } from "@/components/audit/audit-table";
@@ -15,6 +16,7 @@ type AuditResponse = {
 };
 
 export default function AuditPage() {
+  const t = useTranslations("Audit");
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,11 +32,11 @@ export default function AuditPage() {
       setTotalPages(data.pages);
       setPage(data.page);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load audit logs");
+      setError(err instanceof Error ? err.message : t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadLogs(1);
@@ -43,8 +45,8 @@ export default function AuditPage() {
   return (
     <>
       <PageHeader
-        title="Audit Log"
-        description="Review access control decisions and policy evaluations across the system."
+        title={t("title")}
+        description={t("description")}
         action={
           <Button
             variant="outline"
@@ -54,7 +56,7 @@ export default function AuditPage() {
             <span className={`material-symbols-outlined text-base mr-2 ${loading ? 'animate-spin' : ''}`}>
               refresh
             </span>
-            Refresh
+            {t("refresh")}
           </Button>
         }
       />
@@ -73,7 +75,7 @@ export default function AuditPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between bg-card rounded-xl border border-border px-4 py-3">
             <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
+              {t("pagination.pageOf", { page, totalPages })}
             </span>
             <div className="flex gap-2">
               <Button
@@ -82,7 +84,7 @@ export default function AuditPage() {
                 disabled={page <= 1 || loading}
                 onClick={() => loadLogs(page - 1)}
               >
-                Previous
+                {t("pagination.previous")}
               </Button>
               <Button
                 variant="outline"
@@ -90,7 +92,7 @@ export default function AuditPage() {
                 disabled={page >= totalPages || loading}
                 onClick={() => loadLogs(page + 1)}
               >
-                Next
+                {t("pagination.next")}
               </Button>
             </div>
           </div>

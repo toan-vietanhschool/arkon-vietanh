@@ -1,0 +1,23 @@
+{
+  "embedding.title": "Embedding Model",
+  "embedding.subtitle": "Choose a model and save its API key.",
+  "embedding.loading": "Loading embedding catalog…",
+  "embedding.migratingTo": "Migrating to <model/> — {done}/{total} pages",
+  "embedding.migrationFailed": "Migration failed:",
+  "embedding.migrationFailedUnknown": "unknown",
+  "apiKey.label": "API key for {provider}",
+  "apiKey.saved": "saved",
+  "apiKey.replacePlaceholder": "Replace existing key…",
+  "apiKey.pastePlaceholder": "Paste API key",
+  "badge.active": "Active",
+  "action.save": "Save",
+  "action.saving": "Saving…",
+  "action.switchAndSave": "Switch & Save",
+  "action.saved": "Saved",
+  "action.cancel": "Cancel",
+  "catalog.loading": "Loading {title}…",
+  "catalog.loadFailed": "Failed to load {title}",
+  "saveFailed": "Save failed",
+  "cancelFailed": "Cancel failed",
+  "loadFailed": "Failed to load embedding catalog"
+}
