@@ -1,0 +1,85 @@
+{
+  "searchPlaceholder": "Tìm kiếm tài liệu...",
+  "documentCount": "{count, plural, =1 {1 tài liệu} other {# tài liệu}}",
+  "columns": {
+    "document": "Tài liệu",
+    "category": "Danh mục",
+    "visibility": "Hiển thị",
+    "department": "Phòng ban",
+    "pages": "Trang",
+    "wiki": "Wiki",
+    "contributedBy": "Đóng góp bởi",
+    "status": "Trạng thái",
+    "created": "Ngày tạo"
+  },
+  "scope": {
+    "global": "Toàn cục"
+  },
+  "emptyState": {
+    "title": "Chưa có tài liệu",
+    "description": "Tải lên tài liệu để bắt đầu xây dựng kho kiến thức.",
+    "searchTitle": "Không tìm thấy kết quả",
+    "searchDescription": "Không có tài liệu nào khớp với \"{search}\""
+  },
+  "actions": {
+    "edit": "Sửa",
+    "reviewPlan": "Xem kế hoạch",
+    "retry": "Thử lại",
+    "retrying": "Đang thử lại...",
+    "delete": "Xóa"
+  },
+  "pagination": {
+    "pageOf": "Trang {page} / {total}"
+  },
+  "confirmDelete": "Xóa tài liệu này? Hành động này không thể hoàn tác.",
+  "errors": {
+    "deleteFailed": "Xóa thất bại",
+    "retryFailed": "Thử lại thất bại"
+  },
+  "status": {
+    "planReady": "Xem kế hoạch"
+  },
+  "editDialog": {
+    "title": "Sửa tài liệu",
+    "titleLabel": "Tiêu đề",
+    "knowledgeTypeLabel": "Loại kiến thức",
+    "knowledgeTypePlaceholder": "Không có loại",
+    "departmentsLabel": "Phòng ban",
+    "departmentsHint": "Chọn phòng ban có quyền truy cập tài liệu này. Để trống để cho phép truy cập toàn cục.",
+    "noDepartments": "Không có phòng ban",
+    "visibilityLabel": "Hiển thị",
+    "visibilityGlobal": "Toàn cục",
+    "visibilityWorkspace": "Không gian làm việc",
+    "visibilityGlobalWarning": "Nội dung tài liệu sẽ được biên soạn vào wiki chung và hiển thị với tất cả nhân viên — kể cả những người không có quyền truy cập tệp gốc. Chỉ dùng Toàn cục nếu nội dung không nhạy cảm.",
+    "targetWorkspaceLabel": "Không gian làm việc đích",
+    "targetWorkspacePlaceholder": "Chọn không gian làm việc...",
+    "saving": "Đang lưu...",
+    "confirmDeptChange": "Đổi phòng ban sẽ chạy lại quá trình phân tích AI. Wiki pages cũ sẽ được cập nhật sang phòng ban mới. Tiếp tục?",
+    "confirmDeptChangeTitle": "Xác nhận đổi phòng ban",
+    "cancelConfirm": "Hủy",
+    "proceedConfirm": "Xác nhận",
+    "saveFailed": "Lưu thất bại"
+  },
+  "planReviewDialog": {
+    "title": "Xem kế hoạch biên soạn",
+    "subtitle": "{sourceTitle} — xác nhận để bắt đầu viết trang wiki, hoặc từ chối để dừng.",
+    "pagesToCreate": "{count, plural, =1 {1 trang} other {# trang}} sẽ tạo mới",
+    "pagesToUpdate": "{count, plural, =1 {1 trang} other {# trang}} sẽ cập nhật",
+    "plannerNote": "Ghi chú AI: ",
+    "entityMore": "+{count} thêm",
+    "feedbackPlaceholder": "Góp ý hoặc chỉnh sửa cho AI (ví dụ: 'Trang X đã tồn tại, nên là CẬP NHẬT thay vì TẠO MỚI'). Bắt buộc khi muốn tạo lại kế hoạch.",
+    "feedbackHint": "Nhập góp ý rồi nhấn Tạo lại để AI làm lại kế hoạch, hoặc nhấn Xác nhận để tiến hành.",
+    "regenerating": "Đang tạo lại kế hoạch với góp ý của bạn… có thể mất 30–90 giây.",
+    "regeneratingLong": "Đang tạo lại kế hoạch với góp ý của bạn — có thể mất đến 1 phút.",
+    "feedbackRequired": "Vui lòng mô tả những thay đổi cần thực hiện trước khi tạo lại.",
+    "regenerateBtn": "Tạo lại",
+    "regeneratingBtn": "Đang tạo lại...",
+    "rejectBtn": "Từ chối",
+    "confirmRejectBtn": "Xác nhận từ chối",
+    "approveBtn": "Xác nhận & Biên soạn",
+    "approveFailed": "Xác nhận thất bại",
+    "rejectFailed": "Từ chối thất bại",
+    "regenerateFailed": "Tạo lại thất bại",
+    "loadFailed": "Tải kế hoạch thất bại"
+  }
+}

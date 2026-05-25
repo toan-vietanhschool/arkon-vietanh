@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ type PaginatedSources = {
 };
 
 export default function KnowledgePage() {
+  const t = useTranslations("Knowledge");
   const [activeTab, setActiveTab] = useState("documents");
   
   const [sources, setSources] = useState<Source[]>([]);
@@ -151,8 +153,8 @@ export default function KnowledgePage() {
   return (
     <>
       <PageHeader
-        title="Knowledge Base"
-        description="Manage and organize your organization's documents and categories."
+        title={t("pageTitle")}
+        description={t("pageDescription")}
         action={
           activeTab === "documents" ? (
             <Button
@@ -160,7 +162,7 @@ export default function KnowledgePage() {
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <span className="material-symbols-outlined text-base mr-1">add</span>
-              Upload Document
+              {t("actions.uploadDocument")}
             </Button>
           ) : (
             <Button
@@ -168,7 +170,7 @@ export default function KnowledgePage() {
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <span className="material-symbols-outlined text-base mr-1">add</span>
-              Add Category
+              {t("actions.addCategory")}
             </Button>
           )
         }
@@ -178,11 +180,11 @@ export default function KnowledgePage() {
         <TabsList className="mb-6">
           <TabsTrigger value="documents" className="gap-2">
             <span className="material-symbols-outlined text-[18px]">files</span>
-            Documents
+            {t("tabs.documents")}
           </TabsTrigger>
           <TabsTrigger value="types" className="gap-2">
             <span className="material-symbols-outlined text-[18px]">category</span>
-            Categories
+            {t("tabs.categories")}
           </TabsTrigger>
         </TabsList>
 

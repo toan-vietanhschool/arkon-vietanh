@@ -1,0 +1,84 @@
+{
+  "title": "Nhân viên",
+  "description": "Quản lý tài khoản người dùng và token truy cập MCP.",
+  "addEmployee": "Thêm nhân viên",
+  "searchPlaceholder": "Tìm theo tên hoặc email...",
+  "employeeCount": "{count, plural, =0 {0 nhân viên} =1 {1 nhân viên} other {# nhân viên}}",
+  "noEmployees": {
+    "title": "Chưa có nhân viên",
+    "description": "Thêm nhân viên để cấp quyền truy cập vào cơ sở tri thức."
+  },
+  "noResults": {
+    "title": "Không tìm thấy kết quả",
+    "description": "Không có nhân viên nào khớp với \"{search}\""
+  },
+  "table": {
+    "employee": "Nhân viên",
+    "systemRole": "Vai trò hệ thống",
+    "position": "Chức vụ",
+    "department": "Phòng ban",
+    "status": "Trạng thái",
+    "mcpToken": "MCP Token"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động"
+  },
+  "mcpConnected": "Đã kết nối",
+  "pagination": {
+    "page": "Trang {page} / {total}"
+  },
+  "actions": {
+    "edit": "Sửa",
+    "deactivate": "Vô hiệu hóa",
+    "activate": "Kích hoạt",
+    "revokeToken": "Thu hồi token",
+    "generateToken": "Tạo token",
+    "delete": "Xóa",
+    "actionFailedFallback": "Thao tác thất bại",
+    "revokeTokenConfirm": "Thu hồi token MCP của nhân viên này?",
+    "revokeTokenFailed": "Thu hồi token thất bại",
+    "generateTokenFailed": "Tạo token thất bại",
+    "deleteFailed": "Xóa thất bại",
+    "deleteConfirm": "Xóa nhân viên này? Thao tác này không thể hoàn tác."
+  },
+  "tokenDialog": {
+    "title": "Token MCP đã được tạo",
+    "instruction": "Sao chép token này và chia sẻ an toàn với nhân viên. Token sẽ không được hiển thị lại.",
+    "copyToken": "Sao chép token",
+    "done": "Xong"
+  },
+  "systemRoleLabel": {
+    "admin": "Quản trị viên",
+    "employee": "Nhân viên"
+  },
+  "dialog": {
+    "createTitle": "Thêm nhân viên",
+    "editTitle": "Sửa nhân viên",
+    "nameLabel": "Tên",
+    "emailLabel": "Email",
+    "passwordLabel": "Mật khẩu",
+    "passwordLabelEdit": "Mật khẩu (để trống nếu không đổi)",
+    "passwordPlaceholderEdit": "••••••••",
+    "passwordPlaceholderCreate": "Tối thiểu 8 ký tự",
+    "systemRoleLabel": "Vai trò hệ thống",
+    "departmentLabel": "Phòng ban",
+    "positionLabel": "Chức vụ",
+    "positionNone": "Không có",
+    "createNewDepartment": "Tạo phòng ban mới...",
+    "createNewPosition": "Tạo chức vụ mới...",
+    "saveFailed": "Lưu thất bại",
+    "passwordRequired": "Mật khẩu là bắt buộc",
+    "createButton": "Tạo",
+    "updateButton": "Cập nhật",
+    "saving": "Đang lưu...",
+    "inlineCreate": {
+      "createDepartmentTitle": "Tạo phòng ban",
+      "departmentNameLabel": "Tên phòng ban",
+      "createPositionTitle": "Tạo chức vụ",
+      "positionNameLabel": "Tên chức vụ",
+      "createButton": "Tạo",
+      "saving": "Đang lưu..."
+    }
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "pageTitle": "AI Skill Library",
+  "pageDescription": "Manage and deploy skill packages for your AI system.",
+  "actions": {
+    "proposeSkill": "Propose New Skill",
+    "uploadSkill": "Upload Skill"
+  },
+  "filters": {
+    "department": "Department",
+    "allDepartments": "All Departments"
+  },
+  "pendingReview": {
+    "sidebarTitle": "Pending Review",
+    "createSkillPrefix": "Create skill: ",
+    "untitledSkill": "Untitled Skill",
+    "by": "by"
+  },
+  "myContributions": {
+    "sectionTitle": "Your Active Drafts & Proposals",
+    "proposalCount": "{count, plural, =1 {1 proposal} other {# proposals}}",
+    "columns": {
+      "proposal": "Contribution Proposal",
+      "visibility": "Visibility",
+      "departments": "Departments",
+      "status": "Status",
+      "updated": "Updated"
+    },
+    "actions": {
+      "continueEditing": "Continue Editing",
+      "deleteDraft": "Delete Draft"
+    },
+    "confirmDelete": "Are you sure you want to delete this contribution?",
+    "deleteFailed": "Delete failed"
+  },
+  "table": {
+    "searchPlaceholder": "Search skills...",
+    "skillCount": "{count, plural, =1 {1 skill} other {# skills}}",
+    "columns": {
+      "skill": "Skill",
+      "version": "Version",
+      "visibility": "Visibility",
+      "department": "Department",
+      "status": "Status",
+      "updated": "Updated"
+    },
+    "systemBadge": "System",
+    "globalScope": "Global",
+    "emptyState": {
+      "title": "No skills found",
+      "description": "Upload skills to start building your AI library.",
+      "searchTitle": "No results found",
+      "searchDescription": "No skills matching \"{search}\""
+    },
+    "actions": {
+      "editSkill": "Edit Skill",
+      "delete": "Delete"
+    }
+  },
+  "card": {
+    "globalScope": "Global",
+    "details": "Details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "editSkillDialog": {
+    "title": "Edit Skill",
+    "skillNameLabel": "Skill Name",
+    "skillNamePlaceholder": "e.g. Data Analyst",
+    "invalidName": "Name contains invalid characters. Use only letters, numbers, spaces, - and _.",
+    "visibilityLabel": "Visibility",
+    "visibilityGlobal": "Global (All Departments)",
+    "visibilityDepartment": "Specific Departments",
+    "targetDepartmentsLabel": "Target Departments",
+    "noDepartments": "No departments available",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "saveFailed": "Failed to save"
+  },
+  "uploadVersionDialog": {
+    "title": "Upload New Version",
+    "description": "Upload a new ZIP package to replace the current files and create a new version.",
+    "updateLabel": "Update",
+    "selectZip": "Select ZIP Package",
+    "uploading": "Uploading...",
+    "invalidFileType": "Please select a ZIP file",
+    "uploadFailed": "Failed to upload"
+  },
+  "detail": {
+    "backToSkills": "Back to Skills",
+    "packageExplorer": "Package Explorer",
+    "notFound": {
+      "title": "Skill Not Found",
+      "description": "We couldn't find a skill with the identifier \"{slug}\". It might have been deleted or moved.",
+      "returnBtn": "Return to Library"
+    },
+    "sidebar": {
+      "statusLabel": "Status",
+      "versionHistoryLabel": "Version History",
+      "previewingOld": "PREVIEWING OLD",
+      "versionItem": "Version {version}",
+      "versionLatest": " (Latest)",
+      "setLatestBtn": "Set as Official Latest",
+      "settingLatest": "Setting..."
+    }
+  },
+  "contributionEditor": {
+    "editingTitle": "Editing Contribution",
+    "draftMode": "Draft Mode",
+    "contributeBtn": "Contribute",
+    "deleteDraftTitle": "Delete Draft",
+    "closeEditorTitle": "Close Editor",
+    "confirmSubmit": "Are you sure you want to submit this contribution for review?",
+    "submitSuccess": "Contribution submitted successfully!",
+    "submitFailed": "Submit failed",
+    "confirmDeleteDraft": "Are you sure you want to delete this draft contribution? This action cannot be undone.",
+    "deleteFailed": "Delete failed"
+  },
+  "reviewEditor": {
+    "reviewTitle": "Review Contribution",
+    "submittedBy": "Submitted by",
+    "unknownContributor": "Unknown",
+    "rejectBtn": "Reject",
+    "approveMergeBtn": "Approve & Merge",
+    "closeReviewerTitle": "Close Reviewer",
+    "confirmApprove": "Are you sure you want to APPROVE and MERGE this contribution?",
+    "approveSuccess": "Contribution approved and merged successfully!",
+    "approveFailed": "Approval failed",
+    "confirmReject": "Are you sure you want to REJECT this contribution?",
+    "rejectSuccess": "Contribution rejected.",
+    "rejectFailed": "Rejection failed"
+  },
+  "confirmDelete": "Are you sure you want to delete Skill \"{name}\"?",
+  "deleteFailed": "Delete failed"
+}

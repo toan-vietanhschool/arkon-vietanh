@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -40,6 +41,7 @@ type PendingContribution = {
 const LIMIT = 2000;
 
 export default function SkillsPage() {
+  const t = useTranslations("Skills");
   const router = useRouter();
   const { canAccess, hasPermission } = useAuth();
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -154,27 +156,27 @@ export default function SkillsPage() {
 
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete Skill "${name}"?`)) return;
+    if (!confirm(t("confirmDelete", { name }))) return;
     try {
       await api(`/api/skills/${id}`, { method: "DELETE" });
       loadSkills();
     } catch (error) {
-      alert("Delete failed: " + (error instanceof Error ? error.message : "Unknown error"));
+      alert(t("deleteFailed") + ": " + (error instanceof Error ? error.message : "Unknown error"));
     }
   };
 
   const handleSubmitContribution = async () => {
     if (!activeContributionId) return;
-    if (!confirm("Are you sure you want to submit this contribution for review?")) return;
+    if (!confirm(t("contributionEditor.confirmSubmit"))) return;
 
     try {
       await api(`/api/skill-contributions/${activeContributionId}/submit`, { method: "POST" });
-      alert("Contribution submitted successfully!");
+      alert(t("contributionEditor.submitSuccess"));
       setActiveContributionId(null);
       loadSkills();
     } catch (err) {
       console.error("Failed to submit contribution:", err);
-      alert("Submit failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("contributionEditor.submitFailed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -187,32 +189,32 @@ export default function SkillsPage() {
 
 
   const handleApprove = async (id: string) => {
-    if (!confirm("Are you sure you want to APPROVE and MERGE this contribution?")) return;
+    if (!confirm(t("reviewEditor.confirmApprove"))) return;
     try {
       await api(`/api/skill-contributions/${id}/approve`, { method: "POST" });
-      alert("Contribution approved and merged successfully!");
+      alert(t("reviewEditor.approveSuccess"));
       setReviewContributionId(null);
       // Remove from local state immediately for instant feedback
       setPendingContributions(prev => prev.filter(c => c.id !== id));
       loadSkills();
     } catch (err) {
-      alert("Approval failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("reviewEditor.approveFailed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
       setReviewContributionId(null);
       setPendingContributions(prev => prev.filter(c => c.id !== id));
     }
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm("Are you sure you want to REJECT this contribution?")) return;
+    if (!confirm(t("reviewEditor.confirmReject"))) return;
     try {
       await api(`/api/skill-contributions/${id}/reject`, { method: "POST" });
-      alert("Contribution rejected.");
+      alert(t("reviewEditor.rejectSuccess"));
       setReviewContributionId(null);
       // Remove from local state immediately for instant feedback
       setPendingContributions(prev => prev.filter(c => c.id !== id));
       loadSkills();
     } catch (err) {
-      alert("Rejection failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("reviewEditor.rejectFailed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
       setReviewContributionId(null);
       setPendingContributions(prev => prev.filter(c => c.id !== id));
     }
@@ -221,8 +223,8 @@ export default function SkillsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="AI Skill Library"
-        description="Manage and deploy skill packages for your AI system."
+        title={t("pageTitle")}
+        description={t("pageDescription")}
         action={
           <div className="flex items-center gap-3">
             {canAccess("skill", "create") && (
@@ -232,7 +234,7 @@ export default function SkillsPage() {
                 trigger={
                   <Button variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
                     <span className="material-symbols-outlined text-sm">edit_square</span>
-                    Propose New Skill
+                    {t("actions.proposeSkill")}
                   </Button>
                 }
               />
@@ -310,8 +312,8 @@ export default function SkillsPage() {
                     <span className="material-symbols-outlined text-primary">edit_note</span>
                   </div>
                   <div>
-                    <DialogTitle className="text-xl font-serif">Editing Contribution</DialogTitle>
-                    <p className="text-xs text-muted-foreground font-manrope">Draft Mode</p>
+                    <DialogTitle className="text-xl font-serif">{t("contributionEditor.editingTitle")}</DialogTitle>
+                    <p className="text-xs text-muted-foreground font-manrope">{t("contributionEditor.draftMode")}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -320,13 +322,13 @@ export default function SkillsPage() {
                     onClick={handleSubmitContribution}
                     className="h-8 px-4 flex items-center justify-center bg-[#c2652a] text-white rounded-lg font-bold text-xs uppercase tracking-wider hover:opacity-90 shadow-lg transition-all"
                   >
-                    Contribute
+                    {t("contributionEditor.contributeBtn")}
                   </button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
-                      if (!confirm("Are you sure you want to delete this draft contribution? This action cannot be undone.")) return;
+                      if (!confirm(t("contributionEditor.confirmDeleteDraft"))) return;
                       try {
                         const { api } = await import("@/lib/api");
                         await api(`/api/skill-contributions/${activeContributionId}`, { method: "DELETE" });
@@ -334,11 +336,11 @@ export default function SkillsPage() {
                         loadSkills();
                       } catch (err) {
                         console.error("Failed to delete contribution:", err);
-                        alert("Delete failed: " + (err instanceof Error ? err.message : "Unknown error"));
+                        alert(t("contributionEditor.deleteFailed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
                       }
                     }}
                     className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
-                    title="Delete Draft"
+                    title={t("contributionEditor.deleteDraftTitle")}
                   >
                     <span className="material-symbols-outlined text-lg">delete</span>
                   </Button>
@@ -347,7 +349,7 @@ export default function SkillsPage() {
                     size="sm"
                     onClick={() => setActiveContributionId(null)}
                     className="h-8 w-8 hover:bg-muted transition-all"
-                    title="Close Editor"
+                    title={t("contributionEditor.closeEditorTitle")}
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
                   </Button>
@@ -374,9 +376,9 @@ export default function SkillsPage() {
                     <span className="material-symbols-outlined text-primary">rate_review</span>
                   </div>
                   <div>
-                    <DialogTitle className="text-xl font-serif">Review Contribution</DialogTitle>
+                    <DialogTitle className="text-xl font-serif">{t("reviewEditor.reviewTitle")}</DialogTitle>
                     <p className="text-xs text-muted-foreground font-manrope">
-                      Submitted by <span className="font-bold text-foreground">{pendingContributions.find(c => c.id === reviewContributionId)?.contributor_name}</span>
+                      {t("reviewEditor.submittedBy")} <span className="font-bold text-foreground">{pendingContributions.find(c => c.id === reviewContributionId)?.contributor_name}</span>
                     </p>
                   </div>
                 </div>
@@ -388,7 +390,7 @@ export default function SkillsPage() {
                     className="h-8 gap-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
                   >
                     <span className="material-symbols-outlined text-sm">close</span>
-                    Reject
+                    {t("reviewEditor.rejectBtn")}
                   </Button>
                   <Button
                     variant="default"
@@ -397,7 +399,7 @@ export default function SkillsPage() {
                     className="h-8 gap-2 bg-[#c2652a] text-white hover:opacity-90 shadow-lg transition-all font-bold"
                   >
                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                    Approve & Merge
+                    {t("reviewEditor.approveMergeBtn")}
                   </Button>
                   <div className="w-px h-6 bg-border mx-1" />
                   <Button
@@ -405,7 +407,7 @@ export default function SkillsPage() {
                     size="sm"
                     onClick={() => setReviewContributionId(null)}
                     className="h-8 w-8 hover:bg-muted transition-all"
-                    title="Close Reviewer"
+                    title={t("reviewEditor.closeReviewerTitle")}
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
                   </Button>

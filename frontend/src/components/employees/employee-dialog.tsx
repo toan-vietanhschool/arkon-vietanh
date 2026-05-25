@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,8 @@ export function EmployeeDialog({
   roles = [],
   onSaved,
 }: Props) {
+  const t = useTranslations("Employees");
+  const tCommon = useTranslations("Common");
   const isEdit = !!employee;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -79,8 +82,8 @@ export function EmployeeDialog({
   const handleCreateDepartment = () => {
     setInlinePrompt({
       open: true,
-      title: "Create Department",
-      label: "Department Name",
+      title: t("dialog.inlineCreate.createDepartmentTitle"),
+      label: t("dialog.inlineCreate.departmentNameLabel"),
       value: "",
       saving: false,
       error: "",
@@ -99,8 +102,8 @@ export function EmployeeDialog({
   const handleCreateRole = () => {
     setInlinePrompt({
       open: true,
-      title: "Create Position",
-      label: "Position Name",
+      title: t("dialog.inlineCreate.createPositionTitle"),
+      label: t("dialog.inlineCreate.positionNameLabel"),
       value: "",
       saving: false,
       error: "",
@@ -164,7 +167,7 @@ export function EmployeeDialog({
         await api(`/api/employees/${employee.id}`, { method: "PUT", body });
       } else {
         if (!password) {
-          setError("Password is required");
+          setError(t("dialog.passwordRequired"));
           setSaving(false);
           return;
         }
@@ -174,7 +177,7 @@ export function EmployeeDialog({
       onSaved();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : t("dialog.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -186,13 +189,13 @@ export function EmployeeDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {isEdit ? "Edit Employee" : "Add Employee"}
+            {isEdit ? t("dialog.editTitle") : t("dialog.createTitle")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="emp-name">Name</Label>
+            <Label htmlFor="emp-name">{t("dialog.nameLabel")}</Label>
             <Input
               id="emp-name"
               value={name}
@@ -203,7 +206,7 @@ export function EmployeeDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="emp-email">Email</Label>
+            <Label htmlFor="emp-email">{t("dialog.emailLabel")}</Label>
             <Input
               id="emp-email"
               type="email"
@@ -216,36 +219,40 @@ export function EmployeeDialog({
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="emp-password">
-              Password {isEdit && "(leave blank to keep current)"}
+              {isEdit ? t("dialog.passwordLabelEdit") : t("dialog.passwordLabel")}
             </Label>
             <Input
               id="emp-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={isEdit ? "••••••••" : "Min 8 characters"}
+              placeholder={isEdit ? t("dialog.passwordPlaceholderEdit") : t("dialog.passwordPlaceholderCreate")}
               className="bg-background"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <Label>System Role</Label>
+              <Label>{t("dialog.systemRoleLabel")}</Label>
               <Select value={role} onValueChange={(v) => v && setRole(v)}>
                 <SelectTrigger className="bg-background">
-                  {role === "admin" ? "Admin" : role === "employee" ? "Employee" : <SelectValue />}
+                  {role === "admin"
+                    ? t("systemRoleLabel.admin")
+                    : role === "employee"
+                      ? t("systemRoleLabel.employee")
+                      : <SelectValue />}
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="employee">Employee</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="employee">{t("systemRoleLabel.employee")}</SelectItem>
+                  <SelectItem value="admin">{t("systemRoleLabel.admin")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Department</Label>
-              <Select 
-                value={deptId} 
+              <Label>{t("dialog.departmentLabel")}</Label>
+              <Select
+                value={deptId}
                 onValueChange={(v) => {
                   if (v === "__new__") {
                     handleCreateDepartment();
@@ -255,7 +262,7 @@ export function EmployeeDialog({
                 }}
               >
                 <SelectTrigger className="bg-background">
-                  {deptId ? (localDepartments.find(d => d.id === deptId)?.name || deptId) : <SelectValue placeholder="Select" />}
+                  {deptId ? (localDepartments.find(d => d.id === deptId)?.name || deptId) : <SelectValue placeholder={tCommon("search")} />}
                 </SelectTrigger>
                 <SelectContent className="!w-max min-w-(--anchor-width)">
                   {localDepartments.map((d) => (
@@ -267,7 +274,7 @@ export function EmployeeDialog({
                   <SelectItem value="__new__" className="text-primary font-medium focus:text-primary">
                     <span className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm">add</span>
-                      Create new department...
+                      {t("dialog.createNewDepartment")}
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -277,7 +284,7 @@ export function EmployeeDialog({
 
           {role === "employee" && (
             <div className="flex flex-col gap-2">
-              <Label>Position</Label>
+              <Label>{t("dialog.positionLabel")}</Label>
               <Select
                 value={customRoleId || "__none__"}
                 onValueChange={(v) => {
@@ -289,10 +296,10 @@ export function EmployeeDialog({
                 }}
               >
                 <SelectTrigger className="bg-background">
-                  {customRoleId ? (localRoles.find(r => r.id === customRoleId)?.name || customRoleId) : "None"}
+                  {customRoleId ? (localRoles.find(r => r.id === customRoleId)?.name || customRoleId) : t("dialog.positionNone")}
                 </SelectTrigger>
                 <SelectContent className="!w-max min-w-(--anchor-width)">
-                  <SelectItem value="__none__">None</SelectItem>
+                  <SelectItem value="__none__">{t("dialog.positionNone")}</SelectItem>
                   {localRoles.map((r) => (
                     <SelectItem key={r.id} value={r.id}>
                       {r.name}
@@ -302,7 +309,7 @@ export function EmployeeDialog({
                   <SelectItem value="__new__" className="text-primary font-medium focus:text-primary">
                     <span className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm">add</span>
-                      Create new position...
+                      {t("dialog.createNewPosition")}
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -322,14 +329,18 @@ export function EmployeeDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
               disabled={saving}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {saving ? "Saving..." : isEdit ? "Update" : "Create"}
+              {saving
+                ? t("dialog.saving")
+                : isEdit
+                  ? t("dialog.updateButton")
+                  : t("dialog.createButton")}
             </Button>
           </div>
         </form>
@@ -344,7 +355,7 @@ export function EmployeeDialog({
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-2">
               <Label>{inlinePrompt.label}</Label>
-              <Input 
+              <Input
                 value={inlinePrompt.value}
                 onChange={e => setInlinePrompt(p => ({ ...p, value: e.target.value }))}
                 autoFocus
@@ -362,13 +373,15 @@ export function EmployeeDialog({
           </div>
           <div className="flex justify-end gap-2 mt-2">
             <Button type="button" variant="outline" onClick={() => setInlinePrompt(p => ({ ...p, open: false }))}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
-            <Button 
-              disabled={inlinePrompt.saving || !inlinePrompt.value.trim()} 
+            <Button
+              disabled={inlinePrompt.saving || !inlinePrompt.value.trim()}
               onClick={submitInlinePrompt}
             >
-              {inlinePrompt.saving ? "Saving..." : "Create"}
+              {inlinePrompt.saving
+                ? t("dialog.inlineCreate.saving")
+                : t("dialog.inlineCreate.createButton")}
             </Button>
           </div>
         </DialogContent>

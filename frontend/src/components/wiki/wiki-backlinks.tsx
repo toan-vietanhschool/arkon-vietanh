@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { WikiGraphData, WikiPageDetail } from "@/types/wiki";
 import { WikiGraphMini } from "./wiki-graph";
@@ -75,6 +76,7 @@ function Section({
 }
 
 export function WikiSidebarRight({ slug, page, linkSuffix = "" }: Props) {
+  const t = useTranslations("WikiPage.sidebar");
   const [graphData, setGraphData] = React.useState<WikiGraphData | null>(null);
 
   React.useEffect(() => {
@@ -91,7 +93,7 @@ export function WikiSidebarRight({ slug, page, linkSuffix = "" }: Props) {
           info
         </span>
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Page Info
+          {t("header")}
         </span>
       </div>
 
@@ -107,13 +109,13 @@ export function WikiSidebarRight({ slug, page, linkSuffix = "" }: Props) {
           {/* Version & Date */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <p className="text-muted-foreground/60 mb-0.5">Version</p>
+              <p className="text-muted-foreground/60 mb-0.5">{t("version")}</p>
               <p className="text-foreground font-medium">v{page.version}</p>
             </div>
             <div>
-              <p className="text-muted-foreground/60 mb-0.5">Updated</p>
+              <p className="text-muted-foreground/60 mb-0.5">{t("updated")}</p>
               <p className="text-foreground font-medium">
-                {new Date(page.updated_at).toLocaleDateString("en-US", {
+                {new Date(page.updated_at).toLocaleDateString("vi-VN", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -125,7 +127,7 @@ export function WikiSidebarRight({ slug, page, linkSuffix = "" }: Props) {
           {/* Knowledge Types */}
           {page.knowledge_type_slugs.length > 0 && (
             <div>
-              <p className="text-xs text-muted-foreground/60 mb-1.5">Knowledge Types</p>
+              <p className="text-xs text-muted-foreground/60 mb-1.5">{t("knowledgeTypes")}</p>
               <div className="flex flex-wrap gap-1">
                 {page.knowledge_type_slugs.map((kt) => (
                   <span
@@ -143,14 +145,14 @@ export function WikiSidebarRight({ slug, page, linkSuffix = "" }: Props) {
           {page.source_ids.length > 0 && (
             <div>
               <p className="text-xs text-muted-foreground/60 mb-1.5">
-                Source Documents ({page.source_ids.length})
+                {t("sourceDocs", { count: page.source_ids.length })}
               </p>
               <Link
                 href="/knowledge"
                 className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
               >
                 <span className="material-symbols-outlined text-xs">open_in_new</span>
-                View in Knowledge Base
+                {t("viewInKnowledgeBase")}
               </Link>
             </div>
           )}
@@ -161,19 +163,19 @@ export function WikiSidebarRight({ slug, page, linkSuffix = "" }: Props) {
         {/* Connections */}
         {(page.backlinks.length > 0 || page.outlinks.length > 0) ? (
           <>
-            <Section title="Backlinks" icon="arrow_back" count={page.backlinks.length}>
+            <Section title={t("backlinks")} icon="arrow_back" count={page.backlinks.length}>
               {page.backlinks.map((s) => (
                 <LinkItem key={s} slug={s} direction="back" linkSuffix={linkSuffix} />
               ))}
             </Section>
-            <Section title="Outlinks" icon="arrow_forward" count={page.outlinks.length}>
+            <Section title={t("outlinks")} icon="arrow_forward" count={page.outlinks.length}>
               {page.outlinks.map((s) => (
                 <LinkItem key={s} slug={s} direction="forward" linkSuffix={linkSuffix} />
               ))}
             </Section>
           </>
         ) : (
-          <p className="text-xs text-muted-foreground py-1">No connections yet.</p>
+          <p className="text-xs text-muted-foreground py-1">{t("noConnections")}</p>
         )}
       </div>
 
@@ -182,7 +184,7 @@ export function WikiSidebarRight({ slug, page, linkSuffix = "" }: Props) {
         <div className="shrink-0 border-t border-border p-4 bg-card/40">
           <div className="flex items-center gap-2 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <span className="material-symbols-outlined text-xs">hub</span>
-            Local Graph
+            {t("localGraph")}
           </div>
           <div className="rounded-xl overflow-hidden border border-border shadow-sm">
             <WikiGraphMini

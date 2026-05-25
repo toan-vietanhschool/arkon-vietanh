@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
@@ -24,6 +25,7 @@ export function SkillDetailDialog({
   skillName,
   onClose,
 }: SkillDetailDialogProps) {
+  const t = useTranslations("Skills");
   const { user, hasPermission,canAccess } = useAuth();
   const [versions, setVersions] = useState<{ version_number: number }[]>([]);
   const [activeContributionId, setActiveContributionId] = useState<string | null>(null);
@@ -51,12 +53,12 @@ export function SkillDetailDialog({
                   <span className="material-symbols-outlined text-primary">edit_note</span>
                 </div>
                 <div>
-                  <DialogTitle className="text-xl font-heading">Editing Contribution</DialogTitle>
-                  <p className="text-xs text-muted-foreground font-manrope">Draft Mode</p>
+                  <DialogTitle className="text-xl font-heading">{t("contributionEditor.editingTitle")}</DialogTitle>
+                  <p className="text-xs text-muted-foreground font-manrope">{t("contributionEditor.draftMode")}</p>
                 </div>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setActiveContributionId(null)}>
-                <span className="material-symbols-outlined text-sm mr-1">close</span> Close Editor
+                <span className="material-symbols-outlined text-sm mr-1">close</span> {t("contributionEditor.closeEditorTitle")}
               </Button>
             </div>
           </DialogHeader>
@@ -65,7 +67,7 @@ export function SkillDetailDialog({
               contributionId={activeContributionId} 
               mode="edit"
               onSubmitted={() => {
-                alert("Contribution submitted successfully!");
+                alert(t("contributionEditor.submitSuccess"));
                 setActiveContributionId(null);
                 onClose();
               }}
@@ -87,7 +89,7 @@ export function SkillDetailDialog({
               </div>
               <div>
                 <DialogTitle className="text-xl font-heading">{skillName}</DialogTitle>
-                <p className="text-xs text-muted-foreground font-manrope">Package Explorer</p>
+                <p className="text-xs text-muted-foreground font-manrope">{t("detail.packageExplorer")}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

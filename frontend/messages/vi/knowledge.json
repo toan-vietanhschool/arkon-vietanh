@@ -1,0 +1,44 @@
+{
+  "pageTitle": "Kho Kiến Thức",
+  "pageDescription": "Quản lý và tổ chức tài liệu và danh mục của tổ chức.",
+  "tabs": {
+    "documents": "Tài liệu",
+    "categories": "Danh mục"
+  },
+  "actions": {
+    "uploadDocument": "Tải lên tài liệu",
+    "addCategory": "Thêm danh mục"
+  },
+  "filters": {
+    "knowledgeType": "Loại kiến thức",
+    "allTypes": "Tất cả loại",
+    "department": "Phòng ban",
+    "allDepartments": "Tất cả phòng ban"
+  },
+  "upload": {
+    "dialogTitle": "Tải lên tài liệu",
+    "fileLabel": "Tệp",
+    "dropPrompt": "Kéo thả hoặc nhấn để chọn tệp",
+    "dropActive": "Thả tệp vào đây",
+    "fileTypesHint": "PDF, DOCX, XLSX, CSV, TXT, MD, PPTX · Tối đa 50 MB",
+    "knowledgeTypeLabel": "Loại kiến thức",
+    "knowledgeTypePlaceholder": "Chọn loại (tùy chọn)",
+    "knowledgeTypeNone": "Không có",
+    "departmentsLabel": "Phòng ban",
+    "departmentsHint": "Chọn phòng ban có quyền truy cập tài liệu này. Để trống để cho phép truy cập toàn cục.",
+    "noDepartments": "Không có phòng ban",
+    "visibilityLabel": "Hiển thị",
+    "visibilityGlobal": "Toàn cục",
+    "visibilityWorkspace": "Không gian làm việc",
+    "visibilityGlobalWarning": "Nội dung tài liệu sẽ được biên soạn vào wiki chung và hiển thị với tất cả nhân viên — kể cả những người không có quyền truy cập tệp gốc. Chỉ tải lên nếu nội dung không nhạy cảm.",
+    "targetWorkspaceLabel": "Không gian làm việc đích",
+    "targetWorkspacePlaceholder": "Chọn không gian làm việc...",
+    "uploadBtn": "Tải lên",
+    "uploading": "Đang tải lên...",
+    "errors": {
+      "unsupportedType": "Loại tệp \".{ext}\" không được hỗ trợ. Chấp nhận: {accepted}",
+      "fileTooLarge": "Tệp quá lớn. Kích thước tối đa là 50 MB.",
+      "uploadFailed": "Tải lên thất bại"
+    }
+  }
+}

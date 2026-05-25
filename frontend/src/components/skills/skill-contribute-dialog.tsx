@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -35,6 +36,7 @@ type SkillContributeDialogProps = {
 };
 
 export function SkillContributeDialog({ skillId, skillName, versions, onContributionCreated, trigger, allDepartments: externalDepartments }: SkillContributeDialogProps) {
+  const t = useTranslations("SkillsContribute");
   const { canAccess, hasPermission } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -86,7 +88,7 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
       onContributionCreated(data.id);
       setIsOpen(false);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create contribution");
+      alert(err instanceof Error ? err.message : t("contributeDialog.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -135,7 +137,7 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
             trigger || (
               <Button variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
                 <span className="material-symbols-outlined text-sm">edit_square</span>
-                Contribute
+                {t("contributeDialog.triggerBtn")}
               </Button>
             )
           }
@@ -145,30 +147,30 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
         <form onSubmit={handleContribute}>
           <DialogHeader>
             <DialogTitle className="text-xl font-heading">
-              {skillId ? `Contribute to ${skillName}` : "Create New Skill"}
+              {skillId ? t("contributeDialog.titleFork", { skillName: skillName ?? "" }) : t("contributeDialog.titleNew")}
             </DialogTitle>
             <DialogDescription className="font-manrope">
               {skillId
-                ? "Propose changes to improve this skill."
-                : "Propose a brand new skill to the Arkon platform."}
+                ? t("contributeDialog.descriptionFork")
+                : t("contributeDialog.descriptionNew")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-6 py-6">
             {!skillId && (
               <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">{t("contributeDialog.titleLabel")}</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. SRS-writing-skill"
+                  placeholder={t("contributeDialog.titlePlaceholder")}
                   required
                   className={cn(!isTitleValid && "border-destructive focus-visible:ring-destructive")}
                 />
                 {!isTitleValid && (
                   <p className="text-[11px] text-destructive font-medium animate-in fade-in slide-in-from-top-1">
-                    Title contains invalid characters. Use only letters, numbers, spaces, - and _.
+                    {t("contributeDialog.invalidTitle")}
                   </p>
                 )}
               </div>
@@ -178,7 +180,7 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
             {!skillId && (
               <>
                 <div className="grid gap-2">
-                  <Label>Visibility</Label>
+                  <Label>{t("contributeDialog.visibilityLabel")}</Label>
                   <Select value={scopeType} onValueChange={(v) => {
                     if (v) setScopeType(v);
                     setDeptIds([]);
@@ -189,7 +191,7 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
                           {scopeType === "global" ? "public" : "corporate_fare"}
                         </span>
                         <span className="capitalize">
-                          {scopeType === "global" ? "Global" : "Department"}
+                          {scopeType === "global" ? t("contributeDialog.visibilityGlobal").split(" ")[0] : t("contributeDialog.visibilityDepartment").split(" ")[0]}
                         </span>
                       </div>
                     </SelectTrigger>
@@ -197,13 +199,13 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
                       <SelectItem value="global">
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-base text-muted-foreground">public</span>
-                          Global (All Departments)
+                          {t("contributeDialog.visibilityGlobal")}
                         </div>
                       </SelectItem>
                       <SelectItem value="department">
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-base text-muted-foreground">corporate_fare</span>
-                          Specific Departments
+                          {t("contributeDialog.visibilityDepartment")}
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -212,7 +214,7 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
 
                 {scopeType === "department" && (
                   <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
-                    <Label>Target Departments</Label>
+                    <Label>{t("contributeDialog.targetDepartmentsLabel")}</Label>
                     <div className="bg-secondary/5 rounded-xl border border-border p-3">
                       <div className="max-h-[160px] pr-4 overflow-y-auto custom-scrollbar">
                         <div className="grid grid-cols-1 gap-2">
@@ -247,15 +249,15 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
 
             {mode === "fork" && skillId && versions && versions.length > 0 && (
               <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
-                <Label>Base Version</Label>
+                <Label>{t("contributeDialog.baseVersionLabel")}</Label>
                 <Select value={selectedVersion || ""} onValueChange={setSelectedVersion}>
                   <SelectTrigger className="bg-secondary/5 h-11">
-                    <SelectValue placeholder="Select version" />
+                    <SelectValue placeholder={t("contributeDialog.baseVersionPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {versions.map((v) => (
                       <SelectItem key={v.version_number} value={String(v.version_number)}>
-                        Version {v.version_number}
+                        {t("contributeDialog.versionItem", { version: v.version_number })}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -266,7 +268,7 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
 
           <DialogFooter>
             <Button type="submit" disabled={loading || !isTitleValid || (scopeType === "department" && deptIds.length === 0)} className="w-full sm:w-auto px-8">
-              {loading ? "Initializing..." : (skillId ? "Start Improving" : "Start Creating")}
+              {loading ? t("contributeDialog.initializing") : (skillId ? t("contributeDialog.submitFork") : t("contributeDialog.submitNew"))}
             </Button>
           </DialogFooter>
         </form>
@@ -278,18 +280,17 @@ export function SkillContributeDialog({ skillId, skillName, versions, onContribu
                 <span className="material-symbols-outlined text-3xl">warning</span>
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-serif font-bold italic">Skill Already Exists</h3>
+                <h3 className="text-xl font-serif font-bold italic">{t("contributeDialog.duplicateWarning.title")}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  A skill named <strong className="text-foreground">"{duplicateSkill.name}"</strong> already exists.
-                  Would you like to contribute to the existing skill instead?
+                  {t("contributeDialog.duplicateWarning.description", { name: duplicateSkill.name })}
                 </p>
               </div>
               <div className="flex flex-col gap-2 pt-2">
                 <Button onClick={handleConfirmDuplicate} className="w-full">
-                  Yes, contribute to existing
+                  {t("contributeDialog.duplicateWarning.confirmBtn")}
                 </Button>
                 <Button variant="ghost" onClick={() => setShowDuplicateWarning(false)} className="w-full">
-                  No, I'll change the name
+                  {t("contributeDialog.duplicateWarning.cancelBtn")}
                 </Button>
               </div>
             </div>

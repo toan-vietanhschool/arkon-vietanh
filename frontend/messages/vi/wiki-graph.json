@@ -1,0 +1,20 @@
+{
+  "legend": {
+    "nodeTypes": "Loại nút",
+    "scope": "Phạm vi",
+    "filterPlaceholder": "Lọc phạm vi…",
+    "noMatchingScopes": "Không tìm thấy phạm vi nào.",
+    "scopeFilterCount": "{visible}/{total}"
+  },
+  "tooltip": {
+    "links": "{count} liên kết",
+    "scopeGlobal": "Toàn cục",
+    "scopeDepartment": "Phòng ban",
+    "scopeWorkspace": "Workspace"
+  },
+  "controls": {
+    "zoomIn": "Phóng to",
+    "zoomOut": "Thu nhỏ",
+    "fitView": "Vừa khung"
+  }
+}

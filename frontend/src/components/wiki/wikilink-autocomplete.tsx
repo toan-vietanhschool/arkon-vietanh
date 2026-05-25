@@ -2,6 +2,7 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 import { WikiPageSummary } from "@/types/wiki";
 import { wikiTypeIcon, wikiTypeColor } from "./wiki-type-badge";
 
@@ -32,6 +33,7 @@ function score(page: WikiPageSummary, q: string): number {
 }
 
 export function WikilinkAutocomplete({ pages, query, caret, onPick, onClose }: Props) {
+  const t = useTranslations("WikiEditor.wikilinkAutocomplete");
   const [active, setActive] = React.useState(0);
 
   const filtered = React.useMemo(() => {
@@ -73,15 +75,12 @@ export function WikilinkAutocomplete({ pages, query, caret, onPick, onClose }: P
         onClose();
       }
     };
-    // capture: true so we run before the textarea's own key handlers.
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
   }, [filtered, active, onPick, onClose]);
 
   if (typeof window === "undefined") return null;
 
-  // Anchor the popup just under the caret line. Flip above when it would
-  // overflow the viewport bottom.
   const top = caret.top + caret.lineHeight + 4;
   const left = caret.left;
   const flipUp = top + POPUP_MAX_HEIGHT > window.innerHeight - 16;
@@ -99,15 +98,15 @@ export function WikilinkAutocomplete({ pages, query, caret, onPick, onClose }: P
         zIndex: 100,
       }}
       className="rounded-lg border border-border bg-popover text-popover-foreground shadow-lg overflow-hidden flex flex-col"
-      onMouseDown={(e) => e.preventDefault()} // keep textarea focused
+      onMouseDown={(e) => e.preventDefault()}
     >
       <div className="px-3 py-1.5 border-b border-border bg-muted/40 flex items-center justify-between text-[10px] uppercase tracking-wide text-muted-foreground">
-        <span>Link to page</span>
-        <span className="font-mono">↑↓ Enter</span>
+        <span>{t("header")}</span>
+        <span className="font-mono">{t("keyHint")}</span>
       </div>
       {filtered.length === 0 ? (
         <div className="px-3 py-4 text-xs text-muted-foreground italic">
-          No pages match &ldquo;{query}&rdquo;.
+          {t("noMatch", { query })}
         </div>
       ) : (
         <ul className="overflow-y-auto py-1" style={{ maxHeight: POPUP_MAX_HEIGHT - 32 }}>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { api, apiUpload } from "@/lib/api";
+import { api } from "@/lib/api";
 import { ProjectSource, Project, Source } from "./types";
 import { getFileExt, fileIcons } from "./utils";
 import { AddDocumentModal } from "./add-document-modal";
@@ -30,17 +31,18 @@ export function SourcesTab({
   onChanged,
   onError,
 }: Props) {
+  const t = useTranslations("Projects");
   const [showAddDocModal, setShowAddDocModal] = useState(false);
   const [reviewPlanSource, setReviewPlanSource] = useState<ProjectSource | null>(null);
 
   const handleRemoveSource = async (sourceId: string) => {
-    if (!confirm("Remove this document from the workspace?")) return;
+    if (!confirm(t("sources.removeConfirm"))) return;
     onError(null);
     try {
       await api(`/api/projects/${project.id}/sources/${sourceId}`, { method: "DELETE" });
       await onChanged();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to remove document");
+      onError(err instanceof Error ? err.message : t("sources.removeFailed"));
     }
   };
 
@@ -54,7 +56,7 @@ export function SourcesTab({
               <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2 shadow-sahara">
                 <span className="material-symbols-outlined text-sm text-primary">description</span>
                 <span className="text-sm font-semibold">{sources.length}</span>
-                <span className="text-xs text-muted-foreground">Documents</span>
+                <span className="text-xs text-muted-foreground">{t("sources.documentsLabel")}</span>
               </div>
               {(() => {
                 const ready = sources.filter((s) => s.status === "ready").length;
@@ -67,19 +69,19 @@ export function SourcesTab({
                     {ready > 0 && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <span className="w-2 h-2 rounded-full bg-green-500" />
-                        {ready} ready
+                        {ready} {t("sources.ready")}
                       </div>
                     )}
                     {processing > 0 && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                        {processing} processing
+                        {processing} {t("sources.processing")}
                       </div>
                     )}
                     {errored > 0 && (
                       <div className="flex items-center gap-1.5 text-xs text-destructive">
                         <span className="w-2 h-2 rounded-full bg-destructive" />
-                        {errored} failed
+                        {errored} {t("sources.failed")}
                       </div>
                     )}
                   </>
@@ -95,7 +97,7 @@ export function SourcesTab({
             size="sm"
           >
             <span className="material-symbols-outlined text-base mr-1.5">add</span>
-            Add Document
+            {t("sources.addDocument")}
           </Button>
         )}
       </div>
@@ -108,9 +110,9 @@ export function SourcesTab({
               folder_open
             </span>
           </div>
-          <h3 className="text-base font-heading text-foreground">No documents yet</h3>
+          <h3 className="text-base font-heading text-foreground">{t("sources.noDocuments.title")}</h3>
           <p className="text-sm text-muted-foreground max-w-sm text-center">
-            Upload files or link existing documents to build this workspace's knowledge base.
+            {t("sources.noDocuments.description")}
           </p>
           {isAdmin && (
             <Button
@@ -120,7 +122,7 @@ export function SourcesTab({
               className="mt-2"
             >
               <span className="material-symbols-outlined text-base mr-1.5">add</span>
-              Add your first document
+              {t("sources.noDocuments.addFirstButton")}
             </Button>
           )}
         </div>
@@ -202,29 +204,29 @@ export function SourcesTab({
                   <div className="flex items-center gap-1.5">
                     {s.status === "ready" && (
                       <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] uppercase font-semibold">
-                        Ready
+                        {t("sources.status.ready")}
                       </Badge>
                     )}
                     {s.status === "processing" && (
                       <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-[10px] uppercase font-semibold flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
-                        Processing {s.progress !== undefined ? `${s.progress}%` : ""}
+                        {t("sources.status.processing")} {s.progress !== undefined ? `${s.progress}%` : ""}
                       </Badge>
                     )}
                     {s.status === "error" && (
                       <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] uppercase font-semibold flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[12px]">error</span>
-                        Failed
+                        {t("sources.status.failed")}
                       </Badge>
                     )}
                     {s.status === "plan_ready" && (
                       <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[10px] uppercase font-semibold">
-                        Needs Review
+                        {t("sources.status.needsReview")}
                       </Badge>
                     )}
                     {s.status === "pending" && (
                       <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[10px] uppercase font-semibold">
-                        Pending
+                        {t("sources.status.pending")}
                       </Badge>
                     )}
                   </div>
@@ -244,7 +246,7 @@ export function SourcesTab({
                       className="bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 h-7 text-xs px-2.5 shadow-none"
                     >
                       <span className="material-symbols-outlined text-[14px]">fact_check</span>
-                      Review Plan
+                      {t("sources.reviewPlan")}
                     </Button>
                   )}
 
@@ -259,7 +261,7 @@ export function SourcesTab({
                           className="text-destructive focus:text-destructive"
                         >
                           <span className="material-symbols-outlined text-base mr-2">delete</span>
-                          Remove
+                          {t("sources.remove")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

@@ -1,0 +1,44 @@
+{
+  "pageTitle": "Knowledge Base",
+  "pageDescription": "Manage and organize your organization's documents and categories.",
+  "tabs": {
+    "documents": "Documents",
+    "categories": "Categories"
+  },
+  "actions": {
+    "uploadDocument": "Upload Document",
+    "addCategory": "Add Category"
+  },
+  "filters": {
+    "knowledgeType": "Knowledge Type",
+    "allTypes": "All Types",
+    "department": "Department",
+    "allDepartments": "All Departments"
+  },
+  "upload": {
+    "dialogTitle": "Upload Document",
+    "fileLabel": "File",
+    "dropPrompt": "Drag & drop or click to browse",
+    "dropActive": "Drop file here",
+    "fileTypesHint": "PDF, DOCX, XLSX, CSV, TXT, MD, PPTX · Max 50 MB",
+    "knowledgeTypeLabel": "Knowledge Type",
+    "knowledgeTypePlaceholder": "Select type (optional)",
+    "knowledgeTypeNone": "None",
+    "departmentsLabel": "Departments",
+    "departmentsHint": "Select which departments can access this document. Leave empty for global access.",
+    "noDepartments": "No departments available",
+    "visibilityLabel": "Visibility",
+    "visibilityGlobal": "Global",
+    "visibilityWorkspace": "Workspace",
+    "visibilityGlobalWarning": "Document content will be compiled into the shared wiki and visible to all employees — including those without access to the original file. Only upload if the content is not sensitive.",
+    "targetWorkspaceLabel": "Target Workspace",
+    "targetWorkspacePlaceholder": "Select workspace...",
+    "uploadBtn": "Upload",
+    "uploading": "Uploading...",
+    "errors": {
+      "unsupportedType": "Unsupported file type \".{ext}\". Accepted: {accepted}",
+      "fileTooLarge": "File too large. Maximum size is 50 MB.",
+      "uploadFailed": "Upload failed"
+    }
+  }
+}

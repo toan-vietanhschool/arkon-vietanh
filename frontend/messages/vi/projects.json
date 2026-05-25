@@ -1,0 +1,129 @@
+{
+  "title": "Workspace",
+  "titleProjects": "Dự án",
+  "description": "Quản lý các ngữ cảnh tri thức liên chức năng cho khách hàng, sáng kiến và sự kiện.",
+  "descriptionWorkspaces": "Quản lý dự án và tương tác với khách hàng — mỗi workspace có nhóm và tài liệu riêng.",
+  "newProject": "Workspace mới",
+  "newWorkspace": "Workspace mới",
+  "noWorkspaces": {
+    "title": "Chưa có workspace",
+    "description": "Tạo workspace để tổ chức dự án hoặc tương tác với khách hàng"
+  },
+  "memberCount": "{count} thành viên",
+  "docCount": "{count} tài liệu",
+  "workspaceType": {
+    "customer": "Khách hàng",
+    "project": "Dự án"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "archived": "Đã lưu trữ"
+  },
+  "deleteConfirm": "Xóa workspace này? Thành viên sẽ mất quyền truy cập vào tài liệu.",
+  "deleteFailed": "Xóa thất bại",
+  "detail": {
+    "back": "Quay lại",
+    "tabs": {
+      "wiki": "Wiki",
+      "sources": "Tài liệu",
+      "members": "Thành viên"
+    },
+    "loadFailed": "Tải thông tin workspace thất bại",
+    "notFound": "Không tìm thấy workspace",
+    "backToDashboard": "Về trang tổng quan"
+  },
+  "dialog": {
+    "createTitle": "Workspace mới",
+    "editTitle": "Sửa workspace",
+    "nameLabel": "Tên",
+    "namePlaceholder": "Ví dụ: ACME Corp, Kế hoạch Q3, Alpha Launch",
+    "typeLabel": "Loại",
+    "typeSelectPlaceholder": "Chọn loại",
+    "descriptionLabel": "Mô tả",
+    "descriptionOptional": "(không bắt buộc)",
+    "descriptionPlaceholder": "Mô tả ngắn về workspace này",
+    "statusLabel": "Trạng thái",
+    "statusActive": "Hoạt động",
+    "statusArchived": "Lưu trữ",
+    "nameRequired": "Tên là bắt buộc",
+    "saveFailed": "Lưu thất bại",
+    "saveButton": "Lưu",
+    "createButton": "Tạo",
+    "saving": "Đang lưu..."
+  },
+  "members": {
+    "searchPlaceholder": "Nhập tên hoặc email để tìm kiếm…",
+    "noMatch": "Không tìm thấy nhân viên phù hợp.",
+    "addButton": "Thêm",
+    "addWithCount": "Thêm {count}",
+    "keyboardHint": "Gợi ý: nhập để tìm, {arrowKeys} để điều hướng, {enterKey} để chọn, {backspaceKey} để xóa chip cuối. Tất cả thành viên được chọn sẽ nhận vai trò ở trên.",
+    "addFailed": "Thêm thành viên thất bại",
+    "removeFailed": "Xóa thành viên thất bại",
+    "updateRoleFailed": "Cập nhật vai trò thất bại",
+    "removeConfirm": "Xóa thành viên này khỏi dự án?",
+    "noMembers": {
+      "title": "Chưa có thành viên",
+      "description": "Thêm nhân viên để cấp quyền truy cập vào tri thức của workspace này."
+    },
+    "bulkResult": {
+      "added": "{count} đã thêm",
+      "skipped": "{count} bỏ qua",
+      "errored": "{count} lỗi",
+      "details": "Chi tiết",
+      "dismiss": "Đóng"
+    }
+  },
+  "sources": {
+    "documentsLabel": "Tài liệu",
+    "ready": "sẵn sàng",
+    "processing": "đang xử lý",
+    "failed": "thất bại",
+    "addDocument": "Thêm tài liệu",
+    "noDocuments": {
+      "title": "Chưa có tài liệu",
+      "description": "Tải lên tệp hoặc liên kết tài liệu có sẵn để xây dựng cơ sở tri thức cho workspace này.",
+      "addFirstButton": "Thêm tài liệu đầu tiên"
+    },
+    "status": {
+      "ready": "Sẵn sàng",
+      "processing": "Đang xử lý",
+      "failed": "Thất bại",
+      "needsReview": "Cần xem xét",
+      "pending": "Đang chờ"
+    },
+    "removeFailed": "Xóa tài liệu thất bại",
+    "removeConfirm": "Xóa tài liệu này khỏi workspace?",
+    "reviewPlan": "Xem xét kế hoạch",
+    "remove": "Xóa"
+  },
+  "addDocumentModal": {
+    "title": "Thêm tài liệu",
+    "uploadTab": "Tải lên tệp",
+    "linkTab": "Thêm tệp có sẵn",
+    "dropZone": {
+      "dragHint": "Thả tệp vào đây",
+      "browseHint": "Kéo thả hoặc nhấn để chọn",
+      "sizeHint": "PDF, DOCX, XLSX, CSV, TXT, MD, PPTX · Tối đa 50 MB",
+      "changeHint": "Nhấn để thay đổi"
+    },
+    "uploadButton": "Tải lên",
+    "uploading": "Đang tải lên...",
+    "uploadFailed": "Tải lên thất bại",
+    "noAvailableDocs": "Không có tài liệu nào để liên kết",
+    "noAvailableDocsHint": "Tất cả tài liệu đã có trong workspace này.",
+    "linkButton": "Liên kết vào workspace",
+    "linking": "Đang liên kết...",
+    "linkFailed": "Liên kết tài liệu thất bại",
+    "selectDocPlaceholder": "Chọn tài liệu có sẵn để thêm..."
+  },
+  "wiki": {
+    "pagesLabel": "Trang",
+    "updatedLabel": "Cập nhật",
+    "graphView": "Xem đồ thị",
+    "noPages": {
+      "title": "Chưa có trang wiki",
+      "description": "Tải lên tài liệu trong workspace này để tự động tổng hợp tri thức thành các trang wiki."
+    },
+    "allFilter": "Tất cả"
+  }
+}

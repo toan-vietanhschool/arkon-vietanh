@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { WikiPageDetail, DraftResponse } from "@/types/wiki";
@@ -10,7 +11,7 @@ import { WikiContent } from "@/components/wiki/wiki-content";
 import { WikiSidebarRight } from "@/components/wiki/wiki-backlinks";
 import { WikiEditor } from "@/components/wiki/wiki-editor";
 import { WikiDraftBanner } from "@/components/wiki/wiki-draft-banner";
-import { wikiTypeGroupLabel } from "@/components/wiki/wiki-type-badge";
+import { useWikiTypeGroupLabel } from "@/components/wiki/wiki-type-badge";
 import { WikiSearchDialog } from "@/components/wiki/wiki-search-dialog";
 import { WikiScopeSwitcher } from "@/components/wiki/wiki-scope-switcher";
 import { WikiCreatePageDialog } from "@/components/wiki/wiki-create-page-dialog";
@@ -36,6 +37,9 @@ export default function WikiPageViewer() {
   const params = useParams();
   const searchParams = useSearchParams();
   const { user, getWorkspaceRole, hasPermission } = useAuth();
+  const t = useTranslations("WikiPage");
+  const tWiki = useTranslations("Wiki");
+  const typeGroupLabel = useWikiTypeGroupLabel();
 
   const slugParts = Array.isArray(params.slug) ? params.slug : [params.slug ?? ""];
   const fullSlug = slugParts.join("/");
@@ -44,23 +48,16 @@ export default function WikiPageViewer() {
   const isScoped = !!scopeType && scopeType !== "global";
   const isProjectScoped = isScoped && scopeType === "project";
 
-  // Where "back" navigates. Projects keep their dedicated workspace page;
-  // department-scoped pages return to the wiki landing with the scope preserved
-  // so the user lands back on that department's tree+index, not global.
   const backHref = isProjectScoped
     ? "/workspaces"
     : isScoped
       ? `/wiki?scope_type=${scopeType}&scope_id=${scopeId}`
       : "/wiki";
 
-  // Suffix appended to in-page wiki links (backlinks, outlinks, [[wikilinks]])
-  // so navigation between related pages keeps the current scope context.
   const scopeLinkSuffix = isScoped
     ? `?scopeType=${scopeType}&scopeId=${scopeId}`
     : "";
 
-  // Look up the display name for the current page's scope so the scope
-  // switcher trigger reads e.g. "Phòng Nhân sự" rather than just "department".
   const [scopes, setScopes] = React.useState<WikiScope[]>([]);
   React.useEffect(() => {
     api<WikiScope[]>("/api/wiki/my-scopes")
@@ -84,30 +81,16 @@ export default function WikiPageViewer() {
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [dialogScope, setDialogScope] = React.useState<WikiScope | null>(null);
-  // Author-side: the draft the user is currently resubmitting (needs_revision).
-  // When set, the page replaces the read view with a WikiEditor pre-filled
-  // with the draft's previous content.
   const [editingDraft, setEditingDraft] = React.useState<DraftResponse | null>(null);
-
-  // Edit mode
   const [mode, setMode] = React.useState<"view" | "edit">("view");
-
-  // Pending drafts (for editors/admins)
   const [drafts, setDrafts] = React.useState<DraftResponse[]>([]);
 
-  // ---------------------------------------------------------------------------
-  // Permission helpers
-  // ---------------------------------------------------------------------------
-  // Workspace role only applies to project-scoped pages — getWorkspaceRole
-  // looks up project memberships and returns null for department scope IDs.
   const wsRole = isProjectScoped && scopeId ? getWorkspaceRole(scopeId) : null;
   const isGlobalAdmin = user?.role === "admin";
   const isDeptScoped = scopeType === "department";
   const isOwnDept =
     isDeptScoped && !!scopeId && !!user?.department_id && user.department_id === scopeId;
 
-  // Can directly edit (PUT /wiki/pages/{slug}). Department-scoped pages
-  // require wiki:write:all — own_dept only grants propose access.
   const canEdit: boolean = (() => {
     if (!user) return false;
     if (isGlobalAdmin) return true;
@@ -115,27 +98,19 @@ export default function WikiPageViewer() {
     return hasPermission("wiki:write:all");
   })();
 
-  // Can propose draft (POST /wiki/pages/{slug}/drafts).
-  // - Project: workspace contributor+
-  // - Department: own_dept perm AND the page is in user's department, OR write:all
-  // - Global: any wiki:write permission
   const canPropose: boolean = (() => {
     if (!user) return false;
-    if (canEdit) return true; // editors can always propose
+    if (canEdit) return true;
     if (isProjectScoped) return roleAtLeast(wsRole, "contributor");
     if (isDeptScoped) {
       if (hasPermission("wiki:write:all")) return true;
       return hasPermission("wiki:write:own_dept") && isOwnDept;
     }
-    // Global
     return hasPermission("wiki:write:own_dept") || hasPermission("wiki:write:all");
   })();
 
-  // Can review drafts
   const canReview: boolean = canEdit;
 
-  // Permission helper for the create-page action — mirrors the helper on
-  // /wiki landing so the dialog mode follows whatever scope is chosen.
   const getCreateModeForScope = React.useCallback(
     (scope: { scope_type: string; scope_id: string | null }): "direct" | "propose" | null => {
       if (!user) return null;
@@ -170,9 +145,6 @@ export default function WikiPageViewer() {
     scope_id: dialogTargetScope.scope_id ?? null,
   });
 
-  // ---------------------------------------------------------------------------
-  // Load page
-  // ---------------------------------------------------------------------------
   React.useEffect(() => {
     if (!fullSlug) return;
     setLoading(true);
@@ -191,14 +163,8 @@ export default function WikiPageViewer() {
       .finally(() => setLoading(false));
   }, [fullSlug, scopeType, scopeId, isScoped]);
 
-  // ---------------------------------------------------------------------------
-  // Load pending drafts (editors/admins only, after page loaded)
-  // ---------------------------------------------------------------------------
   const fetchDrafts = React.useCallback(() => {
     if (!page) return;
-    // Backend returns reviewable drafts to reviewers and author-only drafts
-    // to everyone else — so the same fetch surfaces 'your pending draft'
-    // even when the user is not a reviewer of this page.
     api<DraftResponse[]>(
       `/api/wiki/pages/${encodeURIComponent(fullSlug)}/drafts${isScoped ? `?scope_type=${scopeType}&scope_id=${scopeId}` : ""}`
     )
@@ -214,9 +180,6 @@ export default function WikiPageViewer() {
     fetchDrafts();
   }, [fetchDrafts]);
 
-  // ---------------------------------------------------------------------------
-  // Keyboard shortcut: ⌘K search
-  // ---------------------------------------------------------------------------
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -228,13 +191,7 @@ export default function WikiPageViewer() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // Save handlers
-  // ---------------------------------------------------------------------------
   const handleSaveEdit = async (content: string, note: string) => {
-    // Direct edit endpoint reads scope from query params (it accepts them via
-    // FastAPI Query). Pass both via the URL so the backend resolves the page
-    // in the correct scope even when the same slug exists elsewhere.
     const scopeParams = isScoped ? `?scope_type=${scopeType}&scope_id=${scopeId}` : "";
     const updated = await api<WikiPageDetail>(
       `/api/wiki/pages/${encodeURIComponent(fullSlug)}${scopeParams}`,
@@ -248,10 +205,6 @@ export default function WikiPageViewer() {
   };
 
   const handleSaveProposal = async (content: string, note: string) => {
-    // propose_draft reads scope from the JSON body (Pydantic model, not Query).
-    // Sending the params via query did nothing — backend fell through to
-    // get_page_by_slug_any_scope, attaching the draft to whichever scope's
-    // copy of the slug happened to be returned first.
     await api(
       `/api/wiki/pages/${encodeURIComponent(fullSlug)}/drafts`,
       {
@@ -270,7 +223,6 @@ export default function WikiPageViewer() {
 
   const handleDraftApproved = (draftId: string) => {
     setDrafts((prev) => prev.filter((d) => d.id !== draftId));
-    // Reload page content — the approved draft has been applied
     const scopeParams = isScoped ? `?scope_type=${scopeType}&scope_id=${scopeId}` : "";
     api<WikiPageDetail>(`/api/wiki/pages/${encodeURIComponent(fullSlug)}${scopeParams}`)
       .then(setPage)
@@ -296,18 +248,14 @@ export default function WikiPageViewer() {
       body: { content_md: content, note: note || undefined },
     });
     setEditingDraft(null);
-    // Refresh draft list so the banner shows the new pending status.
     fetchDrafts();
   };
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
   return (
     <>
       <PageHeader
-        title="Knowledge Wiki"
-        description="Compiled knowledge from your organization's documents."
+        title={tWiki("pageHeader.title")}
+        description={tWiki("pageHeader.description")}
         action={
           <div className="flex items-center gap-2">
             <WikiScopeSwitcher current={currentScope} />
@@ -317,7 +265,7 @@ export default function WikiPageViewer() {
               className="gap-2"
             >
               <span className="material-symbols-outlined text-base">search</span>
-              Search
+              {tWiki("searchBtn")}
               <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded border border-border text-xs font-mono text-muted-foreground">
                 ⌘K
               </kbd>
@@ -332,22 +280,22 @@ export default function WikiPageViewer() {
                 className="gap-2"
                 title={
                   headerCreateMode === "direct"
-                    ? `Create a new page in ${currentScope.name}`
-                    : `Propose a new page in ${currentScope.name} (reviewer approves)`
+                    ? tWiki("createPageTitle.direct", { scopeName: currentScope.name })
+                    : tWiki("createPageTitle.propose", { scopeName: currentScope.name })
                 }
               >
                 <span className="material-symbols-outlined text-base">add</span>
-                {headerCreateMode === "direct" ? "New page" : "Propose page"}
+                {headerCreateMode === "direct" ? tWiki("newPageBtn") : tWiki("proposePageBtn")}
               </Button>
             )}
             {user && (
               <Link
                 href="/wiki/review"
                 className="inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium border border-border bg-background hover:bg-muted transition-colors"
-                title="Drafts you authored and drafts waiting for your review"
+                title={tWiki("contributionsTitle")}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit_note</span>
-                Contributions
+                {tWiki("contributionsBtn")}
               </Link>
             )}
             <Link
@@ -355,16 +303,13 @@ export default function WikiPageViewer() {
               className="inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>hub</span>
-              Graph View
+              {tWiki("graphViewBtn")}
             </Link>
           </div>
         }
       />
 
       <div className="flex-1 flex gap-0 -mx-6 md:-mx-8 lg:-mx-10 -mb-6 md:-mb-8 lg:-mb-10 min-h-0 border-t border-border overflow-hidden">
-        {/* Left: Page Tree — same scope-grouped layout as /wiki. We do NOT
-            filter pagesUrl by scope so the sidebar is identical across all
-            wiki pages; the active page's scope bucket auto-expands. */}
         <WikiPageTree
           activeSlug={fullSlug}
           groupByScope
@@ -416,20 +361,18 @@ export default function WikiPageViewer() {
             <div className="px-8 py-12">
               <EmptyState
                 icon="find_in_page"
-                title="Page not found"
-                description={`No wiki page found for "${fullSlug}". It may not have been compiled yet.`}
+                title={t("notFound.title")}
+                description={t("notFound.description", { slug: fullSlug })}
               />
             </div>
           ) : page ? (
             <div className="max-w-3xl mx-auto px-8 py-8">
-              {/* Breadcrumb & Back Button — project scope returns to /workspaces,
-                  department scope returns to /wiki with that department's scope
-                  preserved so the user lands on the dept's tree+index. */}
+              {/* Breadcrumb & Back Button */}
               <div className="flex items-center gap-3 mb-6">
                 <Link
                   href={backHref}
                   className="flex items-center justify-center w-8 h-8 rounded-full border border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0 shadow-sm"
-                  title={isProjectScoped ? "Back to Workspace" : "Back to Wiki"}
+                  title={isProjectScoped ? t("backTitle.workspace") : t("backTitle.wiki")}
                 >
                   <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                 </Link>
@@ -439,11 +382,11 @@ export default function WikiPageViewer() {
                     href={backHref}
                     className="hover:text-foreground transition-colors font-medium"
                   >
-                    {isProjectScoped ? "Workspace" : "Wiki"}
+                    {isProjectScoped ? t("backToWorkspace") : t("backToWiki")}
                   </Link>
                   <span className="material-symbols-outlined text-muted-foreground/50" style={{ fontSize: 14 }}>chevron_right</span>
                   <span className="capitalize font-medium">
-                    {wikiTypeGroupLabel(page.page_type)}
+                    {typeGroupLabel(page.page_type)}
                   </span>
                   <span className="material-symbols-outlined text-muted-foreground/50" style={{ fontSize: 14 }}>chevron_right</span>
                   <span className="text-foreground font-semibold truncate max-w-[200px]">
@@ -468,12 +411,12 @@ export default function WikiPageViewer() {
                     className="shrink-0 gap-1.5 mt-1"
                   >
                     <span className="material-symbols-outlined text-sm">edit</span>
-                    {canEdit ? "Edit" : "Propose Edit"}
+                    {canEdit ? t("editBtn") : t("proposeEditBtn")}
                   </Button>
                 )}
               </div>
 
-              {/* Draft banner — visible to reviewers AND to authors of own drafts. */}
+              {/* Draft banner */}
               {mode === "view" && !editingDraft && drafts.length > 0 && (
                 <div className="mb-6">
                   <WikiDraftBanner
@@ -492,22 +435,22 @@ export default function WikiPageViewer() {
               {editingDraft ? (
                 <WikiEditor
                   initialContent={editingDraft.content_md}
-                  noteLabel="Resubmission note"
-                  notePlaceholder="What changed in this round?"
-                  saveLabel="Resubmit draft"
+                  noteLabel={t("editor.resubmitNoteLabel")}
+                  notePlaceholder={t("editor.resubmitNotePlaceholder")}
+                  saveLabel={t("editor.resubmitSaveLabel")}
                   onSave={handleResubmitSave}
                   onCancel={() => setEditingDraft(null)}
                 />
               ) : mode === "edit" ? (
                 <WikiEditor
                   initialContent={page.content_md}
-                  noteLabel={canEdit ? "Change note" : "Proposal note"}
+                  noteLabel={canEdit ? t("editor.changeNoteLabel") : t("editor.proposalNoteLabel")}
                   notePlaceholder={
                     canEdit
-                      ? "Briefly describe what you changed (optional)"
-                      : "Describe your proposed change (optional)"
+                      ? t("editor.changeNotePlaceholder")
+                      : t("editor.proposalNotePlaceholder")
                   }
-                  saveLabel={canEdit ? "Save Edit" : "Submit Proposal"}
+                  saveLabel={canEdit ? t("editor.saveEditLabel") : t("editor.submitProposalLabel")}
                   onSave={canEdit ? handleSaveEdit : handleSaveProposal}
                   onCancel={() => setMode("view")}
                 />

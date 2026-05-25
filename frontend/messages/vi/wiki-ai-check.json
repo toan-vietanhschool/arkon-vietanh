@@ -1,0 +1,57 @@
+{
+  "badge": {
+    "passed": "AI: ổn",
+    "warned": "AI: cần xem xét",
+    "failed": "AI: có cảnh báo nghiêm trọng",
+    "running": "AI: đang chạy…",
+    "queued": "AI: đang xếp hàng",
+    "skipped": "AI: bỏ qua",
+    "pending": "AI: chờ xử lý"
+  },
+  "recheck": "Kiểm tra lại",
+  "recheckTitle": "Chạy lại kiểm tra AI cho bản nháp này",
+  "collapse": "Thu gọn",
+  "expand": "Mở rộng",
+  "summary": "{pass} pass · {warn} warn · {fail} fail",
+  "summaryWithSkipped": "{pass} pass · {warn} warn · {fail} fail · {skipped} bỏ qua",
+  "notRun": {
+    "running": "AI đang kiểm tra...",
+    "queued": "AI đang xếp hàng — worker sẽ xử lý sớm.",
+    "default": "AI chưa chạy kiểm tra."
+  },
+  "allPassed": "Tất cả kiểm tra đã qua.",
+  "moreMatches": "+{count} thêm…",
+  "showPassed": "Hiện {pass} pass{skippedSuffix}",
+  "hidePassed": "Ẩn {pass} pass{skippedSuffix}",
+  "skippedSuffix": " · {skipped} bỏ qua",
+  "advisory": "Kiểm tra AI chỉ mang tính tham khảo — không chặn phê duyệt.",
+  "checks": {
+    "pii_email": "Địa chỉ email",
+    "pii_phone_vn": "Số điện thoại",
+    "pii_cccd_vn": "Số CCCD",
+    "secret_api_key_sk": "API key chung (sk-…)",
+    "secret_anthropic": "Anthropic API key",
+    "secret_aws_access": "AWS access key",
+    "secret_github_pat": "GitHub personal access token",
+    "secret_google_api": "Google API key",
+    "secret_jwt": "JWT token",
+    "secret_private_key": "Khối private key",
+    "links_broken": "Wikilink bị hỏng",
+    "links_self": "Liên kết tự tham chiếu",
+    "length_sanity": "Độ dài nội dung",
+    "markdown_heading_jump": "Cấp độ tiêu đề",
+    "markdown_unclosed_fence": "Code fence chưa đóng",
+    "semantic_duplicate": "Trang tương tự đã tồn tại",
+    "llm_tone": "Văn phong",
+    "llm_scope_fit": "Phù hợp chủ đề",
+    "llm_factual": "Vấn đề thực tế",
+    "runner_error": "Lỗi bộ chạy AI"
+  },
+  "categories": {
+    "sensitiveData": "Dữ liệu nhạy cảm",
+    "structure": "Cấu trúc",
+    "duplicates": "Trùng lặp",
+    "aiJudgment": "Đánh giá AI",
+    "system": "Hệ thống"
+  }
+}

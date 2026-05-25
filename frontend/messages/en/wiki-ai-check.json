@@ -1,0 +1,57 @@
+{
+  "badge": {
+    "passed": "AI: all clear",
+    "warned": "AI: needs attention",
+    "failed": "AI: critical flags",
+    "running": "AI: running…",
+    "queued": "AI: queued",
+    "skipped": "AI: skipped",
+    "pending": "AI: pending"
+  },
+  "recheck": "Re-check",
+  "recheckTitle": "Re-run AI pre-review for this draft",
+  "collapse": "Collapse",
+  "expand": "Expand",
+  "summary": "{pass} pass · {warn} warn · {fail} fail",
+  "summaryWithSkipped": "{pass} pass · {warn} warn · {fail} fail · {skipped} skipped",
+  "notRun": {
+    "running": "AI pre-review in progress.",
+    "queued": "AI pre-review queued — worker will pick it up shortly.",
+    "default": "AI pre-review has not run yet."
+  },
+  "allPassed": "All checks passed.",
+  "moreMatches": "+{count} more…",
+  "showPassed": "Show {pass} pass{skippedSuffix}",
+  "hidePassed": "Hide {pass} pass{skippedSuffix}",
+  "skippedSuffix": " · {skipped} skipped",
+  "advisory": "AI checks are advisory — they do not block approval.",
+  "checks": {
+    "pii_email": "Email addresses",
+    "pii_phone_vn": "Phone numbers",
+    "pii_cccd_vn": "National ID numbers",
+    "secret_api_key_sk": "Generic API key (sk-…)",
+    "secret_anthropic": "Anthropic API key",
+    "secret_aws_access": "AWS access key",
+    "secret_github_pat": "GitHub personal access token",
+    "secret_google_api": "Google API key",
+    "secret_jwt": "JWT token",
+    "secret_private_key": "Private key block",
+    "links_broken": "Broken wikilinks",
+    "links_self": "Self-referencing link",
+    "length_sanity": "Content length",
+    "markdown_heading_jump": "Heading hierarchy",
+    "markdown_unclosed_fence": "Unclosed code fence",
+    "semantic_duplicate": "Similar existing pages",
+    "llm_tone": "Writing tone",
+    "llm_scope_fit": "Topic fit",
+    "llm_factual": "Factual concerns",
+    "runner_error": "AI runner error"
+  },
+  "categories": {
+    "sensitiveData": "Sensitive data",
+    "structure": "Structure",
+    "duplicates": "Duplicates",
+    "aiJudgment": "AI judgment",
+    "system": "System"
+  }
+}

@@ -3,8 +3,9 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { forceX, forceY } from "d3-force";
-import { wikiTypeColor, wikiTypeGroupLabel, wikiTypeIcon } from "../wiki-type-badge";
+import { wikiTypeColor, wikiTypeIcon, useWikiTypeGroupLabel } from "../wiki-type-badge";
 import { NodeInput } from "./types";
 import { nodeRadius } from "./utils";
 
@@ -55,6 +56,7 @@ const SCOPE_LIST_SCROLL_THRESHOLD = 8;
 type ScopeCount = { label: string; count: number; scopeType: string };
 
 function ScopeLegendSection({ scopeCounts }: { scopeCounts: ScopeCount[] }) {
+  const t = useTranslations("WikiGraph.legend");
   const [query, setQuery] = React.useState("");
   const showFilter = scopeCounts.length > SCOPE_LIST_SCROLL_THRESHOLD;
 
@@ -67,10 +69,10 @@ function ScopeLegendSection({ scopeCounts }: { scopeCounts: ScopeCount[] }) {
   return (
     <>
       <div className="mt-2 pt-2 border-t border-border/50 mb-1.5 font-semibold text-foreground text-xs flex items-center justify-between gap-2">
-        <span>Scope</span>
+        <span>{t("scope")}</span>
         <span className="text-[10px] font-normal text-muted-foreground/70 tabular-nums">
           {showFilter && query
-            ? `${visible.length}/${scopeCounts.length}`
+            ? t("scopeFilterCount", { visible: visible.length, total: scopeCounts.length })
             : scopeCounts.length}
         </span>
       </div>
@@ -85,7 +87,7 @@ function ScopeLegendSection({ scopeCounts }: { scopeCounts: ScopeCount[] }) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter scopes…"
+            placeholder={t("filterPlaceholder")}
             className="w-full h-6 pl-5 pr-5 text-[11px] rounded border border-border/60 bg-background/70 focus:bg-background outline-none focus:border-primary/40 transition-colors"
           />
           {query && (
@@ -109,7 +111,7 @@ function ScopeLegendSection({ scopeCounts }: { scopeCounts: ScopeCount[] }) {
       >
         {visible.length === 0 ? (
           <p className="text-[11px] text-muted-foreground/60 italic px-1 py-0.5">
-            No matching scopes.
+            {t("noMatchingScopes")}
           </p>
         ) : (
           visible.map(({ label, count, scopeType }) => (
@@ -146,6 +148,8 @@ export function WikiGraph({
   onNodeClick,
 }: Props) {
   const router = useRouter();
+  const tGraph = useTranslations("WikiGraph");
+  const typeGroupLabel = useWikiTypeGroupLabel();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const fgRef = React.useRef<ForceGraphInstance>(null);
   // ForceGraph2D is dynamic(); on first load the chunk can resolve AFTER the
@@ -523,13 +527,13 @@ export function WikiGraph({
       let label: string;
       let scopeType: string;
       if (n.scope_type === "project") {
-        label = n.scope_name || "Workspace";
+        label = n.scope_name || tGraph("tooltip.scopeWorkspace");
         scopeType = "project";
       } else if (n.scope_type === "department") {
-        label = n.scope_name || "Department";
+        label = n.scope_name || tGraph("tooltip.scopeDepartment");
         scopeType = "department";
       } else {
-        label = "Global";
+        label = tGraph("tooltip.scopeGlobal");
         scopeType = "global";
       }
       if (!counts[label]) counts[label] = { count: 0, scopeType };
@@ -538,7 +542,7 @@ export function WikiGraph({
     return Object.entries(counts)
       .map(([label, { count, scopeType }]) => ({ label, count, scopeType }))
       .sort((a, b) => b.count - a.count);
-  }, [rawNodes]);
+  }, [rawNodes, tGraph]);
 
   return (
     <div
@@ -606,7 +610,7 @@ export function WikiGraph({
               style={{ background: wikiTypeColor(tooltip.type) }}
             />
             <span className="capitalize">{tooltip.type}</span>
-            <span className="ml-auto">{tooltip.degree} links</span>
+            <span className="ml-auto">{tGraph("tooltip.links", { count: tooltip.degree })}</span>
           </div>
           {tooltip.scopeType && (
             <div className="flex items-center gap-1.5 mt-1 pt-1 border-t border-border/50 text-muted-foreground">
@@ -619,10 +623,10 @@ export function WikiGraph({
               </span>
               <span className="truncate">
                 {tooltip.scopeType === "project"
-                  ? tooltip.scopeName || "Workspace"
+                  ? tooltip.scopeName || tGraph("tooltip.scopeWorkspace")
                   : tooltip.scopeType === "department"
-                  ? tooltip.scopeName || "Department"
-                  : "Global"}
+                  ? tooltip.scopeName || tGraph("tooltip.scopeDepartment")
+                  : tGraph("tooltip.scopeGlobal")}
               </span>
             </div>
           )}
@@ -632,7 +636,7 @@ export function WikiGraph({
       {/* Legend */}
       {!mini && (
         <div className="absolute bottom-3 left-3 rounded-xl border border-border bg-card/90 backdrop-blur-sm px-3 py-2.5 text-xs shadow-sm max-w-[240px]">
-          <div className="mb-1.5 font-semibold text-foreground text-xs">Node Types</div>
+          <div className="mb-1.5 font-semibold text-foreground text-xs">{tGraph("legend.nodeTypes")}</div>
           <div className="flex flex-col gap-1">
             {Object.entries(typeCounts)
               .sort((a, b) => b[1] - a[1])
@@ -654,7 +658,7 @@ export function WikiGraph({
                   >
                     {wikiTypeIcon(type)}
                   </span>
-                  <span className="text-muted-foreground">{wikiTypeGroupLabel(type)}</span>
+                  <span className="text-muted-foreground">{typeGroupLabel(type)}</span>
                   <span className="text-muted-foreground/60 ml-auto tabular-nums">{count}</span>
                 </div>
               ))}
@@ -671,7 +675,7 @@ export function WikiGraph({
           <button
             onClick={() => fgRef.current?.zoom(fgRef.current.zoom() * 1.2, 200)}
             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-foreground"
-            title="Zoom In"
+            title={tGraph("controls.zoomIn")}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
               add
@@ -680,7 +684,7 @@ export function WikiGraph({
           <button
             onClick={() => fgRef.current?.zoom(fgRef.current.zoom() / 1.2, 200)}
             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-foreground"
-            title="Zoom Out"
+            title={tGraph("controls.zoomOut")}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
               remove
@@ -690,7 +694,7 @@ export function WikiGraph({
           <button
             onClick={() => fgRef.current?.zoomToFit(400, 60)}
             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-foreground"
-            title="Fit View"
+            title={tGraph("controls.fitView")}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
               fit_screen

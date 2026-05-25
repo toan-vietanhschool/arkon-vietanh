@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,8 @@ export function PlanReviewDialog({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const t = useTranslations("KnowledgeTable");
+  const tCommon = useTranslations("Common");
   const [plan, setPlan] = React.useState<PlanData | null>(null);
   const [planStatus, setPlanStatus] = React.useState<string>("pending_review");
   const [loading, setLoading] = React.useState(true);
@@ -93,7 +96,7 @@ export function PlanReviewDialog({
       });
       onDone();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to approve plan");
+      setError(e instanceof Error ? e.message : t("planReviewDialog.approveFailed"));
       setSubmitting(null);
     }
   };
@@ -112,14 +115,14 @@ export function PlanReviewDialog({
       });
       onDone();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to reject plan");
+      setError(e instanceof Error ? e.message : t("planReviewDialog.rejectFailed"));
       setSubmitting(null);
     }
   };
 
   const handleRegenerate = async () => {
     if (!reviewNote.trim()) {
-      setError("Please describe what should be changed before regenerating.");
+      setError(t("planReviewDialog.feedbackRequired"));
       return;
     }
     setSubmitting("regenerate");
@@ -134,7 +137,7 @@ export function PlanReviewDialog({
       setReviewNote("");
       setConfirmReject(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to regenerate plan");
+      setError(e instanceof Error ? e.message : t("planReviewDialog.regenerateFailed"));
     } finally {
       setSubmitting(null);
     }
@@ -152,10 +155,10 @@ export function PlanReviewDialog({
             <span className="material-symbols-outlined text-blue-500" style={{ fontSize: 20 }}>
               fact_check
             </span>
-            Review Compilation Plan
+            {t("planReviewDialog.title")}
           </DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            {source.title} — approve to start writing wiki pages, or reject to stop.
+            {t("planReviewDialog.subtitle", { sourceTitle: source.title })}
           </p>
         </DialogHeader>
 
@@ -179,7 +182,7 @@ export function PlanReviewDialog({
               <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>
                 progress_activity
               </span>
-              Regenerating plan with your feedback… this can take 30–90 seconds.
+              {t("planReviewDialog.regenerating")}
             </div>
           )}
 
@@ -189,11 +192,11 @@ export function PlanReviewDialog({
               <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-green-500" />
-                  {creates.length} page{creates.length !== 1 ? "s" : ""} to create
+                  {t("planReviewDialog.pagesToCreate", { count: creates.length })}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                  {updates.length} page{updates.length !== 1 ? "s" : ""} to update
+                  {t("planReviewDialog.pagesToUpdate", { count: updates.length })}
                 </span>
                 {plan.strategy && (
                   <span className="flex items-center gap-1.5">
@@ -206,7 +209,7 @@ export function PlanReviewDialog({
               {/* Planner notes */}
               {plan.compilation_notes && (
                 <div className="text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2 border border-border">
-                  <span className="font-medium text-foreground">Planner note: </span>
+                  <span className="font-medium text-foreground">{t("planReviewDialog.plannerNote")}</span>
                   {plan.compilation_notes}
                 </div>
               )}
@@ -242,7 +245,7 @@ export function PlanReviewDialog({
                       {page.entity_names && page.entity_names.length > 0 && (
                         <p className="text-[11px] text-muted-foreground mt-1 truncate">
                           {page.entity_names.slice(0, 5).join(", ")}
-                          {page.entity_names.length > 5 && ` +${page.entity_names.length - 5} more`}
+                          {page.entity_names.length > 5 && ` ${t("planReviewDialog.entityMore", { count: page.entity_names.length - 5 })}`}
                         </p>
                       )}
                     </div>
@@ -256,12 +259,12 @@ export function PlanReviewDialog({
           <textarea
             value={reviewNote}
             onChange={(e) => setReviewNote(e.target.value)}
-            placeholder="Feedback or correction for the AI (e.g. 'Page X already exists, it should be UPDATE not CREATE'). Required to regenerate."
+            placeholder={t("planReviewDialog.feedbackPlaceholder")}
             disabled={isRegenerating}
             className="w-full text-sm rounded-lg border border-border bg-background px-3 py-2 resize-none h-16 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 disabled:opacity-60"
           />
           <p className="text-[11px] text-muted-foreground">
-            Write feedback then click <strong>Regenerate</strong> to have AI redo the plan, or click <strong>Approve</strong> to proceed as-is.
+            {t("planReviewDialog.feedbackHint")}
           </p>
         </div>
 
@@ -270,7 +273,7 @@ export function PlanReviewDialog({
             <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>
               progress_activity
             </span>
-            Regenerating plan with your feedback — this can take up to a minute.
+            {t("planReviewDialog.regeneratingLong")}
           </div>
         )}
 
@@ -290,7 +293,7 @@ export function PlanReviewDialog({
               ) : (
                 <span className="material-symbols-outlined" style={{ fontSize: 15 }}>refresh</span>
               )}
-              {isRegenerating ? "Regenerating..." : "Regenerate"}
+              {isRegenerating ? t("planReviewDialog.regeneratingBtn") : t("planReviewDialog.regenerateBtn")}
             </Button>
           </div>
 
@@ -300,7 +303,7 @@ export function PlanReviewDialog({
               onClick={onClose}
               disabled={submitting !== null}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             {!confirmReject ? (
               <Button
@@ -310,7 +313,7 @@ export function PlanReviewDialog({
                 className="text-destructive border-destructive/30 hover:bg-destructive/10"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
-                Reject
+                {t("planReviewDialog.rejectBtn")}
               </Button>
             ) : (
               <Button
@@ -325,7 +328,7 @@ export function PlanReviewDialog({
                 ) : (
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
                 )}
-                Confirm Reject
+                {t("planReviewDialog.confirmRejectBtn")}
               </Button>
             )}
             <Button
@@ -339,7 +342,7 @@ export function PlanReviewDialog({
               ) : (
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>
               )}
-              Approve & Compile
+              {t("planReviewDialog.approveBtn")}
             </Button>
           </div>
         </div>

@@ -1,0 +1,36 @@
+{
+  "title": "Departments",
+  "description": "Organize employees into departments and manage knowledge access.",
+  "addDepartment": "Add Department",
+  "noDepartments": {
+    "title": "No departments",
+    "description": "Create your first department to organize employees"
+  },
+  "employeeCount": "{count, plural, =0 {0 employees} =1 {1 employee} other {# employees}}",
+  "membersButton": "Members",
+  "deleteConfirm": "Delete this department and all its employees?",
+  "dialog": {
+    "createTitle": "Create Department",
+    "editTitle": "Edit Department",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. Sales, Engineering",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Optional description...",
+    "saveFailed": "Save failed",
+    "createButton": "Create",
+    "updateButton": "Update",
+    "saving": "Saving..."
+  },
+  "membersDialog": {
+    "title": "Member Management — {deptName}",
+    "addButton": "Add",
+    "selectPlaceholder": "Select employee to add...",
+    "currentMembers": "Current Members ({count})",
+    "noMembers": {
+      "title": "No members",
+      "description": "No employees are assigned to this department yet."
+    },
+    "addFailedFallback": "Failed to add member",
+    "moveHint": "To move an employee out of this department, edit their profile and assign a new department."
+  }
+}

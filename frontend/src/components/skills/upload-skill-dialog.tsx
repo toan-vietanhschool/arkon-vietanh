@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { apiUpload, api, ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -32,6 +33,7 @@ type UploadSkillDialogProps = {
 };
 
 export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDialogProps) {
+  const t = useTranslations("SkillsContribute");
   const { canAccess, hasPermission } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -83,7 +85,7 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
       if (err instanceof ApiError && err.status === 409) {
         setConflictFiles((err.data as any)?.detail?.conflicts || []);
       } else {
-        alert(err instanceof Error ? err.message : "Upload failed");
+        alert(err instanceof Error ? err.message : t("uploadSkillDialog.uploadFailed"));
       }
     } finally {
       setUploadLoading(false);
@@ -101,7 +103,7 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
           render={
             <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sahara">
               <span className="material-symbols-outlined text-base mr-1">upload</span>
-              Upload Skill
+              {t("uploadSkillDialog.triggerBtn")}
             </Button>
           }
         />
@@ -109,15 +111,15 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleUpload}>
           <DialogHeader>
-            <DialogTitle className="text-xl font-heading">Upload AI Skill</DialogTitle>
+            <DialogTitle className="text-xl font-heading">{t("uploadSkillDialog.title")}</DialogTitle>
             <DialogDescription className="font-manrope">
-              Select one or more ZIP packages containing AI skills.
+              {t("uploadSkillDialog.description")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-6 py-6">
             <div className="grid gap-2">
-              <Label htmlFor="files">Skill Packages (ZIP)</Label>
+              <Label htmlFor="files">{t("uploadSkillDialog.filesLabel")}</Label>
               <Input
                 id="files"
                 type="file"
@@ -128,13 +130,13 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
               />
               {selectedFiles && selectedFiles.length > 0 && (
                 <p className="text-[11px] text-primary font-medium animate-in fade-in">
-                  {selectedFiles.length} file(s) selected
+                  {t("uploadSkillDialog.filesSelected", { count: selectedFiles.length })}
                 </p>
               )}
             </div>
 
             <div className="grid gap-2">
-              <Label>Visibility</Label>
+              <Label>{t("uploadSkillDialog.visibilityLabel")}</Label>
               <Select value={scopeType} onValueChange={(v) => {
                 setScopeType(v || "global");
                 setDeptIds([]);
@@ -145,7 +147,9 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
                       {scopeType === "global" ? "public" : "corporate_fare"}
                     </span>
                     <span className="capitalize">
-                      {scopeType === "global" ? "Global" : "Department"}
+                      {scopeType === "global"
+                        ? t("uploadSkillDialog.visibilityGlobal").split(" ")[0]
+                        : t("uploadSkillDialog.visibilityDepartment").split(" ")[0]}
                     </span>
                   </div>
                 </SelectTrigger>
@@ -153,13 +157,13 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
                   <SelectItem value="global">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-base text-muted-foreground">public</span>
-                      Global (All Departments)
+                      {t("uploadSkillDialog.visibilityGlobal")}
                     </div>
                   </SelectItem>
                   <SelectItem value="department">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-base text-muted-foreground">corporate_fare</span>
-                      Specific Departments
+                      {t("uploadSkillDialog.visibilityDepartment")}
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -168,7 +172,7 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
 
             {scopeType === "department" && (
               <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
-                <Label>Target Departments</Label>
+                <Label>{t("uploadSkillDialog.targetDepartmentsLabel")}</Label>
                 <div className="bg-secondary/5 rounded-xl border border-border p-3">
                   <div className="max-h-[200px] pr-4 overflow-y-auto custom-scrollbar">
                     <div className="grid grid-cols-1 gap-2">
@@ -205,10 +209,10 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
               <div className="bg-destructive/5 border border-destructive/20 p-4 rounded-lg flex flex-col gap-2">
                 <div className="flex items-center gap-2 text-destructive font-semibold text-sm">
                   <span className="material-symbols-outlined text-lg">warning</span>
-                  Duplicate names detected
+                  {t("uploadSkillDialog.conflictTitle")}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Existing skills: {conflictFiles.join(", ")}. Overwrite them?
+                  {t("uploadSkillDialog.conflictDescription", { names: conflictFiles.join(", ") })}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <input
@@ -218,7 +222,7 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
                     onChange={(e) => setForce(e.target.checked)}
                     className="w-4 h-4 cursor-pointer"
                   />
-                  <Label htmlFor="force-check" className="text-xs cursor-pointer">I confirm to overwrite</Label>
+                  <Label htmlFor="force-check" className="text-xs cursor-pointer">{t("uploadSkillDialog.conflictConfirmLabel")}</Label>
                 </div>
               </div>
             )}
@@ -226,7 +230,7 @@ export function UploadSkillDialog({ allDepartments, onUploaded }: UploadSkillDia
 
           <DialogFooter>
             <Button type="submit" disabled={uploadLoading || !selectedFiles || (conflictFiles.length > 0 && !force)}>
-              {uploadLoading ? "Processing..." : "Start Upload"}
+              {uploadLoading ? t("uploadSkillDialog.processing") : t("uploadSkillDialog.submitBtn")}
             </Button>
           </DialogFooter>
         </form>

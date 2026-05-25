@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { WikiContent } from "./wiki-content";
 import { WikilinkAutocomplete } from "./wikilink-autocomplete";
 import { getTextareaCaretCoords, type CaretCoords } from "@/lib/textarea-caret";
@@ -137,6 +138,7 @@ export function MarkdownEditor({
   placeholder = "Write markdown here...",
   minHeightClass = "min-h-[400px]",
 }: MarkdownEditorProps) {
+  const t = useTranslations("WikiEditor");
   const [tab, setTab] = React.useState<"edit" | "preview">("edit");
   const taRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -145,9 +147,6 @@ export function MarkdownEditor({
   const [coords, setCoords] = React.useState<CaretCoords | null>(null);
   const [pages, setPages] = React.useState<WikiPageSummary[]>([]);
 
-  // Load page pool once when the editor first mounts. The endpoint already
-  // filters by user scope via RBAC, so we never see pages the user can't link
-  // to. 300 is more than enough for typical KBs; bump if you need to.
   React.useEffect(() => {
     let cancelled = false;
     api<WikiPageSummary[]>("/api/wiki/pages?limit=300")
@@ -182,7 +181,6 @@ export function MarkdownEditor({
   const handlePick = (p: WikiPageSummary) => {
     const ta = taRef.current;
     if (!ta || !link) return;
-    // Replace from `link.start` through the current caret with `slug]]`.
     const after = `${p.slug}]]`;
     const next = ta.value.slice(0, link.start) + after + ta.value.slice(link.caretOffset);
     onChange(next);
@@ -195,10 +193,10 @@ export function MarkdownEditor({
     });
   };
 
-  const w = (before: string, after = "", placeholder = "text") => {
+  const w = (before: string, after = "", ph = "text") => {
     const ta = taRef.current;
     if (!ta) return;
-    insertWrap(ta, value, onChange, before, after, placeholder);
+    insertWrap(ta, value, onChange, before, after, ph);
   };
   const lp = (prefix: string) => {
     const ta = taRef.current;
@@ -216,35 +214,35 @@ export function MarkdownEditor({
       {/* Header: tab toggle */}
       <div className="flex items-center justify-between px-3 py-2 bg-card border-b border-border">
         <div className="flex gap-1">
-          {(["edit", "preview"] as const).map((t) => (
+          {(["edit", "preview"] as const).map((tabKey) => (
             <button
-              key={t}
+              key={tabKey}
               type="button"
-              onClick={() => setTab(t)}
+              onClick={() => setTab(tabKey)}
               className={`px-3 py-1 rounded-md text-xs font-medium transition-colors capitalize ${
-                tab === t
+                tab === tabKey
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
-              {t === "edit" ? "Edit" : "Preview"}
+              {tabKey === "edit" ? t("tabs.edit") : t("tabs.preview")}
             </button>
           ))}
         </div>
-        <span className="text-xs text-muted-foreground">Markdown</span>
+        <span className="text-xs text-muted-foreground">{t("markdownLabel")}</span>
       </div>
 
       {tab === "edit" ? (
         <>
           {/* Toolbar */}
           <div className="flex items-center flex-wrap gap-0.5 px-2 py-1.5 bg-card/60 border-b border-border">
-            <ToolbarButton icon="format_bold" label="Bold (Ctrl+B)" onClick={() => w("**", "**", "bold text")} />
-            <ToolbarButton icon="format_italic" label="Italic (Ctrl+I)" onClick={() => w("*", "*", "italic text")} />
-            <ToolbarButton icon="code" label="Inline code" onClick={() => w("`", "`", "code")} />
+            <ToolbarButton icon="format_bold" label={t("toolbar.bold")} onClick={() => w("**", "**", "bold text")} />
+            <ToolbarButton icon="format_italic" label={t("toolbar.italic")} onClick={() => w("*", "*", "italic text")} />
+            <ToolbarButton icon="code" label={t("toolbar.inlineCode")} onClick={() => w("`", "`", "code")} />
             <ToolbarSep />
             <button
               type="button"
-              title="Heading 2"
+              title={t("toolbar.heading2")}
               onClick={() => lp("## ")}
               className="px-1.5 h-7 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors text-xs font-bold font-mono"
             >
@@ -252,32 +250,30 @@ export function MarkdownEditor({
             </button>
             <button
               type="button"
-              title="Heading 3"
+              title={t("toolbar.heading3")}
               onClick={() => lp("### ")}
               className="px-1.5 h-7 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors text-xs font-bold font-mono"
             >
               H3
             </button>
             <ToolbarSep />
-            <ToolbarButton icon="format_list_bulleted" label="Bullet list" onClick={() => lp("- ")} />
-            <ToolbarButton icon="format_list_numbered" label="Numbered list" onClick={() => lp("1. ")} />
-            <ToolbarButton icon="format_quote" label="Blockquote" onClick={() => lp("> ")} />
+            <ToolbarButton icon="format_list_bulleted" label={t("toolbar.bulletList")} onClick={() => lp("- ")} />
+            <ToolbarButton icon="format_list_numbered" label={t("toolbar.numberedList")} onClick={() => lp("1. ")} />
+            <ToolbarButton icon="format_quote" label={t("toolbar.blockquote")} onClick={() => lp("> ")} />
             <ToolbarSep />
-            <ToolbarButton icon="data_object" label="Code block" onClick={() => blk("\n```\n\n```\n", 5)} />
-            <ToolbarButton icon="link" label="Link" onClick={() => w("[", "](url)", "link text")} />
+            <ToolbarButton icon="data_object" label={t("toolbar.codeBlock")} onClick={() => blk("\n```\n\n```\n", 5)} />
+            <ToolbarButton icon="link" label={t("toolbar.link")} onClick={() => w("[", "](url)", "link text")} />
             <ToolbarButton
               icon="account_tree"
-              label="Wikilink — type [[ to pick a page"
+              label={t("toolbar.wikilink")}
               onClick={() => {
-                // Insert `[[` and immediately open the picker so the user can
-                // discover the feature without remembering the syntax.
                 const ta = taRef.current;
                 if (!ta) return;
                 insertWrap(ta, value, onChange, "[[", "", "");
                 requestAnimationFrame(() => updateLinkCtx());
               }}
             />
-            <ToolbarButton icon="horizontal_rule" label="Horizontal rule" onClick={() => blk("\n\n---\n\n", 6)} />
+            <ToolbarButton icon="horizontal_rule" label={t("toolbar.horizontalRule")} onClick={() => blk("\n\n---\n\n", 6)} />
           </div>
 
           {/* Textarea */}
@@ -286,12 +282,10 @@ export function MarkdownEditor({
             value={value}
             onChange={(e) => {
               onChange(e.target.value);
-              // Defer to next tick so selectionStart reflects the post-input position.
               requestAnimationFrame(updateLinkCtx);
             }}
             onClick={updateLinkCtx}
             onKeyUp={(e) => {
-              // Arrow keys reposition the caret; recompute link context.
               if (
                 e.key === "ArrowLeft" ||
                 e.key === "ArrowRight" ||
@@ -304,7 +298,6 @@ export function MarkdownEditor({
               }
             }}
             onBlur={() => {
-              // Small delay so a popup click can still fire before we close.
               setTimeout(() => {
                 if (document.activeElement !== taRef.current) {
                   setLink(null);
@@ -332,7 +325,7 @@ export function MarkdownEditor({
           {value.trim() ? (
             <WikiContent markdown={value} />
           ) : (
-            <p className="text-sm text-muted-foreground italic">Nothing to preview.</p>
+            <p className="text-sm text-muted-foreground italic">{t("previewEmpty")}</p>
           )}
         </div>
       )}

@@ -3,10 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { WikiPageSummary } from "@/types/wiki";
-import { wikiTypeIcon, wikiTypeColor, wikiTypeGroupLabel } from "./wiki-type-badge";
+import { wikiTypeIcon, wikiTypeColor, useWikiTypeGroupLabel } from "./wiki-type-badge";
 
 const GROUP_ORDER = ["entity", "concept", "topic", "source"];
 
@@ -41,8 +42,8 @@ function pageKey(p: WikiPageSummary): string {
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = React.useState(value);
   React.useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
   }, [value, delay]);
   return debounced;
 }
@@ -70,13 +71,15 @@ export function WikiPageTree({
   groupByScope?: boolean;
   /** Auto-expand the bucket matching this scope (used together with groupByScope). */
   activeScope?: { scope_type: string; scope_id: string | null };
-  /** Optional: return which create flow ("direct" | "propose" | null) applies for a scope.
-   *  When provided AND non-null, the tree shows a `+` button on that scope's header. */
+  /** Optional: return which create flow ("direct" | "propose" | null) applies for a scope. */
   getCreateModeForScope?: (scope: { scope_type: string; scope_id: string | null }) => "direct" | "propose" | null;
   /** Called when the user clicks the per-scope `+` button. */
   onCreatePage?: (scope: { scope_type: string; scope_id: string | null }) => void;
 }) {
   const pathname = usePathname();
+  const t = useTranslations("Wiki.pageTree");
+  const tCommon = useTranslations("Common");
+  const typeGroupLabel = useWikiTypeGroupLabel();
   const [pages, setPages] = React.useState<WikiPageSummary[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState("");
@@ -84,7 +87,6 @@ export function WikiPageTree({
   const [expandedGroups, setExpandedGroups] = React.useState<Set<string>>(
     new Set(GROUP_ORDER)
   );
-  // Two-stage delete
   const [armedSlug, setArmedSlug] = React.useState<string | null>(null);
   const [deletingSlug, setDeletingSlug] = React.useState<string | null>(null);
 
@@ -104,7 +106,6 @@ export function WikiPageTree({
 
   const handleDelete = async (page: WikiPageSummary) => {
     const slug = page.slug;
-    // First click: arm; second click: execute
     if (armedSlug !== slug) {
       setArmedSlug(slug);
       return;
@@ -112,8 +113,6 @@ export function WikiPageTree({
     setArmedSlug(null);
     setDeletingSlug(slug);
     try {
-      // Pass scope so the backend deletes the right copy when the same slug
-      // exists in multiple scopes (e.g. global + project).
       const scopeQs =
         page.scope_type && page.scope_type !== "global" && page.scope_id
           ? `?scope_type=${page.scope_type}&scope_id=${page.scope_id}`
@@ -157,16 +156,14 @@ export function WikiPageTree({
   const grouped = React.useMemo(() => {
     const map = new Map<string, WikiPageSummary[]>();
     for (const p of filtered) {
-      const t = p.page_type;
-      if (t === "index" || t === "log") continue;
-      if (!map.has(t)) map.set(t, []);
-      map.get(t)!.push(p);
+      const type = p.page_type;
+      if (type === "index" || type === "log") continue;
+      if (!map.has(type)) map.set(type, []);
+      map.get(type)!.push(p);
     }
     return map;
   }, [filtered]);
 
-  // Scope-then-type grouping (used when groupByScope=true).
-  // Outer map keyed by scopeGroupKey(); value is { label, scope_type, scope_id, byType }.
   const scopeGrouped = React.useMemo(() => {
     type ScopeBucket = {
       key: string;
@@ -179,8 +176,6 @@ export function WikiPageTree({
     const map = new Map<string, ScopeBucket>();
     for (const p of filtered) {
       if (p.page_type === "index" || p.page_type === "log") continue;
-      // Workspaces (project scope) are reached via /workspaces — keep the
-      // /wiki tree focused on enterprise-wide knowledge (global + departments).
       if ((p.scope_type || "global") === "project") continue;
       const k = scopeGroupKey(p);
       let bucket = map.get(k);
@@ -195,12 +190,11 @@ export function WikiPageTree({
         };
         map.set(k, bucket);
       }
-      const t = p.page_type;
-      if (!bucket.byType.has(t)) bucket.byType.set(t, []);
-      bucket.byType.get(t)!.push(p);
+      const type = p.page_type;
+      if (!bucket.byType.has(type)) bucket.byType.set(type, []);
+      bucket.byType.get(type)!.push(p);
       bucket.total += 1;
     }
-    // Sort: scope type order first, then label alphabetical.
     return Array.from(map.values()).sort((a, b) => {
       const ao = SCOPE_TYPE_ORDER[a.scope_type] ?? 99;
       const bo = SCOPE_TYPE_ORDER[b.scope_type] ?? 99;
@@ -213,8 +207,6 @@ export function WikiPageTree({
     (p) => p.page_type !== "index" && p.page_type !== "log"
   ).length;
 
-  // Expanded state for scope-level headers in groupByScope mode.
-  // Default: expand global; collapse the rest to keep the tree compact.
   const [expandedScopes, setExpandedScopes] = React.useState<Set<string>>(
     new Set(["global"]),
   );
@@ -225,11 +217,6 @@ export function WikiPageTree({
       : activeScope.scope_type;
   }, [activeScope]);
   React.useEffect(() => {
-    // When scope buckets first arrive, ensure global stays expanded and any
-    // bucket containing the active page (or matching activeScope) is expanded.
-    // Also pre-expand the type subgroups *inside* every expanded bucket so the
-    // tree looks "open" by default — otherwise users navigating from /wiki to a
-    // detail page see all the scope+type subgroups collapsed.
     if (!groupByScope || scopeGrouped.length === 0) return;
 
     const scopesToExpand = new Set<string>(["global"]);
@@ -273,8 +260,6 @@ export function WikiPageTree({
 
   const currentSlug = activeSlug ?? pathname.replace(/^\/wiki\//, "");
 
-  // Renders one leaf row (page link + delete button). Used in both flat and
-  // group-by-scope tree modes so the row markup stays in one place.
   const renderPageItem = (page: WikiPageSummary) => {
     const isActive = page.slug === currentSlug;
     const isArmed = armedSlug === page.slug;
@@ -328,9 +313,9 @@ export function WikiPageTree({
               handleDelete(page);
             }}
             className="shrink-0 mr-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 animate-pulse transition-colors"
-            title={`Click again to confirm delete "${page.title}"`}
+            title={t("deleteConfirmTitle", { title: page.title })}
           >
-            Confirm
+            {tCommon("confirm")}
           </button>
         ) : (
           <button
@@ -340,7 +325,7 @@ export function WikiPageTree({
               handleDelete(page);
             }}
             className="shrink-0 mr-1 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
-            title={`Delete "${page.title}"`}
+            title={t("deleteTitle", { title: page.title })}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span>
           </button>
@@ -355,7 +340,7 @@ export function WikiPageTree({
         <button
           onClick={() => setCollapsed(false)}
           className="text-muted-foreground hover:text-foreground transition-colors"
-          title="Expand page tree"
+          title={t("expandTitle")}
         >
           <span className="material-symbols-outlined text-base">left_panel_open</span>
         </button>
@@ -368,7 +353,7 @@ export function WikiPageTree({
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex-1">
-          Pages
+          {t("header")}
         </span>
         <span className="text-xs text-muted-foreground tabular-nums bg-muted rounded-md px-1.5 py-0.5">
           {totalCount}
@@ -376,7 +361,7 @@ export function WikiPageTree({
         <button
           onClick={() => setCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors"
-          title="Collapse"
+          title={t("collapseTitle")}
         >
           <span className="material-symbols-outlined text-base">left_panel_close</span>
         </button>
@@ -390,7 +375,7 @@ export function WikiPageTree({
           </span>
           <input
             type="text"
-            placeholder="Filter pages..."
+            placeholder={t("filterPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 text-xs bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
@@ -420,11 +405,11 @@ export function WikiPageTree({
           </div>
         ) : groupByScope ? (
           scopeGrouped.length === 0 ? (
-            <p className="text-xs text-muted-foreground px-4 py-3">No pages found.</p>
+            <p className="text-xs text-muted-foreground px-4 py-3">{t("noPages")}</p>
           ) : (
             scopeGrouped.map((bucket) => {
               const scopeExpanded = expandedScopes.has(bucket.key);
-              const typeOrder = GROUP_ORDER.filter((t) => bucket.byType.has(t));
+              const typeOrder = GROUP_ORDER.filter((type) => bucket.byType.has(type));
               const isActive = activeScopeKey === bucket.key;
               const scopeHref =
                 bucket.scope_type === "global"
@@ -443,7 +428,7 @@ export function WikiPageTree({
                     <button
                       onClick={() => toggleScope(bucket.key)}
                       className="shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
-                      title={scopeExpanded ? "Collapse" : "Expand"}
+                      title={scopeExpanded ? t("collapseScopeTitle") : t("expandScopeTitle")}
                     >
                       <span className="material-symbols-outlined text-xs">
                         {scopeExpanded ? "expand_more" : "chevron_right"}
@@ -452,7 +437,7 @@ export function WikiPageTree({
                     <Link
                       href={scopeHref}
                       className="flex-1 flex items-center gap-2 py-1.5 min-w-0 text-left"
-                      title={`Open ${bucket.label} wiki`}
+                      title={t("openScopeWiki", { scopeName: bucket.label })}
                     >
                       <span
                         className="material-symbols-outlined text-xs text-muted-foreground"
@@ -474,11 +459,11 @@ export function WikiPageTree({
                     </Link>
                     {(() => {
                       if (!onCreatePage || !getCreateModeForScope) return null;
-                      const mode = getCreateModeForScope({
+                      const createMode = getCreateModeForScope({
                         scope_type: bucket.scope_type,
                         scope_id: bucket.scope_id ?? null,
                       });
-                      if (!mode) return null;
+                      if (!createMode) return null;
                       return (
                         <button
                           type="button"
@@ -492,11 +477,11 @@ export function WikiPageTree({
                           }}
                           className="shrink-0 mr-1 w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                           title={
-                            mode === "direct"
-                              ? `New page in ${bucket.label}`
-                              : `Propose new page in ${bucket.label}`
+                            createMode === "direct"
+                              ? t("newPageTitle.direct", { scopeName: bucket.label })
+                              : t("newPageTitle.propose", { scopeName: bucket.label })
                           }
-                          aria-label={`Create page in ${bucket.label}`}
+                          aria-label={t("createPageAriaLabel", { scopeName: bucket.label })}
                         >
                           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
                             add
@@ -527,7 +512,7 @@ export function WikiPageTree({
                                 {wikiTypeIcon(type)}
                               </span>
                               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex-1 text-left">
-                                {wikiTypeGroupLabel(type)}
+                                {typeGroupLabel(type)}
                               </span>
                               <span className="text-xs text-muted-foreground tabular-nums">
                                 {items.length}
@@ -548,9 +533,9 @@ export function WikiPageTree({
             })
           )
         ) : grouped.size === 0 ? (
-          <p className="text-xs text-muted-foreground px-4 py-3">No pages found.</p>
+          <p className="text-xs text-muted-foreground px-4 py-3">{t("noPages")}</p>
         ) : (
-          GROUP_ORDER.filter((t) => grouped.has(t)).map((type) => {
+          GROUP_ORDER.filter((type) => grouped.has(type)).map((type) => {
             const items = grouped.get(type)!;
             const isExpanded = expandedGroups.has(type);
             return (
@@ -569,7 +554,7 @@ export function WikiPageTree({
                     {wikiTypeIcon(type)}
                   </span>
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex-1 text-left">
-                    {wikiTypeGroupLabel(type)}
+                    {typeGroupLabel(type)}
                   </span>
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {items.length}

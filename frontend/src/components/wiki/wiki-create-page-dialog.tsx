@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,8 @@ export function WikiCreatePageDialog({
   defaultTitle = "",
 }: Props) {
   const router = useRouter();
+  const t = useTranslations("WikiEditor.createDialog");
+  const tCommon = useTranslations("Common");
   const [title, setTitle] = React.useState(defaultTitle);
   const [slug, setSlug] = React.useState("");
   const [slugTouched, setSlugTouched] = React.useState(false);
@@ -72,9 +75,6 @@ export function WikiCreatePageDialog({
   const [error, setError] = React.useState<string | null>(null);
 
   // Restrict the scope dropdown to scopes the user can actually write to.
-  // Without this filter a user with wiki:write:own_dept (and wiki:read:all)
-  // sees every department in `scopes` and can pick someone else's dept,
-  // leaking a cross-department draft past the contextual permission gate.
   const writableScopes = React.useMemo(() => {
     if (!getCreateModeForScope) return scopes;
     return scopes.filter((s) =>
@@ -85,8 +85,6 @@ export function WikiCreatePageDialog({
     );
   }, [scopes, getCreateModeForScope]);
 
-  // Effective mode follows the currently-selected scope so 'direct' switches
-  // to 'propose' when the user picks a scope where they only have own_dept.
   const [pickedScopeType, pickedScopeIdRaw] = scopeKey.split(":");
   const pickedScopeId = pickedScopeIdRaw || null;
   const effectiveMode: Mode = getCreateModeForScope
@@ -113,7 +111,7 @@ export function WikiCreatePageDialog({
 
   const submit = async () => {
     if (!title.trim() || !slug.trim() || !content.trim()) {
-      setError("Title, slug, and content are required.");
+      setError(t("validationError"));
       return;
     }
     const [scope_type, scope_id_raw] = scopeKey.split(":");
@@ -156,13 +154,11 @@ export function WikiCreatePageDialog({
           },
         });
         onOpenChange(false);
-        // Drafts land in the reviewer queue — no page exists yet. Just close.
-        // The user will get a notification when it is approved.
         // eslint-disable-next-line no-console
         console.info("Draft submitted:", draft.id);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Submit failed";
+      const msg = err instanceof Error ? err.message : t("validationError");
       setError(msg);
     } finally {
       setBusy(false);
@@ -174,30 +170,29 @@ export function WikiCreatePageDialog({
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {effectiveMode === "direct" ? "Create new page" : "Propose new page"}
+            {effectiveMode === "direct" ? t("titleDirect") : t("titlePropose")}
           </DialogTitle>
           <DialogDescription>
-            {effectiveMode === "direct"
-              ? "The page is created immediately and added to the index."
-              : "An editor will review the proposal before the page is materialised."}
+            {effectiveMode === "direct" ? t("descDirect") : t("descPropose")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
           <div className="grid gap-1.5">
-            <Label htmlFor="cp-title">Title</Label>
+            <Label htmlFor="cp-title">{t("titleLabel")}</Label>
             <Input
               id="cp-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Fire Safety Procedure"
+              placeholder={t("titlePlaceholder")}
               autoFocus
             />
           </div>
 
           <div className="grid gap-1.5">
             <Label htmlFor="cp-slug">
-              Slug <span className="text-muted-foreground font-normal">(URL identifier)</span>
+              {t("slugLabel")}{" "}
+              <span className="text-muted-foreground font-normal">{t("slugSubLabel")}</span>
             </Label>
             <Input
               id="cp-slug"
@@ -206,30 +201,30 @@ export function WikiCreatePageDialog({
                 setSlugTouched(true);
                 setSlug(e.target.value);
               }}
-              placeholder="fire-safety-procedure"
+              placeholder={t("slugPlaceholder")}
               className="font-mono text-sm"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="cp-type">Page type</Label>
+              <Label htmlFor="cp-type">{t("pageTypeLabel")}</Label>
               <select
                 id="cp-type"
                 value={pageType}
                 onChange={(e) => setPageType(e.target.value as (typeof PAGE_TYPES)[number])}
                 className="h-9 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                {PAGE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                {PAGE_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="grid gap-1.5">
-              <Label htmlFor="cp-scope">Scope</Label>
+              <Label htmlFor="cp-scope">{t("scopeLabel")}</Label>
               <select
                 id="cp-scope"
                 value={scopeKey}
@@ -249,11 +244,11 @@ export function WikiCreatePageDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <Label>Content</Label>
+            <Label>{t("contentLabel")}</Label>
             <MarkdownEditor
               value={content}
               onChange={setContent}
-              placeholder={"# Overview\n\nUse [[wikilinks]] to reference other pages."}
+              placeholder={t("contentPlaceholder")}
               minHeightClass="min-h-[280px]"
             />
           </div>
@@ -261,13 +256,14 @@ export function WikiCreatePageDialog({
           {effectiveMode === "propose" && (
             <div className="grid gap-1.5">
               <Label htmlFor="cp-note">
-                Note for reviewer <span className="text-muted-foreground font-normal">(optional)</span>
+                {t("reviewerNoteLabel")}{" "}
+                <span className="text-muted-foreground font-normal">{t("reviewerNoteSubLabel")}</span>
               </Label>
               <Input
                 id="cp-note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="One line: why does this page need to exist?"
+                placeholder={t("reviewerNotePlaceholder")}
               />
             </div>
           )}
@@ -277,7 +273,7 @@ export function WikiCreatePageDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button onClick={submit} disabled={busy} className="gap-1.5">
             {busy ? (
@@ -289,7 +285,7 @@ export function WikiCreatePageDialog({
                 {effectiveMode === "direct" ? "add" : "send"}
               </span>
             )}
-            {effectiveMode === "direct" ? "Create page" : "Submit proposal"}
+            {effectiveMode === "direct" ? t("submitDirect") : t("submitPropose")}
           </Button>
         </DialogFooter>
       </DialogContent>

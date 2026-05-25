@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,7 @@ interface MySkillContributionsProps {
 }
 
 export function MySkillContributions({ onEdit, onRefreshNeeded, departments, refreshInterval = 15000 }: MySkillContributionsProps) {
+  const t = useTranslations("Skills");
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,14 +76,14 @@ export function MySkillContributions({ onEdit, onRefreshNeeded, departments, ref
   // Polling logic removed by user request
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this contribution?")) return;
+    if (!confirm(t("myContributions.confirmDelete"))) return;
     try {
       await api(`/api/skill-contributions/${id}`, { method: "DELETE" });
       loadContributions();
       onRefreshNeeded();
     } catch (err) {
       console.error("Failed to delete contribution:", err);
-      alert("Delete failed");
+      alert(t("myContributions.deleteFailed"));
     }
   };
 
@@ -93,11 +95,11 @@ export function MySkillContributions({ onEdit, onRefreshNeeded, departments, ref
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
           <span className="material-symbols-outlined text-sm text-primary/60">pending_actions</span>
-          Your Active Drafts & Proposals
+          {t("myContributions.sectionTitle")}
         </h3>
         <div className="flex items-center gap-3">
           <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-tight">
-            {contributions.length} {contributions.length === 1 ? "proposal" : "proposals"}
+            {t("myContributions.proposalCount", { count: contributions.length })}
           </span>
         </div>
       </div>
@@ -106,11 +108,11 @@ export function MySkillContributions({ onEdit, onRefreshNeeded, departments, ref
         <Table>
           <TableHeader className="bg-secondary/5">
             <TableRow className="hover:bg-transparent border-border/40">
-              <TableHead className="w-[30%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-6">Contribution Proposal</TableHead>
-              <TableHead className="w-[15%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Visibility</TableHead>
-              <TableHead className="w-[20%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Departments</TableHead>
-              <TableHead className="w-[10%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Status</TableHead>
-              <TableHead className="w-[15%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Updated</TableHead>
+              <TableHead className="w-[30%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-6">{t("myContributions.columns.proposal")}</TableHead>
+              <TableHead className="w-[15%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t("myContributions.columns.visibility")}</TableHead>
+              <TableHead className="w-[20%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t("myContributions.columns.departments")}</TableHead>
+              <TableHead className="w-[10%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t("myContributions.columns.status")}</TableHead>
+              <TableHead className="w-[15%] h-11 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t("myContributions.columns.updated")}</TableHead>
               <TableHead className="w-[10%] h-11 text-right pr-6"></TableHead>
             </TableRow>
           </TableHeader>
@@ -160,7 +162,7 @@ export function MySkillContributions({ onEdit, onRefreshNeeded, departments, ref
                     ) : (
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
                         <span className="material-symbols-outlined text-[12px]">public</span>
-                        Global
+                        {t("table.globalScope")}
                       </div>
                     )}
                   </div>
@@ -203,14 +205,14 @@ export function MySkillContributions({ onEdit, onRefreshNeeded, departments, ref
                         className="flex items-center gap-2 py-2.5 cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-base text-primary">edit</span>
-                        Continue Editing
+                        {t("myContributions.actions.continueEditing")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDelete(c.id)}
                         className="flex items-center gap-2 py-2.5 text-destructive focus:text-destructive cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-base">delete</span>
-                        Delete Draft
+                        {t("myContributions.actions.deleteDraft")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

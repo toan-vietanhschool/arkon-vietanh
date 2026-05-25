@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { ScopeBadge } from "@/components/shared/scope-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ export function SkillTable({
   total,
   search,
 }: SkillTableProps) {
+  const t = useTranslations("Skills");
   const { canAccess, hasPermission } = useAuth();
   const [editSkill, setEditSkill] = React.useState<Skill | null>(null);
   const [uploadSkill, setUploadSkill] = React.useState<Skill | null>(null);
@@ -92,7 +94,7 @@ export function SkillTable({
                 setSearchInput(val);
                 onSearch(val);
               }}
-              placeholder="Search skills..."
+              placeholder={t("table.searchPlaceholder")}
               className="h-9 pl-9 pr-3 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 w-[280px] placeholder:text-muted-foreground/60"
             />
             {searchInput && (
@@ -107,7 +109,7 @@ export function SkillTable({
           </div>
         </div>
         <span className="text-xs text-muted-foreground tabular-nums">
-          {total} skill{total !== 1 ? "s" : ""}
+          {t("table.skillCount", { count: total })}
         </span>
       </div>
 
@@ -120,19 +122,19 @@ export function SkillTable({
         ) : skills.length === 0 ? (
           <EmptyState
             icon="smart_toy"
-            title={search ? "No results found" : "No skills found"}
-            description={search ? `No skills matching "${search}"` : "Upload skills to start building your AI library."}
+            title={search ? t("table.emptyState.searchTitle") : t("table.emptyState.title")}
+            description={search ? t("table.emptyState.searchDescription", { search }) : t("table.emptyState.description")}
           />
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/50">
-                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Skill</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Version</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Visibility</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Department</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Status</TableHead>
-                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Updated</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">{t("table.columns.skill")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">{t("table.columns.version")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">{t("table.columns.visibility")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">{t("table.columns.department")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">{t("table.columns.status")}</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">{t("table.columns.updated")}</TableHead>
                 <TableHead className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground text-right w-[80px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -158,7 +160,7 @@ export function SkillTable({
                         {skill.is_system && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 shrink-0">
                             <span className="material-symbols-outlined text-[11px]">lock</span>
-                            System
+                            {t("table.systemBadge")}
                           </span>
                         )}
                       </div>
@@ -191,7 +193,7 @@ export function SkillTable({
                       ) : (
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
                           <span className="material-symbols-outlined text-[12px]">public</span>
-                          Global
+                          {t("table.globalScope")}
                         </div>
                       )}
                     </div>
@@ -233,7 +235,7 @@ export function SkillTable({
                           {canAccess("skill", "edit") && (
                             <DropdownMenuItem onClick={() => setEditSkill(skill)} className="flex items-center gap-2 py-2.5 cursor-pointer">
                               <span className="material-symbols-outlined text-base">edit</span>
-                              Edit Skill
+                              {t("table.actions.editSkill")}
                             </DropdownMenuItem>
                           )}
                           {(canAccess("skill", "edit") || canAccess("skill", "delete")) && <DropdownMenuSeparator className="bg-border/50" />}
@@ -243,7 +245,7 @@ export function SkillTable({
                               className="flex items-center gap-2 py-2.5 text-destructive focus:text-destructive cursor-pointer"
                             >
                               <span className="material-symbols-outlined text-base">delete</span>
-                              Delete
+                              {t("table.actions.delete")}
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -286,6 +288,8 @@ function EditSkillDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("Skills");
+  const tCommon = useTranslations("Common");
   const [name, setName] = React.useState(skill.name);
   const [scopeType, setScopeType] = React.useState(skill.scope_type || "global");
   const [deptIds, setDeptIds] = React.useState<string[]>(skill.department_ids || []);
@@ -310,7 +314,7 @@ function EditSkillDialog({
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(err instanceof Error ? err.message : t("editSkillDialog.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -320,27 +324,27 @@ function EditSkillDialog({
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-serif">Edit Skill</DialogTitle>
+          <DialogTitle className="text-xl font-serif">{t("editSkillDialog.title")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 mt-2">
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Skill Name</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("editSkillDialog.skillNameLabel")}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={cn("bg-background rounded-xl h-11", !isNameValid && "border-destructive focus-visible:ring-destructive")}
-              placeholder="e.g. Data Analyst"
+              placeholder={t("editSkillDialog.skillNamePlaceholder")}
             />
             {!isNameValid && (
               <p className="text-[11px] text-destructive font-medium animate-in fade-in slide-in-from-top-1">
-                Name contains invalid characters. Use only letters, numbers, spaces, - and _.
+                {t("editSkillDialog.invalidName")}
               </p>
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Visibility</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("editSkillDialog.visibilityLabel")}</Label>
             <Select value={scopeType} onValueChange={(v) => setScopeType(v || "global")}>
               <SelectTrigger className="bg-background rounded-xl h-11">
                 <div className="flex items-center gap-2">
@@ -348,7 +352,7 @@ function EditSkillDialog({
                     {scopeType === "global" ? "public" : "corporate_fare"}
                   </span>
                   <span className="capitalize">
-                    {scopeType === "global" ? "Global" : "Department"}
+                    {scopeType === "global" ? t("editSkillDialog.visibilityGlobal").split(" ")[0] : t("editSkillDialog.visibilityDepartment").split(" ")[0]}
                   </span>
                 </div>
               </SelectTrigger>
@@ -356,13 +360,13 @@ function EditSkillDialog({
                 <SelectItem value="global">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-base text-muted-foreground">public</span>
-                    Global (All Departments)
+                    {t("editSkillDialog.visibilityGlobal")}
                   </div>
                 </SelectItem>
                 <SelectItem value="department">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-base text-muted-foreground">corporate_fare</span>
-                    Specific Departments
+                    {t("editSkillDialog.visibilityDepartment")}
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -371,7 +375,7 @@ function EditSkillDialog({
 
           {scopeType === "department" && (
             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Target Departments</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("editSkillDialog.targetDepartmentsLabel")}</Label>
               <div className="bg-background rounded-xl border border-border p-3">
                 <div className="max-h-[200px] pr-4 overflow-y-auto custom-scrollbar">
                   <div className="grid grid-cols-1 gap-2">
@@ -397,7 +401,7 @@ function EditSkillDialog({
                       </div>
                     ))}
                     {departments.length === 0 && (
-                      <span className="text-xs text-muted-foreground italic">No departments available</span>
+                      <span className="text-xs text-muted-foreground italic">{t("editSkillDialog.noDepartments")}</span>
                     )}
                   </div>
                 </div>
@@ -414,7 +418,7 @@ function EditSkillDialog({
           )}
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" onClick={onClose} className="rounded-xl h-11 px-6">Cancel</Button>
+            <Button variant="ghost" onClick={onClose} className="rounded-xl h-11 px-6">{tCommon("cancel")}</Button>
             <Button
               disabled={saving || !isNameValid}
               onClick={handleSave}
@@ -423,9 +427,9 @@ function EditSkillDialog({
               {saving ? (
                 <span className="flex items-center gap-2">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  Saving...
+                  {t("editSkillDialog.saving")}
                 </span>
-              ) : "Save Changes"}
+              ) : t("editSkillDialog.saveChanges")}
             </Button>
           </div>
         </div>
@@ -443,6 +447,7 @@ function UploadVersionDialog({
   onClose: () => void;
   onUploaded: () => void;
 }) {
+  const t = useTranslations("Skills");
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState("");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -452,7 +457,7 @@ function UploadVersionDialog({
     if (!file) return;
 
     if (!file.name.endsWith(".zip")) {
-      setError("Please select a ZIP file");
+      setError(t("uploadVersionDialog.invalidFileType"));
       return;
     }
 
@@ -468,7 +473,7 @@ function UploadVersionDialog({
       await apiUpload(uploadUrl, formData);
       onUploaded();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload");
+      setError(err instanceof Error ? err.message : t("uploadVersionDialog.uploadFailed"));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -479,7 +484,7 @@ function UploadVersionDialog({
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-serif">Upload New Version</DialogTitle>
+          <DialogTitle className="text-xl font-serif">{t("uploadVersionDialog.title")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-6 mt-4 items-center py-4">
@@ -488,8 +493,8 @@ function UploadVersionDialog({
           </div>
 
           <div className="text-center space-y-1">
-            <p className="text-sm font-medium text-foreground">Update <span className="text-primary font-bold">{skill.name}</span></p>
-            <p className="text-xs text-muted-foreground px-8">Upload a new ZIP package to replace the current files and create a new version.</p>
+            <p className="text-sm font-medium text-foreground">{t("uploadVersionDialog.updateLabel")} <span className="text-primary font-bold">{skill.name}</span></p>
+            <p className="text-xs text-muted-foreground px-8">{t("uploadVersionDialog.description")}</p>
           </div>
 
           <div className="w-full">
@@ -503,7 +508,7 @@ function UploadVersionDialog({
               ) : (
                 <span className="material-symbols-outlined text-lg">upload_file</span>
               )}
-              {isUploading ? "Uploading..." : "Select ZIP Package"}
+              {isUploading ? t("uploadVersionDialog.uploading") : t("uploadVersionDialog.selectZip")}
             </Button>
             <input
               type="file"

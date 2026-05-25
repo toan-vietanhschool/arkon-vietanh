@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export type Department = {
 };
 
 export default function DepartmentsPage() {
+  const t = useTranslations("Departments");
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -49,8 +51,8 @@ export default function DepartmentsPage() {
   return (
     <>
       <PageHeader
-        title="Departments"
-        description="Organize employees into departments and manage knowledge access."
+        title={t("title")}
+        description={t("description")}
         action={
           <Button
             onClick={handleCreate}
@@ -59,7 +61,7 @@ export default function DepartmentsPage() {
             <span className="material-symbols-outlined text-base mr-1">
               add
             </span>
-            Add Department
+            {t("addDepartment")}
           </Button>
         }
       />

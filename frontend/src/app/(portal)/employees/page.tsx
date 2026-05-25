@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ type PaginatedResponse = {
 };
 
 export default function EmployeesPage() {
+  const t = useTranslations("Employees");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -95,8 +97,8 @@ export default function EmployeesPage() {
   return (
     <>
       <PageHeader
-        title="Employees"
-        description="Manage user accounts and MCP access tokens."
+        title={t("title")}
+        description={t("description")}
         action={
           <Button
             onClick={handleCreate}
@@ -105,7 +107,7 @@ export default function EmployeesPage() {
             <span className="material-symbols-outlined text-base mr-1">
               person_add
             </span>
-            Add Employee
+            {t("addEmployee")}
           </Button>
         }
       />

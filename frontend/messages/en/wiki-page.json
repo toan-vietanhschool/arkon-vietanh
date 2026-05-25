@@ -1,0 +1,48 @@
+{
+  "backToWorkspace": "Workspace",
+  "backToWiki": "Wiki",
+  "backTitle": {
+    "workspace": "Back to Workspace",
+    "wiki": "Back to Wiki"
+  },
+  "editBtn": "Edit",
+  "proposeEditBtn": "Propose Edit",
+  "notFound": {
+    "title": "Page not found",
+    "description": "No wiki page found for \"{slug}\". It may not have been compiled yet."
+  },
+  "sidebar": {
+    "header": "Page Info",
+    "version": "Version",
+    "updated": "Updated",
+    "knowledgeTypes": "Knowledge Types",
+    "sourceDocs": "Source Documents ({count})",
+    "viewInKnowledgeBase": "View in Knowledge Base",
+    "noConnections": "No connections yet.",
+    "backlinks": "Backlinks",
+    "outlinks": "Outlinks",
+    "localGraph": "Local Graph"
+  },
+  "image": {
+    "loading": "Loading image…",
+    "denied": "Image access restricted",
+    "missing": "Image not found",
+    "ariaLabel": "Wiki image",
+    "download": "Download"
+  },
+  "content": {
+    "contents": "Contents",
+    "copyCode": "Copy code"
+  },
+  "editor": {
+    "resubmitNoteLabel": "Resubmission note",
+    "resubmitNotePlaceholder": "What changed in this round?",
+    "resubmitSaveLabel": "Resubmit draft",
+    "changeNoteLabel": "Change note",
+    "proposalNoteLabel": "Proposal note",
+    "changeNotePlaceholder": "Briefly describe what you changed (optional)",
+    "proposalNotePlaceholder": "Describe your proposed change (optional)",
+    "saveEditLabel": "Save Edit",
+    "submitProposalLabel": "Submit Proposal"
+  }
+}

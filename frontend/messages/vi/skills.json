@@ -1,0 +1,134 @@
+{
+  "pageTitle": "Thư viện Kỹ năng AI",
+  "pageDescription": "Quản lý và triển khai các gói kỹ năng cho hệ thống AI của bạn.",
+  "actions": {
+    "proposeSkill": "Đề xuất kỹ năng mới",
+    "uploadSkill": "Tải lên kỹ năng"
+  },
+  "filters": {
+    "department": "Phòng ban",
+    "allDepartments": "Tất cả phòng ban"
+  },
+  "pendingReview": {
+    "sidebarTitle": "Chờ duyệt",
+    "createSkillPrefix": "Tạo kỹ năng: ",
+    "untitledSkill": "Kỹ năng chưa đặt tên",
+    "by": "bởi"
+  },
+  "myContributions": {
+    "sectionTitle": "Bản thảo & đề xuất của bạn",
+    "proposalCount": "{count, plural, =1 {1 đề xuất} other {# đề xuất}}",
+    "columns": {
+      "proposal": "Đề xuất đóng góp",
+      "visibility": "Hiển thị",
+      "departments": "Phòng ban",
+      "status": "Trạng thái",
+      "updated": "Cập nhật"
+    },
+    "actions": {
+      "continueEditing": "Tiếp tục chỉnh sửa",
+      "deleteDraft": "Xóa bản thảo"
+    },
+    "confirmDelete": "Bạn có chắc muốn xóa đóng góp này không?",
+    "deleteFailed": "Xóa thất bại"
+  },
+  "table": {
+    "searchPlaceholder": "Tìm kiếm kỹ năng...",
+    "skillCount": "{count, plural, =1 {1 kỹ năng} other {# kỹ năng}}",
+    "columns": {
+      "skill": "Kỹ năng",
+      "version": "Phiên bản",
+      "visibility": "Hiển thị",
+      "department": "Phòng ban",
+      "status": "Trạng thái",
+      "updated": "Cập nhật"
+    },
+    "systemBadge": "Hệ thống",
+    "globalScope": "Toàn cục",
+    "emptyState": {
+      "title": "Chưa có kỹ năng",
+      "description": "Tải lên kỹ năng để bắt đầu xây dựng thư viện AI.",
+      "searchTitle": "Không tìm thấy kết quả",
+      "searchDescription": "Không có kỹ năng nào khớp với \"{search}\""
+    },
+    "actions": {
+      "editSkill": "Sửa kỹ năng",
+      "delete": "Xóa"
+    }
+  },
+  "card": {
+    "globalScope": "Toàn cục",
+    "details": "Chi tiết",
+    "edit": "Sửa",
+    "delete": "Xóa"
+  },
+  "editSkillDialog": {
+    "title": "Sửa kỹ năng",
+    "skillNameLabel": "Tên kỹ năng",
+    "skillNamePlaceholder": "Ví dụ: Data Analyst",
+    "invalidName": "Tên chứa ký tự không hợp lệ. Chỉ dùng chữ cái, số, khoảng trắng, - và _.",
+    "visibilityLabel": "Hiển thị",
+    "visibilityGlobal": "Toàn cục (Tất cả phòng ban)",
+    "visibilityDepartment": "Phòng ban cụ thể",
+    "targetDepartmentsLabel": "Phòng ban đích",
+    "noDepartments": "Không có phòng ban",
+    "saving": "Đang lưu...",
+    "saveChanges": "Lưu thay đổi",
+    "saveFailed": "Lưu thất bại"
+  },
+  "uploadVersionDialog": {
+    "title": "Tải lên phiên bản mới",
+    "description": "Tải lên gói ZIP mới để thay thế các tệp hiện tại và tạo phiên bản mới.",
+    "updateLabel": "Cập nhật",
+    "selectZip": "Chọn gói ZIP",
+    "uploading": "Đang tải lên...",
+    "invalidFileType": "Vui lòng chọn tệp ZIP",
+    "uploadFailed": "Tải lên thất bại"
+  },
+  "detail": {
+    "backToSkills": "Quay lại kỹ năng",
+    "packageExplorer": "Trình khám phá gói",
+    "notFound": {
+      "title": "Không tìm thấy kỹ năng",
+      "description": "Không tìm thấy kỹ năng với mã \"{slug}\". Kỹ năng có thể đã bị xóa hoặc di chuyển.",
+      "returnBtn": "Về thư viện"
+    },
+    "sidebar": {
+      "statusLabel": "Trạng thái",
+      "versionHistoryLabel": "Lịch sử phiên bản",
+      "previewingOld": "XEM CŨ",
+      "versionItem": "Phiên bản {version}",
+      "versionLatest": " (Mới nhất)",
+      "setLatestBtn": "Đặt làm phiên bản chính thức",
+      "settingLatest": "Đang đặt..."
+    }
+  },
+  "contributionEditor": {
+    "editingTitle": "Đang chỉnh sửa đóng góp",
+    "draftMode": "Chế độ bản thảo",
+    "contributeBtn": "Đóng góp",
+    "deleteDraftTitle": "Xóa bản thảo",
+    "closeEditorTitle": "Đóng trình soạn thảo",
+    "confirmSubmit": "Bạn có chắc muốn gửi đóng góp này để xem xét không?",
+    "submitSuccess": "Đóng góp đã được gửi thành công!",
+    "submitFailed": "Gửi thất bại",
+    "confirmDeleteDraft": "Bạn có chắc muốn xóa bản thảo đóng góp này không? Hành động này không thể hoàn tác.",
+    "deleteFailed": "Xóa thất bại"
+  },
+  "reviewEditor": {
+    "reviewTitle": "Xem xét đóng góp",
+    "submittedBy": "Gửi bởi",
+    "unknownContributor": "Không rõ",
+    "rejectBtn": "Từ chối",
+    "approveMergeBtn": "Xác nhận & Hợp nhất",
+    "closeReviewerTitle": "Đóng trình xem xét",
+    "confirmApprove": "Bạn có chắc muốn XÁC NHẬN và HỢP NHẤT đóng góp này không?",
+    "approveSuccess": "Đóng góp đã được xác nhận và hợp nhất thành công!",
+    "approveFailed": "Xác nhận thất bại",
+    "confirmReject": "Bạn có chắc muốn TỪ CHỐI đóng góp này không?",
+    "rejectSuccess": "Đóng góp đã bị từ chối.",
+    "rejectFailed": "Từ chối thất bại"
+  },
+  "confirmDelete": "Bạn có chắc muốn xóa kỹ năng \"{name}\" không?",
+  "deleteFailed": "Xóa thất bại"
+}

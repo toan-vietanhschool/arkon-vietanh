@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { EmptyState } from "@/components/shared/empty-state";
 import { WikiTypeBadge, wikiTypeGroupLabel } from "@/components/wiki/wiki-type-badge";
 import { WikiPageTree } from "@/components/wiki/wiki-page-tree";
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props) {
+  const t = useTranslations("Projects");
   const [wikiTypeTab, setWikiTypeTab] = useState<string>("all");
   const [selectedWikiSlug, setSelectedWikiSlug] = useState<string | null>(null);
   const [selectedWikiPage, setSelectedWikiPage] = useState<WikiPageDetail | null>(null);
@@ -85,8 +87,8 @@ export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props)
             ) : wikiPages.length === 0 ? (
               <EmptyState
                 icon="auto_stories"
-                title="No wiki pages yet"
-                description="Upload documents in this workspace to automatically compile knowledge into wiki pages."
+                title={t("wiki.noPages.title")}
+                description={t("wiki.noPages.description")}
               />
             ) : (
               <>
@@ -99,7 +101,7 @@ export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props)
                     <span className="text-sm font-semibold text-foreground">
                       {wikiPages.length}
                     </span>
-                    <span className="text-xs text-muted-foreground">Pages</span>
+                    <span className="text-xs text-muted-foreground">{t("wiki.pagesLabel")}</span>
                   </div>
                   {Object.entries(wikiTypeCounts)
                     .sort((a, b) => b[1] - a[1])
@@ -121,7 +123,7 @@ export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props)
                           schedule
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          Updated{" "}
+                          {t("wiki.updatedLabel")}{" "}
                           {new Date(wikiPages[0].updated_at).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
@@ -134,7 +136,7 @@ export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props)
                       className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sahara"
                     >
                       <span className="material-symbols-outlined text-base">hub</span>
-                      Graph View
+                      {t("wiki.graphView")}
                     </button>
                   </div>
                 </div>
@@ -157,7 +159,7 @@ export function WikiTab({ project, wikiPages, wikiLoading, wikiIndexMd }: Props)
                             : "border-transparent text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {wt === "all" ? "All" : wikiTypeGroupLabel(wt)}
+                        {wt === "all" ? t("wiki.allFilter") : wikiTypeGroupLabel(wt)}
                         <span className="ml-1.5 tabular-nums text-muted-foreground">
                           {count}
                         </span>

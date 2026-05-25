@@ -1,0 +1,117 @@
+{
+  "queueTitle": "Review queue",
+  "shortcutsHint": "Keyboard shortcuts",
+  "tabs": {
+    "toReview": "To review",
+    "mine": "Mine"
+  },
+  "statusFilter": {
+    "pending": "Pending",
+    "needs_revision": "Needs revision",
+    "approved": "Approved",
+    "rejected": "Rejected"
+  },
+  "scopeGlobal": "Global",
+  "allScopes": "All scopes ({count})",
+  "scopeFilterTitle": "Filter by scope",
+  "draftCount": "{count, plural, =1 {1 draft} other {# drafts}}",
+  "draftCountFiltered": "{filtered} of {total, plural, =1 {1 draft} other {# drafts}}",
+  "loading": "Loading…",
+  "refresh": "Refresh",
+  "queueEmpty": {
+    "title": "Empty queue",
+    "descriptionScope": "No drafts in this scope. Switch to 'All scopes' to see others.",
+    "descriptionStatus": "No drafts in {status} state."
+  },
+  "listItem": {
+    "new": "new",
+    "conflict": "conflict",
+    "aiStatus": "AI: {status}"
+  },
+  "center": {
+    "selectPrompt": "Select a draft from the queue.",
+    "newPageBadge": "new page",
+    "conflict": "conflict — base v{base} → page v{page}",
+    "openPage": "open page ↗",
+    "loadingPage": "Loading current page…",
+    "emptyContent": "Empty content.",
+    "tabs": {
+      "diff": "Diff",
+      "proposed": "Proposed",
+      "current": "Current page"
+    },
+    "compareWith": "Compare with:",
+    "compareCurrent": "Current page",
+    "compareDraft": "Draft by {author}",
+    "compareDraftRound": "Draft by {author} (r{round})"
+  },
+  "rightPane": {
+    "noSelection": "No draft selected.",
+    "sectionAuthor": "Author",
+    "authorUnknown": "Unknown",
+    "authorStats": "{approved}✓ · {pct}% accuracy",
+    "authorStatsTitle": "{approved} approved · {rejected} rejected",
+    "authorStatsWithRevision": "{approved} approved · {rejected} rejected · {revision} returned",
+    "firstContribution": "first contribution",
+    "sectionSubmitted": "Submitted",
+    "round": "round {round}",
+    "reviewerAsked": "Reviewer asked:",
+    "sectionSuggestedPage": "Suggested page",
+    "tags": "Tags: {tags}",
+    "sectionSuggestedReviewers": "Suggested reviewers",
+    "sectionAiPreview": "AI pre-review",
+    "ownDraft": "This is your draft.",
+    "draftStatus": "Draft is {status}.",
+    "waitingResubmit": "Waiting for the author to resubmit.",
+    "counter": "{current} / {total}"
+  },
+  "actions": {
+    "approve": "Approve",
+    "approveKey": "A",
+    "requestChanges": "Request changes",
+    "requestChangesKey": "C",
+    "reject": "Reject",
+    "rejectKey": "R",
+    "withdraw": "Withdraw",
+    "confirmReject": "Confirm reject",
+    "sendBack": "Send back",
+    "cancel": "Cancel",
+    "cancelKey": "Esc"
+  },
+  "note": {
+    "rejectLabel": "Rejection reason",
+    "requestChangesLabel": "What needs to change?",
+    "rejectPlaceholder": "Tell the contributor why this was rejected…",
+    "requestChangesPlaceholder": "Explain what to fix before resubmission…",
+    "charMin": "{current}/{min} characters minimum"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "close": "Close",
+    "nextDraft": "Next draft",
+    "prevDraft": "Previous draft",
+    "approveCurrent": "Approve current draft",
+    "requestChanges": "Request changes (focus note)",
+    "reject": "Reject (focus note)",
+    "cancelAction": "Cancel pending action",
+    "toggleHelp": "Toggle this help",
+    "disabledInField": "Shortcuts disabled while focus is in a text field.",
+    "keys": {
+      "nextDraft": "j / ↓",
+      "prevDraft": "k / ↑",
+      "approve": "a",
+      "requestChanges": "c",
+      "reject": "r",
+      "cancel": "Esc",
+      "help": "?"
+    }
+  },
+  "withdrawConfirm": "Withdraw this draft? It will be removed from the review queue.",
+  "errors": {
+    "approveFailed": "Approve failed",
+    "actionFailed": "Action failed",
+    "recheckFailed": "Re-check failed",
+    "withdrawFailed": "Withdraw failed",
+    "noteLengthError": "Please write at least {min} characters."
+  }
+}

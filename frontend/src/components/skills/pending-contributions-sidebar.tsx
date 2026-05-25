@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ export function PendingContributionsSidebar({
   refreshInterval = 30000, // Default 30s
   skillId,
 }: PendingContributionsSidebarProps) {
+  const t = useTranslations("Skills");
   const { canAccess, hasPermission } = useAuth();
   const [internalContributions, setInternalContributions] = useState<PendingContribution[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,7 @@ export function PendingContributionsSidebar({
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-foreground tracking-tight flex items-center gap-2">
           <span className="material-symbols-outlined text-primary/70 text-sm">rate_review</span>
-          Pending Review
+          {t("pendingReview.sidebarTitle")}
         </h4>
         <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
           {contributions.length}
@@ -84,7 +86,7 @@ export function PendingContributionsSidebar({
           >
             <div className="flex items-center justify-between w-full gap-2">
               <span className="text-[13px] font-bold text-foreground truncate group-hover:text-primary transition-colors font-manrope">
-                {c.skill_id ? c.title : `Create skill: ${c.title || "Untitled Skill"}`}
+                {c.skill_id ? c.title : `${t("pendingReview.createSkillPrefix")}${c.title || t("pendingReview.untitledSkill")}`}
               </span>
               <span className="material-symbols-outlined text-[14px] text-muted-foreground/20 group-hover:text-primary/40 transition-all">
                 arrow_forward
@@ -92,7 +94,7 @@ export function PendingContributionsSidebar({
             </div>
             <div className="flex items-center gap-2 w-full">
               <span className="text-[10px] text-muted-foreground/60 truncate font-medium">
-                by {c.contributor_name}
+                {t("pendingReview.by")} {c.contributor_name}
               </span>
               <span className="text-[10px] text-muted-foreground/30">•</span>
               <span className="text-[10px] text-muted-foreground/40 font-medium">
