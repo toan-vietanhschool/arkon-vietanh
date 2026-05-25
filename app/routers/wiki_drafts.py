@@ -713,6 +713,54 @@ async def get_draft(
     return await _draft_response(db, draft)
 
 
+@router.post("/wiki/drafts/{draft_id}/rerun-ai-review", response_model=DraftResponse)
+async def rerun_ai_review(
+    draft_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: Employee = Depends(get_current_user),
+):
+    """Re-trigger the AI pre-review pipeline for a draft.
+
+    Useful after fixing a provider config issue or when a check layer was
+    skipped due to a transient error (e.g. LLM provider rate limit).
+    Author, reviewer, or admin can trigger. Only valid while draft is pending.
+    """
+    draft = await _load_draft(db, draft_id)
+    if user.role != "admin" and draft.author_id != user.id:
+        if not await _can_review_draft(db, user, draft):
+            raise HTTPException(403, "Insufficient permission to rerun review on this draft")
+    if draft.status != "pending":
+        raise HTTPException(400, f"Cannot rerun review on a {draft.status} draft")
+
+    draft.ai_check_status = "queued"
+    draft.ai_check_results = None
+    # Flush + refresh so server-side onupdate columns (updated_at) are loaded
+    # before _draft_response accesses them — otherwise auto-flush inside
+    # _draft_response leaves them expired and triggers MissingGreenlet.
+    await db.flush()
+    await db.refresh(draft)
+
+    try:
+        from app.worker import get_arq_pool
+        pool = await get_arq_pool()
+        await pool.enqueue_job(
+            "ai_pre_review_draft_task",
+            str(draft.id),
+            int(draft.revision_round or 0),
+        )
+    except Exception as e:
+        draft.ai_check_status = "skipped"
+        await db.commit()
+        raise HTTPException(503, f"Failed to enqueue AI review: {e}")
+
+    await log_audit(
+        db, user, "update", "wiki_draft", str(draft.id),
+        reason="re-triggered AI pre-review",
+    )
+    await db.commit()
+    return await _draft_response(db, draft)
+
+
 @router.post("/wiki/drafts/{draft_id}/approve", response_model=DraftResponse)
 async def approve_draft(
     draft_id: str,

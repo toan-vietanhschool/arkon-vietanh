@@ -100,6 +100,7 @@ export default function WikiReviewPage() {
   const [actionMode, setActionMode] = React.useState<ActionMode>(null);
   const [note, setNote] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const [rerunBusy, setRerunBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const noteRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -334,6 +335,24 @@ export default function WikiReviewPage() {
       setBusy(false);
     }
   }, [draft, actionMode, note, advanceAfterAction]);
+
+  const handleRerunAiReview = React.useCallback(async () => {
+    if (!draft) return;
+    setRerunBusy(true);
+    setError(null);
+    try {
+      const fresh = await api<DraftResponse>(
+        `/api/wiki/drafts/${draft.id}/rerun-ai-review`,
+        { method: "POST" },
+      );
+      setDrafts((prev) => prev.map((d) => (d.id === fresh.id ? fresh : d)));
+      setLiveDraft(fresh);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Re-check failed");
+    } finally {
+      setRerunBusy(false);
+    }
+  }, [draft]);
 
   const handleWithdraw = React.useCallback(async () => {
     if (!draft) return;
@@ -774,7 +793,12 @@ export default function WikiReviewPage() {
             {/* AI check panel */}
             <section>
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">AI pre-review</p>
-              <WikiAiCheckPanel status={draft.ai_check_status} results={draft.ai_check_results} />
+              <WikiAiCheckPanel
+                status={draft.ai_check_status}
+                results={draft.ai_check_results}
+                onRerun={handleRerunAiReview}
+                rerunBusy={rerunBusy}
+              />
             </section>
 
             {/* Action area */}
