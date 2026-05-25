@@ -28,7 +28,10 @@
     "logout": "Logout",
     "read": "Read",
     "approve": "Approve",
-    "reject": "Reject"
+    "reject": "Reject",
+    "switch_embedding_model": "Switch embedding model",
+    "switch_llm_model": "Switch LLM model",
+    "switch_vision_model": "Switch vision model"
   },
   "decision": {
     "ALLOW": "Allow",
@@ -41,6 +44,8 @@
     "project": "Workspace",
     "department": "Department",
     "role": "Role",
-    "skill": "Skill"
+    "skill": "Skill",
+    "compilation_plan": "Compilation plan",
+    "settings": "Settings"
   }
 }

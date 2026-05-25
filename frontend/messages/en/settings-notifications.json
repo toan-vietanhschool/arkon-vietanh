@@ -9,7 +9,7 @@
     "username": "Username",
     "password": "Password",
     "fromAddress": "From address",
-    "fromPlaceholder": "Arkon <noreply@your-org.example>",
+    "fromPlaceholder": "Arkon noreply@your-org.example",
     "passwordUnchanged": "(unchanged)",
     "useTls": "Use STARTTLS",
     "save": "Save SMTP settings"
