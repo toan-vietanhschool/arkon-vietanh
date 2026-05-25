@@ -60,10 +60,7 @@ export function LocaleSwitcher() {
           return (
             <DropdownMenuItem
               key={loc}
-              onSelect={(event) => {
-                event.preventDefault();
-                handleSelect(loc);
-              }}
+              onClick={() => handleSelect(loc)}
               className={cn(
                 "flex items-center justify-between gap-2 text-[13px]",
                 isActive && "font-semibold",
