@@ -1,0 +1,43 @@
+{
+  "Common": {
+    "loading": "Đang tải...",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "close": "Đóng",
+    "confirm": "Xác nhận",
+    "back": "Quay lại",
+    "next": "Tiếp",
+    "search": "Tìm kiếm",
+    "noResults": "Không có kết quả",
+    "error": "Đã có lỗi xảy ra"
+  },
+  "Nav": {
+    "wiki": "Wiki",
+    "review": "Đánh giá",
+    "knowledge": "Tri thức",
+    "skills": "Kỹ năng",
+    "projects": "Workspace",
+    "employees": "Nhân viên",
+    "departments": "Phòng ban",
+    "settings": "Cài đặt",
+    "audit": "Nhật ký",
+    "stats": "Thống kê",
+    "logout": "Đăng xuất",
+    "language": "Ngôn ngữ"
+  },
+  "Auth": {
+    "signIn": "Đăng nhập",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "submitSignIn": "Đăng nhập",
+    "signingIn": "Đang đăng nhập...",
+    "invalidCredentials": "Email hoặc mật khẩu không đúng"
+  },
+  "LocaleSwitcher": {
+    "label": "Ngôn ngữ",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  }
+}
