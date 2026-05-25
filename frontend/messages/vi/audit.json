@@ -28,7 +28,10 @@
     "logout": "Đăng xuất",
     "read": "Xem",
     "approve": "Duyệt",
-    "reject": "Từ chối"
+    "reject": "Từ chối",
+    "switch_embedding_model": "Đổi mô hình embedding",
+    "switch_llm_model": "Đổi mô hình LLM",
+    "switch_vision_model": "Đổi mô hình vision"
   },
   "decision": {
     "ALLOW": "Cho phép",
@@ -41,6 +44,8 @@
     "project": "Workspace",
     "department": "Phòng ban",
     "role": "Vai trò",
-    "skill": "Kỹ năng"
+    "skill": "Kỹ năng",
+    "compilation_plan": "Kế hoạch biên soạn",
+    "settings": "Cài đặt"
   }
 }

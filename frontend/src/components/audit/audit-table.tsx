@@ -91,12 +91,18 @@ export function AuditTable({ logs, loading }: Props) {
                       : "border-blue-200 text-blue-700 bg-blue-50/50"
                   }`}
                 >
-                  {t(`action.${log.action.toLowerCase()}`)}
+                  {t.has(`action.${log.action.toLowerCase()}`)
+                    ? t(`action.${log.action.toLowerCase()}`)
+                    : log.action}
                 </Badge>
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="text-sm">{t(`resourceType.${log.resource_type}`)}</span>
+                  <span className="text-sm">
+                    {t.has(`resourceType.${log.resource_type}`)
+                      ? t(`resourceType.${log.resource_type}`)
+                      : log.resource_type}
+                  </span>
                   {log.resource_id && (
                     <span className="text-xs text-muted-foreground font-mono">
                       {log.resource_id.length > 20 ? log.resource_id.slice(0, 8) + '...' : log.resource_id}

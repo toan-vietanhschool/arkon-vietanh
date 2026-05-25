@@ -9,7 +9,7 @@
     "username": "Username",
     "password": "Password",
     "fromAddress": "Địa chỉ gửi",
-    "fromPlaceholder": "Arkon <noreply@your-org.example>",
+    "fromPlaceholder": "Arkon noreply@your-org.example",
     "passwordUnchanged": "(giữ nguyên)",
     "useTls": "Dùng STARTTLS",
     "save": "Lưu cài đặt SMTP"
