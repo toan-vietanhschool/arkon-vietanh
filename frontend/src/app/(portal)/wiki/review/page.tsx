@@ -431,7 +431,11 @@ export default function WikiReviewPage() {
   // ---------- Render ----------
 
   const currentUserId = user?.id ?? null;
-  const isOwnDraft = !!draft && !!currentUserId && draft.author_id === currentUserId;
+  const isAdmin = user?.role === "admin";
+  // Admin is allowed to approve their own drafts server-side (see
+  // app/routers/wiki_drafts.py approve_draft) — mirror that here so the
+  // approve/reject controls aren't hidden from them.
+  const isOwnDraft = !!draft && !!currentUserId && draft.author_id === currentUserId && !isAdmin;
   const isCreate = draft?.draft_kind === "create";
   const isPending = draft?.status === "pending";
   const isNeedsRevision = draft?.status === "needs_revision";
