@@ -64,3 +64,8 @@ uv.lock
 
 # Nginx
 nginx/
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright/

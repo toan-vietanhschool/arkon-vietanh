@@ -681,13 +681,24 @@ async def list_source_candidates(
     await _get_project_or_404(db, project_id)
     await _require_workspace_role(db, _user, project_id, WorkspaceRole.EDITOR.value)
 
+    pid = uuid.UUID(project_id)
     linked_ids_stmt = select(ProjectSource.source_id).where(
-        ProjectSource.project_id == uuid.UUID(project_id)
+        ProjectSource.project_id == pid
     )
     stmt = (
         select(Source)
         .options(selectinload(Source.knowledge_type))
-        .where(Source.id.notin_(linked_ids_stmt))
+        .where(
+            Source.id.notin_(linked_ids_stmt),
+            # Exclude sources already OWNED by this workspace
+            # (scope_type='project', scope_id=this). They're effectively
+            # "in" the workspace via ownership; surfacing them as
+            # link candidates would mislead editors into thinking they
+            # need to add them — and the subsequent POST would 409
+            # because the source's home scope already targets this ws
+            # in `_resolve_wiki_scopes`.
+            ~((Source.scope_type == "project") & (Source.scope_id == pid)),
+        )
         .order_by(Source.created_at.desc())
         .limit(max(1, min(limit, 500)))
     )
