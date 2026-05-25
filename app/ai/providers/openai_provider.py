@@ -30,6 +30,13 @@ from app.ai.providers.base import (
 )
 
 
+def _is_reasoning_model(model_id: str) -> bool:
+    # OpenAI reasoning models (o1/o3/o4 series, gpt-5+) reject `max_tokens` and
+    # `temperature`; they require `max_completion_tokens` and ignore temperature.
+    mid = (model_id or "").lower()
+    return mid.startswith(("o1", "o3", "o4", "gpt-5"))
+
+
 class OpenAIEmbedding(EmbeddingProvider):
     """OpenAI embedding provider."""
 
@@ -122,13 +129,15 @@ class OpenAILLM(LLMProvider):
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
+        reasoning = _is_reasoning_model(self.config.model_id)
         kwargs: dict = {
             "model": self.config.model_id,
             "messages": messages,
-            "temperature": temperature,
         }
+        if not reasoning:
+            kwargs["temperature"] = temperature
         if max_tokens is not None:
-            kwargs["max_tokens"] = max_tokens
+            kwargs["max_completion_tokens" if reasoning else "max_tokens"] = max_tokens
 
         response = await self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content or ""
@@ -146,14 +155,16 @@ class OpenAILLM(LLMProvider):
             openai_messages.append({"role": "system", "content": system})
         openai_messages.extend(neutral_to_openai_messages(messages))
 
+        reasoning = _is_reasoning_model(self.config.model_id)
         kwargs: dict = {
             "model": self.config.model_id,
             "messages": openai_messages,
             "tools": tools,
-            "temperature": temperature,
         }
+        if not reasoning:
+            kwargs["temperature"] = temperature
         if max_tokens is not None:
-            kwargs["max_tokens"] = max_tokens
+            kwargs["max_completion_tokens" if reasoning else "max_tokens"] = max_tokens
 
         response = await self.client.chat.completions.create(**kwargs)
 
