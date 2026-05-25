@@ -30,19 +30,49 @@ from app.utils.progress import ProgressTracker
 async def _resolve_wiki_scopes(session: AsyncSession, source) -> list[tuple[str, Optional[uuid.UUID]]]:
     """Return the list of (scope_type, scope_id) tuples to commit wiki pages into.
 
-    Project scope takes priority. If source has department assignments, one scope
-    per department. Falls back to global.
+    Resolution order:
+      1. If `source.scope_type == 'project'`, the source itself is owned by a
+         workspace — commit into that workspace.
+      2. Otherwise the source is global. Per-department assignments (via
+         SourceDepartment) take priority over the global fallback.
+      3. ON TOP of (1) or (2), any workspace that has LINKED this source via
+         ProjectSource is also a commit target. This lets workspaces consume
+         global / departmental sources without re-uploading — the same wiki
+         content is materialised inside each workspace's own scope so scope
+         filters (MCP, wiki UI) work uniformly.
+
+    Result is deduplicated; order is preserved (primary scope first, linked
+    workspaces appended).
     """
-    from app.database.models import SourceDepartment
+    from app.database.models import ProjectSource, SourceDepartment
+
+    scopes: list[tuple[str, Optional[uuid.UUID]]] = []
     if source.scope_type == "project":
-        return [("project", source.scope_id)]
-    rows = (await session.execute(
-        select(SourceDepartment.department_id).where(SourceDepartment.source_id == source.id)
+        scopes.append(("project", source.scope_id))
+    else:
+        rows = (await session.execute(
+            select(SourceDepartment.department_id).where(SourceDepartment.source_id == source.id)
+        )).all()
+        dept_ids = [r[0] for r in rows]
+        if dept_ids:
+            scopes.extend([("department", did) for did in dept_ids])
+        else:
+            scopes.append(("global", None))
+
+    linked_rows = (await session.execute(
+        select(ProjectSource.project_id).where(ProjectSource.source_id == source.id)
     )).all()
-    dept_ids = [r[0] for r in rows]
-    if dept_ids:
-        return [("department", did) for did in dept_ids]
-    return [("global", None)]
+    for (pid,) in linked_rows:
+        scopes.append(("project", pid))
+
+    seen: set[tuple[str, Optional[uuid.UUID]]] = set()
+    out: list[tuple[str, Optional[uuid.UUID]]] = []
+    for s in scopes:
+        if s in seen:
+            continue
+        seen.add(s)
+        out.append(s)
+    return out
 
 
 # ---------------------------------------------------------------------------
