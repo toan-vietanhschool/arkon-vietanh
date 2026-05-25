@@ -47,6 +47,18 @@ class NotificationType:
 # Write helpers
 # ---------------------------------------------------------------------------
 
+# notifications.subject is VARCHAR(200). Long wiki page titles plus their slugs
+# can blow past this and crash the approve/reject/... flow with a 500 on insert.
+# Clamp here so callers don't have to think about it.
+_SUBJECT_MAX = 200
+
+
+def _clamp_subject(s: str) -> str:
+    if not s:
+        return ""
+    return s if len(s) <= _SUBJECT_MAX else s[: _SUBJECT_MAX - 1] + "…"
+
+
 async def notify(
     db: AsyncSession,
     recipient_id: uuid.UUID,
@@ -61,7 +73,7 @@ async def notify(
     n = Notification(
         recipient_id=recipient_id,
         type=type,
-        subject=subject,
+        subject=_clamp_subject(subject),
         body=body,
         target_type=target_type,
         target_id=str(target_id),
@@ -101,7 +113,7 @@ async def notify_each(
         out.append(Notification(
             recipient_id=rid,
             type=type,
-            subject=item.get("subject", ""),
+            subject=_clamp_subject(item.get("subject", "")),
             body=item.get("body", ""),
             target_type=target_type,
             target_id=str(item.get("target_id") or ""),
