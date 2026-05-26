@@ -120,19 +120,10 @@
     "pagesLabel": "Pages",
     "updatedLabel": "Updated",
     "graphView": "Graph View",
-    "pinGlobalAction": "Pin global page",
-    "pinnedBadge": "Pinned",
     "noPages": {
       "title": "No wiki pages yet",
       "description": "Upload documents in this workspace to automatically compile knowledge into wiki pages."
     },
     "allFilter": "All"
-  },
-  "pinGlobalPage": {
-    "title": "Pin a global wiki page into this workspace",
-    "description": "Pick a global wiki page to surface inside this workspace. The page stays owned by its home scope — edits there flow through automatically.",
-    "searchPlaceholder": "Search by title or slug...",
-    "empty": "No more global pages available to pin.",
-    "pinAction": "Pin"
   }
 }

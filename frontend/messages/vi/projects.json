@@ -120,19 +120,10 @@
     "pagesLabel": "Trang",
     "updatedLabel": "Cập nhật",
     "graphView": "Xem đồ thị",
-    "pinGlobalAction": "Pin trang global",
-    "pinnedBadge": "Đã pin",
     "noPages": {
       "title": "Chưa có trang wiki",
       "description": "Tải lên tài liệu trong workspace này để tự động tổng hợp tri thức thành các trang wiki."
     },
     "allFilter": "Tất cả"
-  },
-  "pinGlobalPage": {
-    "title": "Pin trang wiki global vào workspace",
-    "description": "Chọn trang wiki global để hiển thị trong wiki của workspace này. Trang vẫn được quản lý ở scope gốc, mọi sửa đổi ở đó sẽ phản ánh ngay tại đây.",
-    "searchPlaceholder": "Tìm theo tên hoặc slug...",
-    "empty": "Không còn trang global nào để pin.",
-    "pinAction": "Pin"
   }
 }
