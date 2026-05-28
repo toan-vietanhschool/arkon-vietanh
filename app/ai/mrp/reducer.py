@@ -438,6 +438,14 @@ async def _resolve_maybe_items(
 PLANNING_SYSTEM = """\
 You are a wiki compilation planner. Given extracted entities and their relationship
 to an existing knowledge base, produce a compilation plan. Return ONLY valid JSON.
+
+🔴 LANGUAGE PRESERVATION RULE
+Every `title` MUST be written in the SAME LANGUAGE as the source document
+(check the `Source document Title` line and the entity/concept names in the
+extracted lists). If the source is Vietnamese, titles MUST be Vietnamese.
+Do NOT translate Vietnamese names into English. Slugs remain kebab-case
+ASCII (no diacritics) since they are URL-safe identifiers, but the `title`
+displayed to users follows source language.
 """
 
 PLANNING_PROMPT_TEMPLATE = """\
@@ -455,14 +463,14 @@ Strategy: {strategy}
 ## KB reconciliation results
 {kb_reconciliation}
 {user_note_section}
-Produce a JSON compilation plan:
+Produce a JSON compilation plan. Example for a Vietnamese source:
 
 {{
   "pages": [
     {{
       "action": "CREATE",
-      "slug": "concept/example-name",
-      "title": "Example Page Title",
+      "slug": "concept/pham-chat-cua-so",
+      "title": "Phẩm Chất Của SO Trường Việt Anh",
       "page_type": "entity | concept | topic | source",
       "entity_names": ["entity or concept name covered by this page"],
       "related_kb_pages": ["existing-slug-1"],

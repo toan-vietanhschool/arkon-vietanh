@@ -145,6 +145,39 @@ You are an enterprise knowledge wiki writer. Your job is to write a single,
 high-quality wiki page by reading the SOURCE TEXT provided and using the
 evidence checklist as guidance for what to cover.
 
+# 🔴 ABSOLUTE RULE: PRESERVE QUANTITATIVE FACTS VERBATIM
+This is the #1 rule. Violations fail the page.
+
+If the source text contains ANY of these, they MUST appear in your output
+exactly as in the source — never summarized into general statements, never
+rephrased into "a few" / "several" / "minimum" without the number:
+
+- **Counts / minimums / maximums**: "200 customers", "at least 5 people",
+  "max 30 students per class".
+- **Durations / time windows**: "within 3 days", "every 2 weeks", "valid
+  for 6 months", "before 31/3/2026".
+- **Percentages / ratios**: "10% discount", "8% early-bird", "1:15
+  teacher-student ratio".
+- **Money / prices**: "13,000,000 VND/month", "$50 fee", "early-bird
+  -8%".
+- **Dates / years**: "school year 2026-2027", "applies from 1/8/2026".
+- **Phone / email / contact identifiers**: "0901-234-567",
+  "tuyensinh@vietanh.edu.vn".
+
+## ❌ BAD — summarizing a number out of existence
+Source: "Mỗi nhân viên cần xây ít nhất 200 khách hàng dự trữ và chăm sóc
+kỹ trong 3 ngày đầu."
+Wiki:   "Cần duy trì liên lạc với khách hàng cho đến khi họ có nhu cầu."
+
+## ✅ GOOD — number + context preserved
+Source: "Mỗi nhân viên cần xây ít nhất 200 khách hàng dự trữ và chăm sóc
+kỹ trong 3 ngày đầu."
+Wiki:   "Mỗi sale cần duy trì danh sách **≥ 200 khách hàng dự trữ**, mỗi
+khách được chăm sóc kỹ trong **3 ngày đầu** sau khi tiếp cận."
+
+If a number appears in the source but not the evidence checklist, INCLUDE
+IT ANYWAY — the checklist is a floor, not a ceiling.
+
 # Mindset: COMPILE, do NOT summarize
 You are not writing an executive summary. You are extracting structured knowledge
 and rewriting it into a reusable wiki page. The output should contain MORE
@@ -156,7 +189,7 @@ find the actual numbers, regulations, procedures, names, and edge cases — not
 just a high-level recap.
 
 # What to KEEP from the source (do not lose these)
-- Specific numbers: thresholds, dosages, timeframes, dimensions, percentages.
+- **Quantitative facts** — see the ABSOLUTE RULE above.
 - Named regulations, laws, articles, code references.
 - Equipment names, model numbers, product specs.
 - Procedure steps in order, with actual actions (not "follow the procedure"
@@ -420,8 +453,11 @@ _SIMPLE_WRITER_PROMPT = """\
 - Title: {title}
 - Type: {page_type}
 
-## Available pages (ONLY use these slugs for [[wikilinks]])
+## Available pages — siblings in THIS source's plan (link freely)
 {all_plan_slugs}
+
+## Existing wiki pages — from OTHER sources/scopes (link when topics overlap)
+{kb_neighbors}
 
 {existing_section}
 
@@ -439,9 +475,22 @@ But also look for additional relevant information in the source text above.
 {image_section}
 ## Instructions
 Write the complete wiki page in markdown based on the source text above.
-Cross-link to other pages using [[slug]] or [[slug|display text]] — ONLY
-use slugs from the "Available pages" list. Do NOT invent new slugs.
-Do NOT include Citations or Footnotes sections.
+
+**Before writing, scan the source for every number, date, percentage,
+duration, count, money amount, and contact identifier — list them mentally,
+and ensure each appears in your output (or is explicitly justified as
+out-of-scope for this page's slug).** A page that ships without the source's
+quantitative facts is a regression.
+
+Cross-link to other pages using [[slug]] or [[slug|display text]]. You MAY
+use slugs from either list above:
+- Sibling pages (this plan) — link liberally; they share context.
+- Existing wiki pages (other sources) — link ONLY when the concept genuinely
+  overlaps (e.g., this page mentions a value/skill/method that already has a
+  dedicated page elsewhere in the wiki). Bridging knowledge across sources
+  is a feature, not noise — but do NOT force a link if the overlap is weak.
+
+Do NOT invent new slugs. Do NOT include Citations or Footnotes sections.
 
 Return ONLY the markdown content, no other text.
 """
@@ -459,6 +508,29 @@ def _format_evidence_blocks(evidence: list[dict]) -> tuple[str, list[dict]]:
 
 
 _IMAGE_MARKER_RE = re.compile(r"!\[([^\]]*)\]\(image://([0-9a-fA-F-]+)\)")
+
+
+def _format_kb_neighbors(
+    neighbors: Optional[list[tuple[str, str]]],
+    exclude_slug: str = "",
+    max_items: int = 60,
+) -> str:
+    """Render existing-wiki neighbour slugs as a bulleted list for the writer prompt.
+
+    `neighbors` is a list of (slug, title) tuples already filtered to the
+    source's wiki scopes (excluding pages in the current plan).
+    """
+    if not neighbors:
+        return "(none — no related existing pages in this scope)"
+    lines = []
+    for slug, title in neighbors[:max_items]:
+        if slug == exclude_slug or not slug:
+            continue
+        if title:
+            lines.append(f"- [[{slug}]] — {title}")
+        else:
+            lines.append(f"- [[{slug}]]")
+    return "\n".join(lines) if lines else "(none)"
 
 
 def _collect_relevant_image_markers(
@@ -495,6 +567,7 @@ async def _write_page_simple(
     all_plan_slugs: list[str],
     source_context: str = "",
     image_markers: Optional[list[str]] = None,
+    kb_neighbors: Optional[list[tuple[str, str]]] = None,
 ) -> tuple[str, str, list[dict]]:
     """
     Returns (content_md, summary, citations_meta).
@@ -503,6 +576,8 @@ async def _write_page_simple(
     own_slug = plan_item.get("slug", "")
     available = [s for s in all_plan_slugs if s != own_slug]
     all_plan_slugs_str = "\n".join(f"- [[{s}]]" for s in available) if available else "(none — this is the only page)"
+
+    kb_neighbors_str = _format_kb_neighbors(kb_neighbors, exclude_slug=own_slug)
 
     existing_section = (
         f"## Existing page content (UPDATE — integrate new evidence into this)\n\n{existing_content}\n"
@@ -527,6 +602,7 @@ async def _write_page_simple(
         title=plan_item.get("title", ""),
         page_type=plan_item.get("page_type", "concept"),
         all_plan_slugs=all_plan_slugs_str,
+        kb_neighbors=kb_neighbors_str,
         existing_section=existing_section,
         source_context=source_context or "(no source text available)",
         evidence_count=len(evidence),
@@ -622,6 +698,7 @@ async def _write_page_complex(
     session: AsyncSession,
     source,
     all_plan_slugs: list[str],
+    kb_neighbors: Optional[list[tuple[str, str]]] = None,
 ) -> tuple[str, str, list[dict]]:
     """
     Mini agent loop for pages with many evidence items or large existing content.
@@ -643,6 +720,7 @@ async def _write_page_complex(
     own_slug = plan_item.get("slug", "")
     available = [s for s in all_plan_slugs if s != own_slug]
     slugs_list = "\n".join(f"- [[{s}]]" for s in available) if available else "(none)"
+    kb_neighbors_str = _format_kb_neighbors(kb_neighbors, exclude_slug=own_slug)
 
     # Build source context
     source_context = _build_source_context(full_text, evidence, llm=llm)
@@ -662,7 +740,8 @@ async def _write_page_complex(
         f"Write a wiki page for: **{plan_item.get('title', '')}** "
         f"(slug: `{own_slug}`, type: {plan_item.get('page_type', 'concept')})\n"
         f"Action: {plan_item.get('action', 'CREATE')}\n\n"
-        f"## Available pages (ONLY use these for [[wikilinks]])\n{slugs_list}\n"
+        f"## Sibling pages in THIS plan (link freely)\n{slugs_list}\n\n"
+        f"## Existing wiki pages from OTHER sources/scopes (link when topics overlap)\n{kb_neighbors_str}\n"
         f"{existing_section}\n"
         f"## Source document text\n{source_context}\n\n"
         f"## Evidence checklist ({len(evidence)} items)\n{evidence_blocks}"
@@ -782,9 +861,34 @@ async def run_refine_phase(
 
     # Collect ALL slugs from the plan so writers can cross-link accurately
     all_plan_slugs = [p.get("slug", "") for p in pages_spec if p.get("slug")]
+    plan_slug_set = set(all_plan_slugs)
 
     scope_type = source.scope_type or "global"
     scope_id = source.scope_id
+
+    # Fetch existing wiki pages in this source's scopes so writers can
+    # cross-link to concepts already documented from OTHER sources.
+    # Excludes pages this plan will create/update (already in all_plan_slugs).
+    from app.ai.mrp.pipeline import _resolve_wiki_scopes
+    kb_neighbors: list[tuple[str, str]] = []
+    try:
+        wiki_scopes = await _resolve_wiki_scopes(session, source)
+        seen_slugs: set[str] = set()
+        for n_scope_type, n_scope_id in wiki_scopes:
+            existing_pages = await wiki_service.list_pages(
+                session,
+                limit=200,
+                scope_type=n_scope_type,
+                scope_id=n_scope_id,
+            )
+            for page in existing_pages:
+                if page.slug in plan_slug_set or page.slug in seen_slugs:
+                    continue
+                seen_slugs.add(page.slug)
+                kb_neighbors.append((page.slug, page.title or ""))
+        logger.info(f"MRP REFINE: {len(kb_neighbors)} kb neighbour pages available for cross-linking")
+    except Exception as exc:
+        logger.warning(f"MRP REFINE: failed to load kb neighbours for cross-linking: {exc}")
 
     await tracker.update(78, f"Writing {len(pages_spec)} wiki pages...")
 
@@ -832,6 +936,7 @@ async def run_refine_phase(
                         content_md, summary, citations = await _write_page_complex(
                             llm, plan_item, evidence, existing_content, full_text, worker_session, source,
                             all_plan_slugs=all_plan_slugs,
+                            kb_neighbors=kb_neighbors,
                         )
                     else:
                         content_md, summary, citations = await _write_page_simple(
@@ -839,6 +944,7 @@ async def run_refine_phase(
                             all_plan_slugs=all_plan_slugs,
                             source_context=source_context,
                             image_markers=image_markers,
+                            kb_neighbors=kb_neighbors,
                         )
                 except Exception as e:
                     err_msg = f"{type(e).__name__}: {str(e)}"

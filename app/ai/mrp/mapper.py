@@ -216,6 +216,13 @@ EXTRACTION_SYSTEM = """\
 You are a knowledge extraction engine. Extract structured knowledge from the
 provided document section. Return ONLY valid JSON matching the schema exactly.
 Never include any text outside the JSON object. If a category has no items, use [].
+
+🔴 LANGUAGE PRESERVATION RULE
+Every `name`, `term`, `definition_excerpt`, `statement`, `subject`, and `topics`
+value MUST be written in the SAME LANGUAGE as the source document. If the
+document is in Vietnamese, keep names and concepts in Vietnamese. Do NOT
+translate Vietnamese terms into English. Acronyms and proper nouns that the
+source itself writes in English (e.g. "CRM", "Pancake") stay as-is.
 """
 
 EXTRACTION_PROMPT_TEMPLATE = """\
@@ -242,7 +249,7 @@ Extract all knowledge from this section and return a JSON object with this exact
   ],
   "concepts": [
     {{
-      "term": "string — concept name OR a thematic section topic (e.g. 'Product Positioning', 'Target Customer Profile', 'Pricing Model'). Prefer the document's own heading wording when the section is coherent and self-contained.",
+      "term": "string — concept name OR a thematic section topic. WRITE IN THE SOURCE'S LANGUAGE (e.g. Vietnamese sources → Vietnamese terms like 'Định Vị Sản Phẩm', 'Chân Dung Khách Hàng Mục Tiêu', 'Mô Hình Giá'). Prefer the document's own heading wording when the section is coherent and self-contained.",
       "definition_excerpt": "string — verbatim or near-verbatim defining phrase from text; for thematic sections use the opening sentence that frames the section.",
       "local_offset": 0
     }}
@@ -273,13 +280,16 @@ Rules:
 - Absolute offset in full document = {start_char} + local_offset.
 - confidence must be "explicit" (directly stated) or "inferred" (implied by the text).
 - Be exhaustive — include all named entities, defined terms, and factual claims.
-- For `concepts`, extract BOTH (a) named terms with definitions (e.g. "RAG",
-  "MCP") AND (b) thematic section topics — coherent sub-topics that a reader
-  could open as their own wiki page (e.g. "Product Positioning", "Target
-  Customer Profile (ICP)", "Content Pillars", "Risk Assessment"). When a
-  document is structured around such themes about a primary entity, prefer
-  splitting them as separate concepts over collapsing everything into the
-  entity's page.
+- For `concepts`, extract BOTH (a) named terms with definitions AND
+  (b) thematic section topics — coherent sub-topics that a reader could open
+  as their own wiki page. Each concept term MUST stay in the SOURCE'S
+  language. For a Vietnamese document, that means concepts like
+  "Định Vị Sản Phẩm", "Chân Dung Khách Hàng", "Phẩm Chất Của SO",
+  "Kỹ Năng Hẹn Gặp Phụ Huynh" — NOT translated to English. Acronyms the
+  source uses verbatim (RAG, MCP, CRM) stay as-is.
+  When a document is structured around such themes about a primary entity,
+  prefer splitting them as separate concepts over collapsing everything into
+  the entity's page.
 - Return empty arrays [] for categories with no findings.
 - Return ONLY the JSON object, no other text.
 """
