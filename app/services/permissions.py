@@ -44,6 +44,10 @@ ALL_PERMISSIONS: list[str] = [
 
     # Workspaces
     "workspace:view:all",
+    "workspace:create",
+    "workspace:archive",
+    "workspace:delete",
+    "workspace:members:manage",
 ]
 
 
@@ -92,6 +96,10 @@ PERMISSION_GROUPS: dict[str, list[str]] = {
     ],
     "Workspaces": [
         "workspace:view:all",
+        "workspace:create",
+        "workspace:archive",
+        "workspace:delete",
+        "workspace:members:manage",
     ],
 }
 
@@ -138,7 +146,11 @@ PERMISSION_LABELS: dict[str, str] = {
     "org:audit:read":         "View audit log",
 
     # Workspaces
-    "workspace:view:all":     "View all workspaces (admin override)",
+    "workspace:view:all":         "View all workspaces (admin override)",
+    "workspace:create":           "Create new workspaces",
+    "workspace:archive":          "Archive / unarchive workspaces (soft remove, no data loss)",
+    "workspace:delete":           "Delete workspaces (permanent — emergency only)",
+    "workspace:members:manage":   "Add/remove members in any workspace",
 }
 
 
@@ -185,7 +197,11 @@ PERMISSION_DESCRIPTIONS: dict[str, str] = {
     "org:audit:read":         "View the audit log tracking all system activities.",
 
     # Workspaces
-    "workspace:view:all":     "View all workspaces even without being a member. By default, only admins have this.",
+    "workspace:view:all":         "View all workspaces even without being a member. By default, only admins have this.",
+    "workspace:create":           "Create new workspaces. Useful for staff who run recurring events/projects without escalating to full system admin.",
+    "workspace:archive":          "Archive a workspace (status='archived') or unarchive it back to active. Soft-remove — preserves members, sources, and wiki. The canonical lifecycle ending for events/seasons. Granted to school leadership.",
+    "workspace:delete":           "⚠ PERMANENTLY delete a workspace including its member list and linked sources index. This is NOT the same as archive — archived data stays searchable. Prefer archive for normal lifecycle. Only grant for emergency cleanup; typical school deployments leave this UNGRANTED to all roles.",
+    "workspace:members:manage":   "Add or remove members from any workspace and change their workspace roles, without being a workspace admin yourself. Useful for HR roles.",
 }
 
 
@@ -249,16 +265,23 @@ LEGACY_PERMISSION_MAP: dict[str, list[str]] = {
     "departments.create":  ["org:departments:manage"],
     "departments.edit":    ["org:departments:manage"],
     "departments.delete":  ["org:departments:manage"],
+    "departments.manage":  ["org:departments:manage"],
     "employees.read":      ["org:employees:read"],
     "employees.create":    ["org:employees:manage"],
     "employees.edit":      ["org:employees:manage"],
     "employees.delete":    ["org:employees:manage"],
+    "employees.manage":    ["org:employees:manage"],
     "roles.read":          ["org:roles:read"],
     "roles.create":        ["org:roles:manage"],
     "roles.edit":          ["org:roles:manage"],
     "roles.delete":        ["org:roles:manage"],
+    "roles.manage":        ["org:roles:manage"],
     "settings.read":       ["org:settings:read"],
     "settings.edit":       ["org:settings:manage"],
+    "settings.manage":     ["org:settings:manage"],
+    # Projects/workspaces (legacy aggregate — workspace view is the modern equivalent)
+    "projects.read":       ["workspace:view:all"],
+    "projects.manage":     ["workspace:view:all"],
     "workspaces.read":     ["workspace:view:all"],
     "workspaces.create":   [],  # Workspace creation is admin-only now
     "workspaces.edit":     [],
