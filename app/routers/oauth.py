@@ -44,6 +44,31 @@ async def oauth_metadata(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# OAuth Protected Resource metadata (RFC 9728)
+#
+# Modern MCP clients (claude.ai web, Claude Desktop's newer flow) discover the
+# authorization server by first fetching this document — pointed to by the
+# `WWW-Authenticate: Bearer resource_metadata="..."` header that the /mcp
+# endpoint returns on an unauthenticated request. Without it, the client treats
+# /mcp as a no-auth server and never prompts to connect.
+#
+# Both the bare path and the RFC 9728 path-suffixed variant
+# (/.well-known/oauth-protected-resource/mcp) are served so strict and lenient
+# clients both resolve it.
+# ---------------------------------------------------------------------------
+
+@wellknown_router.get("/.well-known/oauth-protected-resource")
+@wellknown_router.get("/.well-known/oauth-protected-resource/{resource_path:path}")
+async def oauth_protected_resource(request: Request, resource_path: str = ""):
+    base = str(request.base_url).rstrip("/")
+    return {
+        "resource": f"{base}/mcp",
+        "authorization_servers": [base],
+        "bearer_methods_supported": ["header"],
+    }
+
+
+# ---------------------------------------------------------------------------
 # Dynamic client registration (RFC 7591)
 # ---------------------------------------------------------------------------
 

@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from loguru import logger
 
 from app.config import settings
@@ -127,6 +128,30 @@ async def _notification_dispatch_mw(request, call_next):
         logger.warning(f"Notification dispatch middleware failed: {e}")
     return response
 
+# --- MCP OAuth challenge ---
+# An unauthenticated request to /mcp must answer 401 + WWW-Authenticate pointing
+# at the protected-resource metadata (RFC 9728), otherwise spec-compliant clients
+# (claude.ai web) assume no auth is needed and never start the OAuth flow. Only
+# the *absence* of a bearer token is challenged here; token validity is still
+# enforced per-tool in app/mcp/tools.py. OPTIONS/HEAD are passed through so CORS
+# preflight is unaffected.
+
+@app.middleware("http")
+async def _mcp_auth_challenge(request, call_next):
+    path = request.url.path
+    if (path == "/mcp" or path.startswith("/mcp/")) and request.method not in ("OPTIONS", "HEAD"):
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.lower().startswith("bearer "):
+            base = str(request.base_url).rstrip("/")
+            resource_metadata = f"{base}/.well-known/oauth-protected-resource"
+            return JSONResponse(
+                {"error": "unauthorized", "error_description": "MCP access requires authorization."},
+                status_code=401,
+                headers={"WWW-Authenticate": f'Bearer resource_metadata="{resource_metadata}"'},
+            )
+    return await call_next(request)
+
+
 # --- Mount MCP Server ---
 # Claude Desktop connects to: https://your-server/mcp
 app.mount("/mcp", mcp_http_app)
@@ -152,6 +177,7 @@ from app.routers import (  # noqa: E402
     wiki,
     wiki_drafts,
     wiki_images,
+    wiki_revisions,
 )
 
 app.include_router(oauth.wellknown_router)
@@ -160,6 +186,7 @@ app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(sources.router, prefix="/api", tags=["sources"])
 app.include_router(notes.router, prefix="/api", tags=["notes"])
 app.include_router(wiki_drafts.router, prefix="/api", tags=["wiki-drafts"])
+app.include_router(wiki_revisions.router, prefix="/api", tags=["wiki"])
 app.include_router(wiki.router, prefix="/api", tags=["wiki"])
 app.include_router(wiki_images.router, prefix="/api", tags=["wiki"])
 app.include_router(admin_settings.router, prefix="/api", tags=["settings"])
