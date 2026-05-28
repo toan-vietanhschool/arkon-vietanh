@@ -85,7 +85,7 @@ class MemberOut(BaseModel):
 
 
 class ProjectSourceOut(BaseModel):
-    source_id: str
+    id: str
     title: Optional[str]
     source_type: Optional[str]
     file_name: Optional[str] = None
@@ -281,6 +281,24 @@ async def delete_project(
         raise HTTPException(403, "Only system admins can delete workspaces")
 
     project = await _get_project_or_404(db, project_id)
+
+    # Manual cascade: wiki_pages.scope_id is polymorphic (project or
+    # department id), so we can't put a real FK on it. Delete workspace-
+    # scoped wiki pages here to prevent orphan rows that linger in the
+    # global wiki catalog after the workspace is gone. FK CASCADE on
+    # wiki_pages.id then cleans wiki_links / drafts / revisions /
+    # embeddings automatically.
+    from sqlalchemy import delete as sa_delete
+
+    from app.database.models import WikiPage
+
+    await db.execute(
+        sa_delete(WikiPage).where(
+            WikiPage.scope_type == "project",
+            WikiPage.scope_id == uuid.UUID(project_id),
+        )
+    )
+
     await db.delete(project)
     return {"deleted": True}
 
@@ -624,7 +642,7 @@ async def list_project_sources(
     out: list[ProjectSourceOut] = []
     for r in linked_rows:
         out.append(ProjectSourceOut(
-            source_id=str(r.source_id),
+            id=str(r.source_id),
             title=r.source.title,
             source_type=r.source.source_type,
             file_name=r.source.file_name,
@@ -637,7 +655,7 @@ async def list_project_sources(
     for s in owned_sources:
         if s.id not in linked_ids:
             out.append(ProjectSourceOut(
-                source_id=str(s.id),
+                id=str(s.id),
                 title=s.title,
                 source_type=s.source_type,
                 file_name=s.file_name,

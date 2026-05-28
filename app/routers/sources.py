@@ -521,6 +521,8 @@ async def retry_source(
     Only allowed when the source is in `error` status — successful sources
     cannot be re-ingested.
     """
+    from datetime import datetime, timedelta, timezone
+
     source = (await db.execute(
         select(Source)
         .options(*_source_load_options())
@@ -528,11 +530,35 @@ async def retry_source(
     )).scalar_one_or_none()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
-    allowed_statuses = ("error", "plan_ready")
-    if source.status not in allowed_statuses:
+
+    # Retry policy:
+    #   error / plan_ready     → always retryable (idempotent)
+    #   pending / processing   → only when STALE (worker crashed mid-job)
+    #                            stale = no progress update for ≥ 5 minutes
+    #   ready                  → never (would re-do an already-successful job)
+    STALE_THRESHOLD = timedelta(minutes=5)
+    now = datetime.now(timezone.utc)
+    last_updated = source.updated_at or source.created_at
+
+    if source.status in ("error", "plan_ready"):
+        pass  # always allowed
+    elif source.status in ("pending", "processing"):
+        if last_updated and now - last_updated < STALE_THRESHOLD:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Source is actively '{source.status}' "
+                    f"(updated {int((now - last_updated).total_seconds())}s ago). "
+                    "Wait for the current job to finish, or retry after 5 minutes "
+                    "if it appears stuck."
+                ),
+            )
+        # Stale → retry allowed (worker likely crashed)
+    else:
+        # 'ready' or any other terminal state
         raise HTTPException(
             status_code=400,
-            detail=f"Retry is only allowed for sources in {allowed_statuses} status",
+            detail=f"Retry not allowed for status '{source.status}' (already complete)",
         )
     if source.source_type == "url" and not source.url:
         raise HTTPException(status_code=400, detail="Source has no URL to retry")
