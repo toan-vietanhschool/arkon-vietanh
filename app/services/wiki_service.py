@@ -436,6 +436,359 @@ async def search_pages_semantic(
     return [(row[0], float(row[1])) for row in result.all()]
 
 
+async def search_pages_bm25(
+    session: AsyncSession,
+    query: str,
+    top_k: int = 30,
+    allowed_kt_slugs: Optional[list[str]] = None,
+    scope_type: str = "global",
+    scope_id: Optional[uuid.UUID] = None,
+    department_id: Optional[uuid.UUID] = None,
+    project_ids: Optional[list[uuid.UUID]] = None,
+    inverse_scope: bool = False,
+    all_scopes: bool = False,
+) -> list[tuple[WikiPage, float]]:
+    """
+    BM25-style lexical search over the generated `wiki_pages.search_vector`
+    tsvector column (see migration 028).
+
+    Why this exists alongside `search_pages_semantic`:
+      * Embeddings struggle with exact terms (proper nouns, acronyms, IDs).
+      * Lexical search nails those but misses paraphrases. The MCP layer
+        combines both signals.
+
+    Scoring:
+      * `plainto_tsquery('simple', :q)` parses the user query — multi-word
+        queries become AND'd lexemes safely (no risk of operator injection).
+      * `ts_rank_cd(search_vector, query, 32)` ranks each hit. The `32` flag
+        is `rank/(rank+1)` — a length-normalised score in (0, 1) that keeps
+        long pages from dominating just because they contain more tokens.
+
+    Scope behaviour mirrors `search_pages_semantic` exactly:
+      * `all_scopes=True` and not inverse: no scope filter (admin bypass).
+      * `inverse_scope=True`: pages OUTSIDE user's accessible scopes.
+      * `department_id` or `project_ids` given: identity union (global +
+        own dept + own workspaces).
+      * Otherwise: exact scope_type/scope_id match.
+
+    Returns (page, ts_rank_cd) tuples sorted by score descending. Returns
+    an empty list when the query produces no lexemes (e.g. all stopwords or
+    punctuation only).
+    """
+    query = (query or "").strip()
+    if not query:
+        return []
+
+    tsquery = func.plainto_tsquery("simple", query)
+    rank = func.ts_rank_cd(WikiPage.search_vector, tsquery, 32).label("score")
+
+    if all_scopes and not inverse_scope:
+        scope_clause = None
+    elif inverse_scope:
+        scope_clause = _inverse_scope_filter_for_identity(department_id, project_ids)
+    elif department_id is not None or project_ids:
+        scope_clause = _scope_filter_for_identity(department_id, project_ids)
+    else:
+        scope_clause = _scope_filter(scope_type, scope_id)
+
+    where_clauses = [
+        WikiPage.search_vector.op("@@")(tsquery),
+        WikiPage.slug.notin_([INDEX_SLUG, LOG_SLUG]),
+    ]
+    if scope_clause is not None:
+        where_clauses.append(scope_clause)
+
+    stmt = (
+        select(WikiPage, rank)
+        .where(and_(*where_clauses))
+        .order_by(rank.desc())
+        .limit(top_k)
+    )
+    if allowed_kt_slugs:
+        stmt = stmt.where(
+            or_(
+                WikiPage.knowledge_type_slugs.overlap(allowed_kt_slugs),
+                func.cardinality(WikiPage.knowledge_type_slugs) == 0,
+            )
+        )
+    result = await session.execute(stmt)
+    return [(row[0], float(row[1])) for row in result.all()]
+
+
+async def expand_via_graph_walk(
+    session: AsyncSession,
+    seed_page_ids: list[uuid.UUID],
+    seed_scores: dict[uuid.UUID, float],
+    max_hops: int = 2,
+    decay: float = 0.5,
+    scope_type: str = "global",
+    scope_id: Optional[uuid.UUID] = None,
+    department_id: Optional[uuid.UUID] = None,
+    project_ids: Optional[list[uuid.UUID]] = None,
+    all_scopes: bool = False,
+    include_backlinks: bool = False,
+) -> dict[uuid.UUID, float]:
+    """
+    Expand a set of seed pages via wikilinks (1-2 hops) and return a proximity
+    score per discovered page.
+
+    Algorithm:
+      hop_score[seed] = seed_scores[seed]
+      for each hop h in 1..max_hops:
+          for each page p reached at hop h via wiki_links:
+              score(p) += decay^h * source_seed_score
+      Apply scope filter at the END so we don't waste hops on pages the
+      caller can't read anyway.
+
+    Returns {page_id: aggregated_proximity_score}. INCLUDES the original
+    seeds (with their starting scores) so caller can fuse with BM25/vector
+    ranks easily.
+    """
+    if not seed_page_ids:
+        return {}
+    if max_hops <= 0:
+        return dict(seed_scores)
+
+    # Resolve the scope clause once — applied at JOIN target so out-of-scope
+    # pages are unreachable even when reached via in-scope sources.
+    if all_scopes:
+        scope_clause = None
+    elif department_id is not None or project_ids:
+        scope_clause = _scope_filter_for_identity(department_id, project_ids)
+    else:
+        scope_clause = _scope_filter(scope_type, scope_id)
+
+    # Aggregated proximity score per page (starts with the seeds themselves).
+    scores: dict[uuid.UUID, float] = {
+        pid: float(seed_scores.get(pid, 0.0)) for pid in seed_page_ids
+    }
+
+    # Per-hop frontier: maps page_id -> contribution score at this hop.
+    # For hop 1 the contributions are the seed scores themselves; for hop 2
+    # the contributions are whatever hop-1 nodes accumulated from their seeds.
+    frontier: dict[uuid.UUID, float] = {
+        pid: float(seed_scores.get(pid, 0.0)) for pid in seed_page_ids
+    }
+
+    for hop in range(1, max_hops + 1):
+        if not frontier:
+            break
+        hop_multiplier = decay ** hop
+
+        # Pull edges incident to the current frontier. Outbound is always on;
+        # inbound (backlinks) is opt-in. Cross-source links in Arkon are often
+        # asymmetric (e.g. leaf pages link to hub pages but not vice-versa);
+        # `include_backlinks=True` lets the walk also surface those leaves.
+        frontier_ids = list(frontier.keys())
+        edges: list[tuple] = []
+
+        # --- outbound: frontier --> target via [[to_slug]] ---
+        out_where = [WikiLink.from_page_id.in_(frontier_ids)]
+        if scope_clause is not None:
+            out_where.append(scope_clause)
+        out_stmt = (
+            select(WikiLink.from_page_id, WikiPage.id)
+            .join(WikiPage, WikiPage.slug == WikiLink.to_slug)
+            .where(and_(*out_where))
+        )
+        edges.extend((await session.execute(out_stmt)).all())
+
+        # --- inbound: any page p that links to a frontier page ---
+        if include_backlinks:
+            # Resolve frontier page_ids -> slugs first; backlinks key off slug.
+            slug_stmt = select(WikiPage.id, WikiPage.slug).where(
+                WikiPage.id.in_(frontier_ids)
+            )
+            slug_rows = (await session.execute(slug_stmt)).all()
+            frontier_slug_to_id = {slug: pid for pid, slug in slug_rows}
+            frontier_slugs = list(frontier_slug_to_id.keys())
+            if frontier_slugs:
+                in_where = [WikiLink.to_slug.in_(frontier_slugs)]
+                if scope_clause is not None:
+                    in_where.append(scope_clause)
+                # Source-side scope filter: only count incoming edges whose
+                # source page is itself in scope (otherwise we'd read pages
+                # the caller can't see).
+                in_stmt = (
+                    select(WikiLink.to_slug, WikiPage.id)
+                    .join(WikiPage, WikiPage.id == WikiLink.from_page_id)
+                    .where(and_(*in_where))
+                )
+                for to_slug, src_pid in (await session.execute(in_stmt)).all():
+                    target_pid_in_frontier = frontier_slug_to_id.get(to_slug)
+                    if target_pid_in_frontier is None:
+                        continue
+                    # Edge tuple format: (frontier_node_id, discovered_page_id)
+                    edges.append((target_pid_in_frontier, src_pid))
+
+        # Accumulate per-target contributions; multiple paths from distinct
+        # frontier nodes SUM (rewards multi-source convergence).
+        next_frontier: dict[uuid.UUID, float] = {}
+        for from_pid, target_pid in edges:
+            source_contrib = frontier.get(from_pid, 0.0)
+            if source_contrib == 0.0:
+                continue
+            delta = hop_multiplier * source_contrib
+            scores[target_pid] = scores.get(target_pid, 0.0) + delta
+            # For next hop, propagate this node's accumulated contribution.
+            # We use the seed-equivalent strength (source_contrib) rather
+            # than the decayed delta so the next hop applies its own decay
+            # against the original strength — equivalent to decay^(h+1).
+            prev = next_frontier.get(target_pid, 0.0)
+            if source_contrib > prev:
+                next_frontier[target_pid] = source_contrib
+
+        frontier = next_frontier
+
+    return scores
+
+
+async def search_pages_hybrid(
+    session: AsyncSession,
+    query: str,
+    query_embedding: list[float],
+    top_k: int = 10,
+    allowed_kt_slugs: Optional[list[str]] = None,
+    scope_type: str = "global",
+    scope_id: Optional[uuid.UUID] = None,
+    spec_id: Optional[str] = None,
+    department_id: Optional[uuid.UUID] = None,
+    project_ids: Optional[list[uuid.UUID]] = None,
+    all_scopes: bool = False,
+    *,
+    candidate_pool: int = 30,
+    rrf_k: int = 60,
+    graph_hops: int = 2,
+    graph_decay: float = 0.5,
+    graph_weight: float = 0.0,
+) -> list[tuple[WikiPage, float]]:
+    """
+    Hybrid retrieval combining BM25 (lexical) + vector (semantic), with
+    optional graph-walk re-ranking via wikilinks.
+
+    Pipeline:
+      1. BM25 top-N (lexical, `search_pages_bm25`)
+      2. Vector top-N (semantic, `search_pages_semantic`)
+      3. Reciprocal Rank Fusion: score(p) = sum 1/(rrf_k + rank_in_list)
+      4. (optional) Graph walk from top fused seeds → bonus for pages that
+         many seeds link to. Disabled by default (`graph_weight=0`).
+      5. Final score = rrf_score + graph_weight * (graph_score - own_rrf)
+      6. Sort, normalise so top is ~1.0, return top_k.
+
+    Why RRF instead of weighted sum of raw scores: BM25 (`ts_rank_cd`) and
+    cosine similarity live on different scales and distributions. Working
+    in rank space sidesteps that problem and is the standard hybrid-search
+    fusion technique (Cormack et al. 2009).
+
+    Why `graph_weight=0` is the default: empirically on Arkon's corpus,
+    graph re-ranking inflates well-connected "hub" pages that many top
+    candidates link to. On a small corpus this surfaces useful bridges;
+    once the corpus has > ~20 sources with dense cross-source linking the
+    same mechanism homogenises the result set and reduces topical
+    precision. Callers who want bridge-aware results (e.g. a "Related
+    pages" sidebar) can pass `graph_weight=0.05`. The graph_walk function
+    itself remains available as a standalone primitive.
+
+    Returns (WikiPage, normalised_score) sorted by score descending.
+    """
+    import asyncio as _asyncio
+
+    # Channels run independently; fire them in parallel.
+    bm25_task = search_pages_bm25(
+        session=session,
+        query=query,
+        top_k=candidate_pool,
+        allowed_kt_slugs=allowed_kt_slugs,
+        scope_type=scope_type,
+        scope_id=scope_id,
+        department_id=department_id,
+        project_ids=project_ids,
+        all_scopes=all_scopes,
+    )
+    vec_task = search_pages_semantic(
+        session=session,
+        query_embedding=query_embedding,
+        top_k=candidate_pool,
+        allowed_kt_slugs=allowed_kt_slugs,
+        scope_type=scope_type,
+        scope_id=scope_id,
+        spec_id=spec_id,
+        department_id=department_id,
+        project_ids=project_ids,
+        all_scopes=all_scopes,
+    )
+    # SQLAlchemy AsyncSession is NOT safe for concurrent statements, so we
+    # await sequentially. Both channels are cheap; net latency stays low.
+    bm25_hits = await bm25_task
+    vec_hits = await vec_task
+
+    # ------- Reciprocal Rank Fusion -------
+    # rrf_score(page) = sum over channels of 1/(k + rank), rank is 1-indexed.
+    pages_by_id: dict[uuid.UUID, WikiPage] = {}
+    rrf_scores: dict[uuid.UUID, float] = {}
+
+    for rank, (page, _) in enumerate(bm25_hits, start=1):
+        pages_by_id[page.id] = page
+        rrf_scores[page.id] = rrf_scores.get(page.id, 0.0) + 1.0 / (rrf_k + rank)
+    for rank, (page, _) in enumerate(vec_hits, start=1):
+        pages_by_id[page.id] = page
+        rrf_scores[page.id] = rrf_scores.get(page.id, 0.0) + 1.0 / (rrf_k + rank)
+
+    if not rrf_scores:
+        return []
+
+    # ------- Optional graph walk expansion from top fused seeds -------
+    # Skip entirely when graph_weight is 0 — the walk is expensive on dense
+    # graphs and would just multiply by zero anyway.
+    graph_scores: dict[uuid.UUID, float] = {}
+    if graph_weight > 0:
+        seed_limit = max(top_k * 2, 10)
+        top_seeds = sorted(rrf_scores.items(), key=lambda kv: kv[1], reverse=True)[:seed_limit]
+        seed_ids = [pid for pid, _ in top_seeds]
+        seed_scores = {pid: score for pid, score in top_seeds}
+        graph_scores = await expand_via_graph_walk(
+            session=session,
+            seed_page_ids=seed_ids,
+            seed_scores=seed_scores,
+            max_hops=graph_hops,
+            decay=graph_decay,
+            scope_type=scope_type,
+            scope_id=scope_id,
+            department_id=department_id,
+            project_ids=project_ids,
+            all_scopes=all_scopes,
+            include_backlinks=False,
+        )
+
+    # ------- Final fusion -------
+    # Graph walk is used as a RERANKER only — we do NOT introduce pages
+    # that were not retrieved by BM25 or vector. Why: empirically, pages
+    # surfaced ONLY by graph walk are usually well-connected hubs that
+    # over-rank just because many candidates link to them, drowning out
+    # truly relevant leaf pages. The graph signal still meaningfully
+    # boosts candidates that are reinforced by other candidates linking
+    # to them, but it cannot vault unrelated hubs into the top results.
+    final_scores: dict[uuid.UUID, float] = {}
+    for pid in pages_by_id.keys():
+        rrf = rrf_scores.get(pid, 0.0)
+        gscore = graph_scores.get(pid, 0.0)
+        # Boost = excess graph score over the page's own seed score.
+        # For non-seeds (rrf=0) the boost is bounded by graph_weight * gscore.
+        proximity_boost = max(0.0, gscore - rrf)
+        final_scores[pid] = rrf + graph_weight * proximity_boost
+
+    ranked = sorted(final_scores.items(), key=lambda kv: kv[1], reverse=True)[:top_k]
+    # Normalize so the top result is ~1.0; downstream UIs render this as a
+    # percentage. Raw RRF scores cluster around 1/(60+rank) ≈ 0.016, which
+    # rendered as a `%` is misleading ("2% match"). The relative ordering is
+    # what matters, not the absolute magnitude.
+    if ranked:
+        top_score = ranked[0][1]
+        scale = (1.0 / top_score) if top_score > 0 else 1.0
+        return [(pages_by_id[pid], score * scale) for pid, score in ranked if pid in pages_by_id]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Compiler ops application
 # ---------------------------------------------------------------------------

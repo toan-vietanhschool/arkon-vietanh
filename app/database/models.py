@@ -14,6 +14,7 @@ from typing import Optional
 from pgvector.sqlalchemy import HALFVEC, Vector
 from sqlalchemy import (
     Boolean,
+    Computed,
     DateTime,
     Float,
     ForeignKey,
@@ -26,9 +27,9 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR, UUID
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, deferred, mapped_column, relationship
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -316,6 +317,24 @@ class WikiPage(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    # GENERATED tsvector column maintained by Postgres (see migration 028).
+    # `Computed(..., persisted=True)` tells SQLAlchemy this is a STORED generated
+    # column so it is excluded from INSERT/UPDATE — without this annotation the
+    # ORM tries to set the column on every upsert and Postgres rejects with
+    # GeneratedAlwaysError. `deferred` keeps the (potentially huge) lexeme blob
+    # out of the default SELECT payload — lexical search reads it via raw SQL.
+    search_vector: Mapped[Optional[str]] = deferred(
+        mapped_column(
+            TSVECTOR,
+            Computed(
+                "setweight(to_tsvector('simple', coalesce(title, '')), 'A') || "
+                "setweight(to_tsvector('simple', coalesce(summary, '')), 'B') || "
+                "setweight(to_tsvector('simple', coalesce(content_md, '')), 'C')",
+                persisted=True,
+            ),
+            nullable=True,
+        )
     )
 
     __table_args__ = (

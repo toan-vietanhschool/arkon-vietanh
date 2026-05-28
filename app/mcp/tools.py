@@ -269,8 +269,9 @@ def register_tools(mcp: FastMCP):
             embedding_provider = await registry.get_embedding(task="search_query")
             query_embedding = await embedding_provider.embed(query)
 
-            hits = await wiki_service.search_pages_semantic(
+            hits = await wiki_service.search_pages_hybrid(
                 session,
+                query=query,
                 query_embedding=query_embedding,
                 top_k=top_k,
                 allowed_kt_slugs=identity.allowed_knowledge_types,
@@ -378,18 +379,25 @@ def register_tools(mcp: FastMCP):
         proj_uuids = [uuid_mod.UUID(p) for p in identity.project_ids]
 
         async with async_session_factory() as session:
-            # Try global → department → user's workspaces (in that order).
-            page = await wiki_service.get_page_by_slug(
-                session, slug, allowed_kt_slugs=identity.allowed_knowledge_types,
-            )
-            if not page and identity.department_id is not None:
-                page = await wiki_service.get_page_by_slug(
+            # Admin bypass: match search_wiki behavior. Admin reads any page
+            # across every scope without enumerating their own dept/projects.
+            if identity.is_admin:
+                page = await wiki_service.get_page_by_slug_any_scope(
                     session, slug,
-                    allowed_kt_slugs=identity.allowed_knowledge_types,
-                    scope_type="department",
-                    scope_id=identity.department_id,
                 )
-            if not page and proj_uuids:
+            else:
+                # Try global → department → user's workspaces (in that order).
+                page = await wiki_service.get_page_by_slug(
+                    session, slug, allowed_kt_slugs=identity.allowed_knowledge_types,
+                )
+                if not page and identity.department_id is not None:
+                    page = await wiki_service.get_page_by_slug(
+                        session, slug,
+                        allowed_kt_slugs=identity.allowed_knowledge_types,
+                        scope_type="department",
+                        scope_id=identity.department_id,
+                    )
+            if not page and not identity.is_admin and proj_uuids:
                 # Walk the user's workspaces until we hit a matching slug.
                 for pid in proj_uuids:
                     page = await wiki_service.get_page_by_slug(
