@@ -69,3 +69,9 @@ nginx/
 frontend/test-results/
 frontend/playwright-report/
 frontend/.playwright/
+test-results/
+
+# Local scratch / ops artifacts (never commit)
+tmp/
+backup/
+.tmp_*
