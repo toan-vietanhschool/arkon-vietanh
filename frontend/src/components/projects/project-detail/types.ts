@@ -16,7 +16,7 @@ export type Member = {
 };
 
 export type ProjectSource = {
-  source_id: string;
+  id: string;
   title?: string;
   source_type?: string;
   file_name?: string;

@@ -36,6 +36,7 @@
     "header": "Trang",
     "filterPlaceholder": "Lọc trang...",
     "noPages": "Không tìm thấy trang nào.",
+    "noPagesInScope": "Phạm vi này chưa có trang nào.",
     "expandTitle": "Mở rộng cây trang",
     "collapseTitle": "Thu gọn",
     "newPageTitle": {

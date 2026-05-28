@@ -36,6 +36,7 @@
     "header": "Pages",
     "filterPlaceholder": "Filter pages...",
     "noPages": "No pages found.",
+    "noPagesInScope": "No pages in this scope yet.",
     "expandTitle": "Expand page tree",
     "collapseTitle": "Collapse",
     "newPageTitle": {

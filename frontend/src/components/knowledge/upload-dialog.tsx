@@ -143,7 +143,7 @@ export function UploadDialog({ open, onOpenChange, types, departments, onUploade
       const formData = new FormData();
       formData.append("file", file);
       if (typeId) formData.append("knowledge_type_id", typeId);
-      
+
       if (selectedDepts.length > 0) {
         formData.append("department_ids", selectedDepts.join(","));
       }

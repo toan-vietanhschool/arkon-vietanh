@@ -134,7 +134,7 @@ export function SourcesTab({
             const isProcessing = s.status === "processing" || s.status === "pending";
             return (
               <div
-                key={s.source_id}
+                key={s.id}
                 className="group bg-card border border-border rounded-xl px-4 py-3.5 hover:border-primary/30 hover:shadow-sahara transition-all flex items-center gap-3"
               >
                 {/* File icon */}
@@ -165,7 +165,7 @@ export function SourcesTab({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground truncate">
-                      {s.title || s.source_id}
+                      {s.title || s.id}
                     </span>
                     {ext && (
                       <span className="text-[10px] font-medium text-muted-foreground uppercase bg-accent/50 px-1.5 py-0.5 rounded shrink-0">
@@ -257,7 +257,7 @@ export function SourcesTab({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => handleRemoveSource(s.source_id)}
+                          onClick={() => handleRemoveSource(s.id)}
                           className="text-destructive focus:text-destructive"
                         >
                           <span className="material-symbols-outlined text-base mr-2">delete</span>
@@ -286,7 +286,7 @@ export function SourcesTab({
 
       {reviewPlanSource && (
         <PlanReviewDialog
-          source={{ id: reviewPlanSource.source_id, title: reviewPlanSource.title || reviewPlanSource.source_id } as any}
+          source={{ id: reviewPlanSource.id, title: reviewPlanSource.title || reviewPlanSource.id } as any}
           onClose={() => setReviewPlanSource(null)}
           onDone={() => {
             setReviewPlanSource(null);

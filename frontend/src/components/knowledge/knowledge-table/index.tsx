@@ -278,17 +278,34 @@ export function KnowledgeTable({
                             {t("actions.reviewPlan")}
                           </DropdownMenuItem>
                         )}
-                        {source.status === "error" && (
-                          <DropdownMenuItem
-                            onClick={() => handleRetry(source.id)}
-                            disabled={retryingIds.has(source.id)}
-                          >
-                            <span className={`material-symbols-outlined mr-2 ${retryingIds.has(source.id) ? "animate-spin" : ""}`} style={{ fontSize: 16 }}>
-                              refresh
-                            </span>
-                            {retryingIds.has(source.id) ? t("actions.retrying") : t("actions.retry")}
-                          </DropdownMenuItem>
-                        )}
+                        {(() => {
+                          // Show retry for:
+                          //   - 'error'                       (always)
+                          //   - 'pending' / 'processing'      (only when STALE ≥ 5 min — worker likely crashed)
+                          // Backend enforces the same rule (returns 409 if not yet stale).
+                          const STALE_MS = 5 * 60 * 1000;
+                          const isStuck =
+                            (source.status === "pending" || source.status === "processing") &&
+                            !!source.updated_at &&
+                            Date.now() - new Date(source.updated_at).getTime() >= STALE_MS;
+                          const showRetry = source.status === "error" || isStuck;
+                          if (!showRetry) return null;
+                          const labelKey = isStuck ? "actions.retryStuck" : "actions.retry";
+                          return (
+                            <DropdownMenuItem
+                              onClick={() => handleRetry(source.id)}
+                              disabled={retryingIds.has(source.id)}
+                            >
+                              <span
+                                className={`material-symbols-outlined mr-2 ${retryingIds.has(source.id) ? "animate-spin" : ""} ${isStuck ? "text-amber-500" : ""}`}
+                                style={{ fontSize: 16 }}
+                              >
+                                refresh
+                              </span>
+                              {retryingIds.has(source.id) ? t("actions.retrying") : t(labelKey)}
+                            </DropdownMenuItem>
+                          );
+                        })()}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleDelete(source.id)}

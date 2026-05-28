@@ -15,9 +15,16 @@ type Props = {
   onRefresh: () => void;
 };
 
+/** Convert a system role name (e.g. "Department Admin") to its i18n key. */
+function toSystemRoleKey(name: string): string {
+  return name.replace(/\s+/g, "");
+}
+
 export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Props) {
   const t = useTranslations("Roles");
   const tCommon = useTranslations("Common");
+  // Fallback map: backend English label, used only if a permission key is not
+  // yet present in the locale file (e.g., newly-added backend permission).
   const labelMap = Object.fromEntries(permissions.map((p) => [p.key, p.label]));
 
   const handleDelete = async (role: Role) => {
@@ -61,7 +68,19 @@ export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Pro
         >
           <div className="flex flex-col gap-2 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">{role.name}</span>
+              <span className="text-sm font-semibold">
+                {(() => {
+                  if (role.is_system) {
+                    const key = `systemRoles.${toSystemRoleKey(role.name)}` as Parameters<typeof t>[0];
+                    return t.has(key) ? t(key) : role.name;
+                  }
+                  // Custom roles: try schoolRoles map for VI/EN translation,
+                  // fall back to the stored name (already in user's language
+                  // for non-school deployments).
+                  const schoolKey = `schoolRoles.${role.name}` as Parameters<typeof t>[0];
+                  return t.has(schoolKey) ? t(schoolKey) : role.name;
+                })()}
+              </span>
               {role.is_system && (
                 <Badge variant="secondary" className="text-xs">{t("systemBadge")}</Badge>
               )}
@@ -73,11 +92,14 @@ export function RoleList({ roles, loading, permissions, onEdit, onRefresh }: Pro
               {role.permissions.length === 0 ? (
                 <span className="text-xs text-muted-foreground">{t("noPermissions")}</span>
               ) : (
-                role.permissions.map((p) => (
-                  <Badge key={p} variant="outline" className="text-xs font-normal">
-                    {labelMap[p] ?? p}
-                  </Badge>
-                ))
+                role.permissions.map((p) => {
+                  const pKey = `permissions.${p}` as Parameters<typeof t>[0];
+                  return (
+                    <Badge key={p} variant="outline" className="text-xs font-normal">
+                      {t.has(pKey) ? t(pKey) : (labelMap[p] ?? p)}
+                    </Badge>
+                  );
+                })
               )}
             </div>
           </div>

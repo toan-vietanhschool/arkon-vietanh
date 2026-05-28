@@ -178,7 +178,10 @@ export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: P
                         className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
                       />
                       <span className="text-sm font-semibold uppercase tracking-wider text-foreground">
-                        {group}
+                        {(() => {
+                          const gKey = `permissionGroups.${group}` as Parameters<typeof t>[0];
+                          return t.has(gKey) ? t(gKey) : group;
+                        })()}
                       </span>
                     </label>
 
@@ -198,7 +201,10 @@ export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: P
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               <p className="text-sm font-medium leading-none group-hover:text-primary transition-colors">
-                                {p.label}
+                                {(() => {
+                                  const lKey = `permissions.${p.key}` as Parameters<typeof t>[0];
+                                  return t.has(lKey) ? t(lKey) : p.label;
+                                })()}
                               </p>
                               {p.description && (
                                 <div className="relative">
@@ -210,7 +216,10 @@ export function RoleDialog({ open, onOpenChange, role, permissions, onSaved }: P
                                   </span>
                                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden peer-hover:block z-50 w-64 px-3 py-2 text-xs text-popover-foreground bg-popover border border-border rounded-lg shadow-lg">
                                     <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-border" />
-                                    {p.description}
+                                    {(() => {
+                                      const dKey = `permissionDescriptions.${p.key}` as Parameters<typeof t>[0];
+                                      return t.has(dKey) ? t(dKey) : p.description;
+                                    })()}
                                   </div>
                                 </div>
                               )}

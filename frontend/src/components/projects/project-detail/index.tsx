@@ -19,9 +19,12 @@ type Props = {
   onBack: () => void;
 };
 
-export function ProjectDetail({ project, isAdmin, onBack }: Props) {
+export function ProjectDetail({ project: initialProject, isAdmin, onBack }: Props) {
   const { getWorkspaceRole } = useAuth();
   const t = useTranslations("Projects");
+  // Mirror prop into local state so archive/unarchive actions can update the
+  // status badge inline without forcing the parent list to re-fetch.
+  const [project, setProject] = useState<Project>(initialProject);
   const [members, setMembers] = useState<Member[]>([]);
   const [sources, setSources] = useState<ProjectSource[]>([]);
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
@@ -31,6 +34,7 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
   const [wikiPages, setWikiPages] = useState<WikiPageSummary[]>([]);
   const [wikiLoading, setWikiLoading] = useState(false);
   const [wikiIndexMd, setWikiIndexMd] = useState<string | null>(null);
+  const [archiveBusy, setArchiveBusy] = useState(false);
 
   // Workspace-level admin: either an org admin or someone explicitly given
   // the workspace `admin` role. The candidate-picker endpoints are scoped to
@@ -39,6 +43,29 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
   const canAdminWorkspace = isAdmin || workspaceRole === "admin";
   const canEditWorkspace =
     canAdminWorkspace || workspaceRole === "editor";
+
+  // Archive button visibility — only workspace admin (or system admin).
+  // The backend PUT /projects/{id} requires workspace admin role for any
+  // update; a global `workspace:archive` permission is reserved for future
+  // use and currently not enforced.
+  const canArchive = canAdminWorkspace;
+
+  const handleToggleArchive = useCallback(async () => {
+    const nextStatus = project.status === "active" ? "archived" : "active";
+    setArchiveBusy(true);
+    try {
+      const updated = await api<Project>(`/api/projects/${project.id}`, {
+        method: "PUT",
+        body: { status: nextStatus },
+      });
+      setProject(updated);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("detail.archiveFailed"));
+    } finally {
+      setArchiveBusy(false);
+    }
+  }, [project.id, project.status, t]);
 
   const load = useCallback(async () => {
     // Members + sources of THIS workspace — any workspace member can read.
@@ -155,6 +182,27 @@ export function ProjectDetail({ project, isAdmin, onBack }: Props) {
               >
                 {project.status === "active" ? t("status.active") : t("status.archived")}
               </Badge>
+              {canArchive && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={handleToggleArchive}
+                  disabled={archiveBusy}
+                  title={
+                    project.status === "active"
+                      ? t("detail.archiveHint")
+                      : t("detail.unarchiveHint")
+                  }
+                >
+                  <span className="material-symbols-outlined text-base mr-1">
+                    {project.status === "active" ? "archive" : "unarchive"}
+                  </span>
+                  {project.status === "active"
+                    ? t("detail.archiveAction")
+                    : t("detail.unarchiveAction")}
+                </Button>
+              )}
             </div>
             {project.description && (
               <p className="text-xs text-muted-foreground truncate max-w-[260px]">{project.description}</p>

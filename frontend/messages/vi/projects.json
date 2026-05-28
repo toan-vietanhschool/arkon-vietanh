@@ -30,7 +30,12 @@
     },
     "loadFailed": "Tải thông tin workspace thất bại",
     "notFound": "Không tìm thấy workspace",
-    "backToDashboard": "Về trang tổng quan"
+    "backToDashboard": "Về trang tổng quan",
+    "archiveAction": "Lưu trữ",
+    "unarchiveAction": "Mở lại",
+    "archiveHint": "Lưu trữ workspace — không xóa dữ liệu, có thể mở lại sau",
+    "unarchiveHint": "Mở lại workspace, đưa về trạng thái hoạt động",
+    "archiveFailed": "Lưu trữ workspace thất bại"
   },
   "dialog": {
     "createTitle": "Workspace mới",

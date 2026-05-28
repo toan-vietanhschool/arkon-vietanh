@@ -25,6 +25,7 @@
     "edit": "Sửa",
     "reviewPlan": "Xem kế hoạch",
     "retry": "Thử lại",
+    "retryStuck": "Thử lại (đang treo)",
     "retrying": "Đang thử lại...",
     "delete": "Xóa"
   },

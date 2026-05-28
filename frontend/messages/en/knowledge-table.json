@@ -25,6 +25,7 @@
     "edit": "Edit",
     "reviewPlan": "Review Plan",
     "retry": "Retry",
+    "retryStuck": "Retry (stalled)",
     "retrying": "Retrying...",
     "delete": "Delete"
   },

@@ -195,17 +195,45 @@ export function WikiPageTree({
       bucket.byType.get(type)!.push(p);
       bucket.total += 1;
     }
+
+    // Always render the active scope bucket even when empty — gives the user
+    // a clear "you're here, no pages yet" anchor instead of a phantom sidebar.
+    if (activeScope && (activeScope.scope_type || "global") !== "project") {
+      const activeKey = activeScope.scope_id
+        ? `${activeScope.scope_type}:${activeScope.scope_id}`
+        : activeScope.scope_type;
+      if (!map.has(activeKey)) {
+        map.set(activeKey, {
+          key: activeKey,
+          label: activeScope.scope_type === "global" ? "Global" : "(scope hiện tại)",
+          scope_type: activeScope.scope_type,
+          scope_id: activeScope.scope_id,
+          byType: new Map(),
+          total: 0,
+        });
+      }
+    }
+
     return Array.from(map.values()).sort((a, b) => {
       const ao = SCOPE_TYPE_ORDER[a.scope_type] ?? 99;
       const bo = SCOPE_TYPE_ORDER[b.scope_type] ?? 99;
       if (ao !== bo) return ao - bo;
       return a.label.localeCompare(b.label);
     });
-  }, [filtered]);
+  }, [filtered, activeScope]);
 
-  const totalCount = filtered.filter(
-    (p) => p.page_type !== "index" && p.page_type !== "log"
-  ).length;
+  // Count = pages actually surfaced in the tree (excludes project pages when
+  // groupByScope is on — those live in /workspaces/{id} sidebars, not here).
+  // Otherwise the badge says "23" but the tree only shows 6, which is jarring.
+  const totalCount = React.useMemo(() => {
+    const all = filtered.filter(
+      (p) => p.page_type !== "index" && p.page_type !== "log",
+    );
+    if (groupByScope) {
+      return all.filter((p) => (p.scope_type || "global") !== "project").length;
+    }
+    return all.length;
+  }, [filtered, groupByScope]);
 
   const [expandedScopes, setExpandedScopes] = React.useState<Set<string>>(
     new Set(["global"]),
@@ -492,6 +520,11 @@ export function WikiPageTree({
                   </div>
                   {scopeExpanded && (
                     <div className="ml-3">
+                      {typeOrder.length === 0 && (
+                        <p className="text-xs text-muted-foreground px-4 py-2 italic">
+                          {t("noPagesInScope")}
+                        </p>
+                      )}
                       {typeOrder.map((type) => {
                         const items = bucket.byType.get(type)!;
                         const typeKey = `${bucket.key}::${type}`;

@@ -30,7 +30,12 @@
     },
     "loadFailed": "Failed to load project details",
     "notFound": "Workspace not found",
-    "backToDashboard": "Back to Dashboard"
+    "backToDashboard": "Back to Dashboard",
+    "archiveAction": "Archive",
+    "unarchiveAction": "Restore",
+    "archiveHint": "Archive workspace — preserves all data, can be restored later",
+    "unarchiveHint": "Restore workspace to active state",
+    "archiveFailed": "Failed to archive workspace"
   },
   "dialog": {
     "createTitle": "New Workspace",
