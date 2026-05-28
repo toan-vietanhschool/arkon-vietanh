@@ -26,7 +26,6 @@ from app.database.models import (
     Project,
     ProjectMember,
     WikiPage,
-    WikiPageRevision,
 )
 from app.services import wiki_service
 from app.services.audit_service import log_audit
@@ -255,6 +254,37 @@ async def list_wiki_pages(
     return [_summary(r.WikiPage, scope_name=r.scope_name) for r in rows]
 
 
+async def assert_page_read_access(db: AsyncSession, user: Employee, page: WikiPage) -> None:
+    """Raise 403 if `user` may not read `page` given its scope.
+
+    Mirrors the access model documented at module top: project-scoped pages
+    require workspace membership; department-scoped pages require a matching
+    department. Admins and holders of `wiki:read:all` bypass both. Global pages
+    are readable by anyone who already passed the `wiki:read` permission gate.
+
+    Shared by `get_wiki_page` and the revisions router so a page's history is
+    never readable by someone who cannot read the page itself.
+    """
+    if user.role == "admin":
+        return
+    if page.scope_type == "project" and page.scope_id:
+        if "wiki:read:all" in _get_user_permissions(user):
+            return
+        member = (await db.execute(
+            select(ProjectMember.role).where(
+                ProjectMember.project_id == page.scope_id,
+                ProjectMember.employee_id == user.id,
+            )
+        )).scalar_one_or_none()
+        if not member:
+            raise HTTPException(403, "Access denied — you are not a member of this workspace")
+    elif page.scope_type == "department" and page.scope_id:
+        if "wiki:read:all" in _get_user_permissions(user):
+            return
+        if user.department_id != page.scope_id:
+            raise HTTPException(403, "Access denied — this page belongs to another department")
+
+
 @router.get("/wiki/pages/{slug:path}", response_model=WikiPageDetail)
 async def get_wiki_page(
     slug: str,
@@ -274,28 +304,7 @@ async def get_wiki_page(
     if not page:
         raise HTTPException(404, f"Wiki page not found: {slug}")
 
-    # Check scope access
-    if page.scope_type == "project" and page.scope_id:
-        if user.role != "admin":
-            perms = _get_user_permissions(user)
-            if "wiki:read:all" not in perms:
-                # Check workspace membership
-                member = (await db.execute(
-                    select(ProjectMember.role)
-                    .where(
-                        ProjectMember.project_id == page.scope_id,
-                        ProjectMember.employee_id == user.id,
-                    )
-                )).scalar_one_or_none()
-                if not member:
-                    raise HTTPException(403, "Access denied — you are not a member of this workspace")
-
-    if page.scope_type == "department" and page.scope_id:
-        if user.role != "admin":
-            perms = _get_user_permissions(user)
-            if "wiki:read:all" not in perms:
-                if user.department_id != page.scope_id:
-                    raise HTTPException(403, "Access denied — this page belongs to another department")
+    await assert_page_read_access(db, user, page)
 
     backlinks = await wiki_service.get_backlinks(db, slug, page.scope_type, page.scope_id)
     outlinks = await wiki_service.get_outlinks(db, slug, page.scope_type or "global", page.scope_id)
@@ -500,69 +509,6 @@ async def direct_edit_wiki_page(
         scope_type=edited_scope_type,
         scope_id=edited_scope_id,
     )
-    await db.commit()
-    await db.refresh(page)
-
-    backlinks = await wiki_service.get_backlinks(db, slug, page.scope_type, page.scope_id)
-    outlinks = await wiki_service.get_outlinks(db, slug, page.scope_type or "global", page.scope_id)
-    return _detail(page, backlinks, outlinks)
-
-
-@router.get("/wiki/pages/{slug:path}/revisions", response_model=list[WikiRevisionSummary])
-async def list_wiki_page_revisions(
-    slug: str,
-    limit: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
-    user: Employee = require_permission("wiki:read"),
-):
-    """List revision history for a wiki page (most recent first)."""
-    page = await wiki_service.get_page_by_slug_any_scope(db, slug)
-    if not page:
-        raise HTTPException(404, f"Wiki page not found: {slug}")
-
-    from app.database.models import Employee as Emp
-    rows = (await db.execute(
-        select(WikiPageRevision, Emp.name.label("changed_by_name"))
-        .outerjoin(Emp, WikiPageRevision.changed_by_id == Emp.id)
-        .where(WikiPageRevision.page_id == page.id)
-        .order_by(WikiPageRevision.version.desc())
-        .limit(limit)
-    )).all()
-
-    return [
-        WikiRevisionSummary(
-            id=r.WikiPageRevision.id,
-            version=r.WikiPageRevision.version,
-            change_type=r.WikiPageRevision.change_type,
-            changed_by_name=r.changed_by_name,
-            change_note=r.WikiPageRevision.change_note,
-            created_at=r.WikiPageRevision.created_at.isoformat(),
-        )
-        for r in rows
-    ]
-
-
-@router.post("/wiki/pages/{slug:path}/revisions/{version}/rollback", response_model=WikiPageDetail)
-async def rollback_wiki_page(
-    slug: str,
-    version: int,
-    db: AsyncSession = Depends(get_db),
-    user: Employee = Depends(get_current_user),
-):
-    """Rollback a wiki page to a specific version. Admin only."""
-    if user.role != "admin":
-        raise HTTPException(403, "Only admins can rollback wiki pages")
-
-    page = await wiki_service.get_page_by_slug_any_scope(db, slug)
-    if not page:
-        raise HTTPException(404, f"Wiki page not found: {slug}")
-
-    try:
-        await wiki_service.rollback_to_revision(db, page, version, user.id)
-    except ValueError as e:
-        raise HTTPException(404, str(e))
-
-    await log_audit(db, user, "update", "wiki_page", str(page.id), reason=f"rollback to v{version}: {slug}")
     await db.commit()
     await db.refresh(page)
 
