@@ -9,7 +9,7 @@ import { loginAsAdmin } from "./fixtures/login";
 // We test the API contract directly (faster, deterministic) and then a
 // light UI smoke that the picker renders without listing those owned IDs.
 
-const WORKSPACE_ID = process.env.ARKON_TEST_WORKSPACE_ID ?? "5f03d0ba-a12f-4383-bc55-b7674405157d";
+const WORKSPACE_ID = process.env.ARKON_TEST_WORKSPACE_ID ?? "732bb87b-282c-4173-8e09-89c0db28bb87";
 
 test.describe("Workspace · Add Source", () => {
   test("candidates endpoint excludes sources already in the workspace", async ({
