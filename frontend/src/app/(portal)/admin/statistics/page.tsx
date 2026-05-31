@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { BarList, LineChart } from "@/components/stats/charts";
+import { WikiStatusBadge } from "@/components/wiki/wiki-status-badge";
 
 /* ──────────────────────────────────────────────────────────────────────── */
 /* Types                                                                    */
@@ -39,7 +40,30 @@ type GapItem = {
   requester_ids: string[];
 };
 
-type TabKey = "overview" | "content" | "contribution" | "usage" | "gaps";
+type TabKey = "overview" | "content" | "contribution" | "usage" | "gaps" | "diagnostics";
+
+type DeadLinkItem = {
+  from_slug: string;
+  from_title: string;
+  to_slug: string;
+};
+
+type OrphanItem = {
+  slug: string;
+  title: string;
+  status: string;
+};
+
+type ContradictionItem = {
+  slug: string;
+  title: string;
+};
+
+type LintResponse = {
+  dead_links: DeadLinkItem[];
+  orphans: OrphanItem[];
+  contradictions: ContradictionItem[];
+};
 
 /* ──────────────────────────────────────────────────────────────────────── */
 /* Helpers                                                                  */
@@ -119,6 +143,7 @@ export default function StatisticsPage() {
   const [contribution, setContribution] = useState<SectionResponse | null>(null);
   const [usage, setUsage] = useState<SectionResponse | null>(null);
   const [gaps, setGaps] = useState<{ items: GapItem[] } | null>(null);
+  const [lint, setLint] = useState<LintResponse | null>(null);
 
   const range = useMemo(() => `from=${fromDate}&to=${toDate}`, [fromDate, toDate]);
 
@@ -126,18 +151,20 @@ export default function StatisticsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [ov, ct, cb, us, gp] = await Promise.all([
+      const [ov, ct, cb, us, gp, ln] = await Promise.all([
         api<OverviewResponse>(`/api/admin/stats/overview`),
         api<SectionResponse>(`/api/admin/stats/content?${range}`),
         api<SectionResponse>(`/api/admin/stats/contribution?${range}`),
         api<SectionResponse>(`/api/admin/stats/usage?${range}`),
         api<{ items: GapItem[] }>(`/api/admin/stats/gaps?${range}&limit=50`),
+        api<LintResponse>(`/api/wiki/lint`),
       ]);
       setOverview(ov);
       setContent(ct);
       setContribution(cb);
       setUsage(us);
       setGaps(gp);
+      setLint(ln);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load statistics");
     } finally {
@@ -223,7 +250,7 @@ export default function StatisticsPage() {
           />
         </div>
         <div className="flex gap-1 ml-auto">
-          {(["overview", "content", "contribution", "usage", "gaps"] as TabKey[]).map((t) => (
+          {(["overview", "content", "contribution", "usage", "gaps", "diagnostics"] as TabKey[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -231,7 +258,7 @@ export default function StatisticsPage() {
                 tab === t ? "bg-foreground text-background border-foreground" : "bg-background hover:bg-black/[0.03]"
               }`}
             >
-              {t[0].toUpperCase() + t.slice(1)}
+              {t === "diagnostics" ? "Linter" : t[0].toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
@@ -250,6 +277,7 @@ export default function StatisticsPage() {
         {tab === "contribution" && <ContributionTab data={contribution} onExport={() => exportCsv("contribution")} />}
         {tab === "usage" && <UsageTab data={usage} onExport={() => exportCsv("usage")} />}
         {tab === "gaps" && <GapsTab data={gaps} onExport={() => exportCsv("gaps")} />}
+        {tab === "diagnostics" && <DiagnosticsTab data={lint} loading={loading} />}
       </div>
     </>
   );
@@ -488,6 +516,198 @@ function SkeletonGrid() {
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="h-24 rounded-xl border bg-card animate-pulse" />
       ))}
+    </div>
+  );
+}
+
+function DiagnosticsTab({ data, loading }: { data: LintResponse | null; loading?: boolean }) {
+  if (loading || !data) return <SkeletonGrid />;
+
+  const { dead_links = [], orphans = [], contradictions = [] } = data;
+  const totalErrors = dead_links.length + orphans.length + contradictions.length;
+
+  return (
+    <div className="space-y-6">
+      {/* Overview KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className={`rounded-xl border p-4 ${dead_links.length > 0 ? "border-amber-500/20 bg-amber-50/40" : "border-border bg-card"}`}>
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span className="material-symbols-outlined text-[16px] text-amber-600">link_off</span>
+            <span>Dead Links (Liên kết hỏng)</span>
+          </div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{dead_links.length}</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">Các liên kết trong tài liệu trỏ tới trang chưa tồn tại</div>
+        </div>
+
+        <div className={`rounded-xl border p-4 ${orphans.length > 0 ? "border-[#c2652a]/20 bg-[#c2652a]/5" : "border-border bg-card"}`}>
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span className="material-symbols-outlined text-[16px] text-amber-600">article</span>
+            <span>Orphan Pages (Trang mồ côi)</span>
+          </div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{orphans.length}</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">Các trang phẳng không có bất kỳ trang nào khác trỏ tới</div>
+        </div>
+
+        <div className={`rounded-xl border p-4 ${contradictions.length > 0 ? "border-red-500/20 bg-red-50/40" : "border-border bg-card"}`}>
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span className="material-symbols-outlined text-[16px] text-red-500">warning</span>
+            <span>Contradictions (Mâu thuẫn tri thức)</span>
+          </div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{contradictions.length}</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">Các trang bị AI Verifier phát hiện có xung đột nội dung</div>
+        </div>
+      </div>
+
+      {totalErrors === 0 ? (
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/30 p-8 text-center text-sm text-emerald-800 flex flex-col items-center justify-center gap-2">
+          <span className="material-symbols-outlined text-4xl text-emerald-600">check_circle</span>
+          <div className="font-semibold text-base">Hệ thống Wiki hoàn toàn lành mạnh!</div>
+          <p className="text-xs text-emerald-700/80 max-w-md">Không tìm thấy bất kỳ liên kết hỏng, trang mồ côi hoặc mâu thuẫn tri thức nào trong không gian Wiki phẳng.</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* 🔴 Dead Links Panel */}
+          {dead_links.length > 0 && (
+            <div className="rounded-xl border bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b bg-amber-500/5">
+                <span className="material-symbols-outlined text-[18px] text-amber-600">link_off</span>
+                <div className="text-sm font-medium text-amber-900">Liên kết hỏng (Dead Links)</div>
+                <span className="ml-auto text-xs font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-800 font-semibold">{dead_links.length} lỗi</span>
+              </div>
+              <table className="w-full text-sm">
+                <thead className="text-[11px] uppercase tracking-wide text-muted-foreground bg-black/[0.02]">
+                  <tr className="border-b">
+                    <th className="text-left px-4 py-2 font-medium">Trang chứa link</th>
+                    <th className="text-left px-4 py-2 font-medium">Link bị hỏng (Trỏ tới)</th>
+                    <th className="text-right px-4 py-2 font-medium">Thao tác sửa lỗi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dead_links.map((link, idx) => (
+                    <tr key={idx} className="border-b hover:bg-black/[0.01]">
+                      <td className="px-4 py-3">
+                        <a
+                          href={`/wiki/${link.from_slug}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {link.from_title}
+                        </a>
+                        <div className="text-[10px] text-muted-foreground font-mono">slug: {link.from_slug}</div>
+                      </td>
+                      <td className="px-4 py-3 text-destructive font-mono text-xs font-semibold">
+                        {`[[${link.to_slug}]]`}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <a
+                          href={`/wiki/${link.from_slug}?edit=1`}
+                          className="inline-flex items-center gap-1 text-xs text-foreground/80 hover:text-foreground font-medium underline-offset-4 hover:underline"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                          Sửa nguồn →
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* 🟡 Orphan Pages Panel */}
+          {orphans.length > 0 && (
+            <div className="rounded-xl border bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b bg-[#c2652a]/5">
+                <span className="material-symbols-outlined text-[18px] text-[#c2652a]">article</span>
+                <div className="text-sm font-medium text-[#c2652a]">Trang mồ côi (Orphan Pages)</div>
+                <span className="ml-auto text-xs font-mono px-2 py-0.5 rounded-full bg-[#c2652a]/10 text-[#c2652a] font-semibold">{orphans.length} trang</span>
+              </div>
+              <table className="w-full text-sm">
+                <thead className="text-[11px] uppercase tracking-wide text-muted-foreground bg-black/[0.02]">
+                  <tr className="border-b">
+                    <th className="text-left px-4 py-2 font-medium">Tiêu đề trang</th>
+                    <th className="text-left px-4 py-2 font-medium">Trạng thái</th>
+                    <th className="text-right px-4 py-2 font-medium">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orphans.map((orphan, idx) => (
+                    <tr key={idx} className="border-b hover:bg-black/[0.01]">
+                      <td className="px-4 py-3">
+                        <a
+                          href={`/wiki/${orphan.slug}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {orphan.title}
+                        </a>
+                        <div className="text-[10px] text-muted-foreground font-mono">slug: {orphan.slug}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <WikiStatusBadge status={orphan.status} />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <a
+                          href={`/wiki/${orphan.slug}`}
+                          className="inline-flex items-center gap-1 text-xs text-foreground/80 hover:text-foreground font-medium underline-offset-4 hover:underline"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">visibility</span>
+                          Xem trang →
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ⚠️ Contradiction Pages Panel */}
+          {contradictions.length > 0 && (
+            <div className="rounded-xl border bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b bg-red-500/5">
+                <span className="material-symbols-outlined text-[18px] text-red-600">warning</span>
+                <div className="text-sm font-medium text-red-900">Mâu thuẫn tri thức (Contradiction Nodes)</div>
+                <span className="ml-auto text-xs font-mono px-2 py-0.5 rounded-full bg-red-500/10 text-red-800 font-semibold">{contradictions.length} điểm</span>
+              </div>
+              <table className="w-full text-sm">
+                <thead className="text-[11px] uppercase tracking-wide text-muted-foreground bg-black/[0.02]">
+                  <tr className="border-b">
+                    <th className="text-left px-4 py-2 font-medium">Tên trang bị mâu thuẫn</th>
+                    <th className="text-left px-4 py-2 font-medium">Chi tiết lỗi</th>
+                    <th className="text-right px-4 py-2 font-medium">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contradictions.map((node, idx) => (
+                    <tr key={idx} className="border-b hover:bg-black/[0.01]">
+                      <td className="px-4 py-3 font-medium">
+                        <a
+                          href={`/wiki/${node.slug}`}
+                          className="text-foreground hover:underline"
+                        >
+                          {node.title}
+                        </a>
+                        <div className="text-[10px] text-muted-foreground font-mono">slug: {node.slug}</div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-red-700/80">
+                        Phát hiện thẻ cảnh báo <code className="bg-red-50 px-1.5 py-0.5 border border-red-200/50 rounded font-mono text-[10px] text-red-600">[!contradiction]</code> do AI ghim trên trang.
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <a
+                          href={`/wiki/${node.slug}`}
+                          className="inline-flex items-center gap-1 text-xs text-foreground/80 hover:text-foreground font-medium underline-offset-4 hover:underline"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">rule</span>
+                          Kiểm tra mâu thuẫn →
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
