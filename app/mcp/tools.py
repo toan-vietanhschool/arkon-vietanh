@@ -165,7 +165,7 @@ async def _format_oos_hint(session: AsyncSession, oos_hits: list) -> str:
 
     from collections import Counter
 
-    from app.database.models import Department, Project
+    from app.database.models import Department
 
     # Group by (scope_type, scope_id) → count.
     buckets: Counter[tuple[str, str | None]] = Counter()
@@ -193,9 +193,6 @@ async def _format_oos_hint(session: AsyncSession, oos_hits: list) -> str:
                 if scope_type == "department":
                     d = await session.get(Department, sid)
                     label = d.name if d else None
-                elif scope_type == "project":
-                    p = await session.get(Project, sid)
-                    label = p.name if p else None
         labels[(scope_type, scope_id)] = label or "(unknown)"
 
     lines = ["**Out-of-scope matches** — matching page(s) exist outside your access:"]
@@ -205,11 +202,6 @@ async def _format_oos_hint(session: AsyncSession, oos_hits: list) -> str:
             lines.append(
                 f"- {count} page(s) in department **{label}** — "
                 f"contact the {label} department admin to request access."
-            )
-        elif scope_type == "project":
-            lines.append(
-                f"- {count} page(s) in workspace **{label}** — "
-                f"contact the workspace admin to be added as a member."
             )
     return "\n".join(lines)
 
@@ -373,12 +365,10 @@ def register_tools(mcp: FastMCP):
         import uuid as uuid_mod
         from sqlalchemy import select as sa_select
 
-        from app.database.models import Department, Project, WikiPage
-
-        proj_uuids = [uuid_mod.UUID(p) for p in identity.project_ids]
+        from app.database.models import Department, WikiPage
 
         async with async_session_factory() as session:
-            # Try global → department → user's workspaces (in that order).
+            # Try global → department.
             page = await wiki_service.get_page_by_slug(
                 session, slug, allowed_kt_slugs=identity.allowed_knowledge_types,
             )
@@ -393,34 +383,16 @@ def register_tools(mcp: FastMCP):
                     )
                     if page:
                         break
-            if not page and proj_uuids:
-                # Walk the user's workspaces until we hit a matching slug.
-                for pid in proj_uuids:
-                    page = await wiki_service.get_page_by_slug(
-                        session, slug,
-                        allowed_kt_slugs=identity.allowed_knowledge_types,
-                        scope_type="project",
-                        scope_id=pid,
-                    )
-                    if page:
-                        break
 
             if not page:
                 # Out-of-scope hint: does the slug exist in a scope the caller
                 # CAN'T access? If so, leak only the scope label (no content).
                 if not identity.is_admin:
-                    excluded_proj_ids = proj_uuids
                     stmt = sa_select(WikiPage).where(WikiPage.slug == slug)
                     others = (await session.execute(stmt)).scalars().all()
                     inaccessible = [
                         p for p in others
-                        if (
-                            (p.scope_type == "department" and p.scope_id not in identity.department_ids)
-                            or (
-                                p.scope_type == "project"
-                                and p.scope_id not in excluded_proj_ids
-                            )
-                        )
+                        if p.scope_type == "department" and p.scope_id not in identity.department_ids
                     ]
                     if inaccessible:
                         labels: list[str] = []
@@ -429,11 +401,6 @@ def register_tools(mcp: FastMCP):
                                 d = await session.get(Department, p.scope_id)
                                 labels.append(
                                     f"department **{d.name if d else '(unknown)'}**"
-                                )
-                            elif p.scope_type == "project" and p.scope_id:
-                                pr = await session.get(Project, p.scope_id)
-                                labels.append(
-                                    f"workspace **{pr.name if pr else '(unknown)'}**"
                                 )
                         # Dedup while preserving order.
                         seen: set[str] = set()
