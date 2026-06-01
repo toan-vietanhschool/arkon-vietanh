@@ -65,7 +65,7 @@ async def ingest_source(
 
         # --- Step 2: Extract text per page ---
         if file_data and file_name:
-            pages_data = await _extract_text_from_file(file_data, file_name)
+            pages_data = await _extract_text_from_file(file_data, file_name, vision_provider=vision_provider)
         elif source.url:
             pages_data = await _extract_text_from_url(source.url)
         else:
