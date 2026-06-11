@@ -24,6 +24,8 @@
     "knowledgeTypeLabel": "Knowledge Type",
     "knowledgeTypePlaceholder": "Select type (optional)",
     "knowledgeTypeNone": "None",
+    "verbatimLabel": "Keep verbatim — skip wiki generation",
+    "verbatimHint": "Use for official or high-fidelity documents (contracts, decrees, regulations). The document is stored and searched exactly as-is, skipping AI summarization or rewriting.",
     "departmentsLabel": "Departments",
     "departmentsHint": "Select which departments can access this document. Leave empty for global access.",
     "noDepartments": "No departments available",

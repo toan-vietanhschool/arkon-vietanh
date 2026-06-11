@@ -53,6 +53,28 @@ from app.utils.progress import ProgressTracker  # noqa: E402
 # Ingestion tasks
 # ---------------------------------------------------------------------------
 
+async def finalize_verbatim_source(session, source, tracker) -> dict:
+    """Verbatim path: index raw chunks (no LLM) and mark the source ready.
+
+    Skips the entire MRP wiki pipeline — verbatim indexing burns no LLM tokens,
+    so even very long legal documents go straight to ready.
+    """
+    from app.services.verbatim_service import index_verbatim_source
+
+    await tracker.update(60, "Indexing verbatim document (no wiki)...")
+    n_chunks = await index_verbatim_source(session, source)
+    source.status = "ready"
+    source.progress = 100
+    source.progress_message = (
+        f"Verbatim: indexed {n_chunks} chunks, no wiki" if n_chunks
+        else "Verbatim: stored, no embedding model (keyword search only)"
+    )
+    source.auto_recover_count = 0
+    await session.commit()
+    logger.info(f"Source {source.id} finalized as verbatim ({n_chunks} chunks indexed)")
+    return {"status": "ready", "verbatim_chunks": n_chunks}
+
+
 async def ingest_file_task(ctx: dict, source_id: str):
     """
     arq task: full file ingestion → wiki compilation.
@@ -141,6 +163,10 @@ async def ingest_file_task(ctx: dict, source_id: str):
             await session.commit()
             await tracker.update(50, f"Outline: {len(source.outline_json or [])} top-level sections")
 
+            # --- Verbatim: skip MRP, index raw chunks, done ---
+            if source.preserve_verbatim:
+                return await finalize_verbatim_source(session, source, tracker)
+
             # --- Step 6: Enqueue captioning (if images) OR MRP directly ---
             # Captioning MUST complete before MAP so wiki pages get real image captions
             # baked into full_text. caption_images_task chains into ingest_map_reduce_task
@@ -227,6 +253,10 @@ async def ingest_url_task(ctx: dict, source_id: str):
             source.full_text = full_text
             source.page_offsets = page_offsets
             await session.commit()
+
+            # --- Verbatim: skip MRP, index raw chunks, done ---
+            if source.preserve_verbatim:
+                return await finalize_verbatim_source(session, source, tracker)
 
             await tracker.update(55, "Queuing compilation pipeline...")
             pool = await get_arq_pool()
@@ -488,13 +518,14 @@ async def reembed_all_pages_task(ctx: dict, job_id: str) -> None:
     from app.ai.embedding_catalog import get_spec
     from app.ai.registry import ProviderRegistry
     from app.database import async_session_factory
-    from app.database.models import EmbeddingJob, WikiPage
+    from app.database.models import EmbeddingJob, Source, WikiPage
     from app.services.config_service import (
         ACTIVE_EMBEDDING_MODEL_KEY,
         ConfigService,
     )
     from app.services.embedding_storage import (
         cleanup_stale_embeddings,
+        cleanup_stale_source_chunk_embeddings,
         compute_content_hash,
         embedding_input_text,
         upsert_page_embedding,
@@ -595,6 +626,28 @@ async def reembed_all_pages_task(ctx: dict, job_id: str) -> None:
             job.done_pages = min(offset + len(pages), job.total_pages)
             await session.commit()
 
+    # Re-embed verbatim source chunks against the NEW spec too, so the unified
+    # search pool stays consistent after the flip. Each source re-indexes against
+    # spec.id explicitly (active spec is still the OLD one until the flip below).
+    async with async_session_factory() as session:
+        from app.services.verbatim_service import index_verbatim_source
+
+        verbatim_sources = (
+            await session.execute(
+                select(Source).where(
+                    Source.preserve_verbatim.is_(True),
+                    Source.status == "ready",
+                )
+            )
+        ).scalars().all()
+        for vs in verbatim_sources:
+            try:
+                await index_verbatim_source(session, vs, spec_id=spec.id)
+            except Exception as e:
+                logger.warning(f"reembed: verbatim source {vs.id} re-index failed: {e}")
+        if verbatim_sources:
+            logger.info(f"reembed: re-indexed {len(verbatim_sources)} verbatim sources")
+
     # Atomic flip + cleanup of old model's vectors.
     async with async_session_factory() as session:
         job = await session.get(EmbeddingJob, job_uuid)
@@ -603,6 +656,7 @@ async def reembed_all_pages_task(ctx: dict, job_id: str) -> None:
         svc = ConfigService(session)
         await svc.set(ACTIVE_EMBEDDING_MODEL_KEY, spec.id)
         deleted = await cleanup_stale_embeddings(session, keep_spec_id=spec.id)
+        deleted += await cleanup_stale_source_chunk_embeddings(session, keep_spec_id=spec.id)
         job.status = "completed"
         job.finished_at = datetime.now(timezone.utc)
         await session.commit()
@@ -642,6 +696,18 @@ async def ingest_map_reduce_task(ctx: dict, source_id: str):
             return
         if not source.full_text:
             raise ValueError(f"Source {source_id} has no full_text — run pre-processing first")
+
+        # Verbatim sources never run MRP, regardless of which task enqueued them
+        # (e.g. a dept-change re-ingest). Index raw chunks and finish.
+        if source.preserve_verbatim:
+            try:
+                return await finalize_verbatim_source(session, source, tracker)
+            except BaseException as e:
+                logger.error(f"Verbatim indexing failed for {source_id}: {e}")
+                source.status = "error"
+                source.error_message = str(e)[:500]
+                await session.commit()
+                raise
 
         try:
             source.status = "processing"
