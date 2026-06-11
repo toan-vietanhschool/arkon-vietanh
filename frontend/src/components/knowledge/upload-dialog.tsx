@@ -39,12 +39,13 @@ type Props = {
   onUploaded: () => void;
 };
 
-const ACCEPTED_EXTENSIONS = ["pdf", "docx", "doc", "xlsx", "csv", "txt", "md", "pptx"];
+const ACCEPTED_EXTENSIONS = ["pdf", "docx", "doc", "xlsx", "xls", "csv", "txt", "md", "pptx"];
 const ACCEPTED_MIMES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
   "text/plain",
   "text/csv",
   "text/markdown",
