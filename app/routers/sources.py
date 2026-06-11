@@ -18,6 +18,7 @@ from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import get_db
 from app.database.models import Employee, ScopeType, Source, SourceDepartment, WikiPage
 from app.database.repository import Repository
@@ -530,6 +531,21 @@ async def retry_source(
     )).scalar_one_or_none()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
+
+    # Auto-recovery cap: a source repeatedly swept from a dead 'processing'
+    # state (see sweep_stuck_processing_cron) burns tokens on every retry when
+    # the failure is deterministic (bad provider key, malformed file). Block
+    # further retries until an admin resets the counter.
+    if (source.auto_recover_count or 0) >= settings.max_auto_recover_attempts:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Retry blocked: this source failed {source.auto_recover_count} "
+                f"consecutive times (cap={settings.max_auto_recover_attempts}). "
+                "Check the LLM provider config and the source file, then ask an "
+                "admin to reset its auto-recovery counter."
+            ),
+        )
 
     # Retry policy:
     #   error / plan_ready     → always retryable (idempotent)

@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     redis_db: int = Field(default=0)
     worker_max_jobs: int = Field(default=3, description="Max concurrent ingestion jobs")
     worker_job_timeout: int = Field(default=1800, description="Job timeout in seconds")
+    max_auto_recover_attempts: int = Field(
+        default=3,
+        description="Max times a source may be auto-flipped from stuck 'processing' back to 'error' before the retry API refuses further attempts. Prevents token-burning loops when the failure is deterministic (bad provider key, malformed file).",
+    )
 
     # --- MRP Pipeline ---
     mrp_auto_approve_plan: bool = Field(

@@ -674,6 +674,7 @@ async def ingest_map_reduce_task(ctx: dict, source_id: str):
                     src.status = "plan_ready"
                     src.progress = 80
                     src.progress_message = "Compilation plan ready — awaiting review"
+                    src.auto_recover_count = 0  # successful checkpoint
                     await session.commit()
                 logger.info(f"Source {source_id} plan ready: {result.get('plan_id')}")
             elif result.get("status") == "plan_auto_approved":
@@ -923,6 +924,74 @@ async def sweep_stuck_ai_review_cron(ctx: dict):
             )
 
 
+async def sweep_stuck_processing_cron(ctx: dict):
+    """Periodic safety net: flip any Source stuck in status='processing' for
+    longer than 2x the worker job_timeout back to 'error'.
+
+    A source gets stuck when the worker process dies AFTER writing
+    status='processing' but BEFORE finishing the pipeline — OOM, SIGKILL,
+    container restart, hung LLM call. The in-worker try/except can't catch
+    process death so the source row stays at 'processing' indefinitely with
+    no recovery path (the retry endpoint only accepts 'error' / 'plan_ready').
+
+    This sweep does NOT auto-enqueue a retry — it only marks the row 'error'
+    so the user sees the Retry button. Auto-retrying here would loop forever
+    if the failure is deterministic (bad provider key, malformed file).
+    Source.auto_recover_count tracks consecutive sweeps; the retry API blocks
+    once it crosses settings.max_auto_recover_attempts so even manual retries
+    are gated against token-burning loops.
+
+    Uses updated_at (bumped by ProgressTracker on every progress update) so
+    legitimately slow MAP-phase LLM calls don't get swept while still
+    producing progress.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import or_, select
+
+    from app.database import async_session_factory
+    from app.database.models import Source
+
+    timeout_sec = max(int(settings.worker_job_timeout) * 2, 1800)
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=timeout_sec)
+
+    async with async_session_factory() as session:
+        rows = (await session.execute(
+            select(Source).where(
+                Source.status == "processing",
+                or_(Source.updated_at < cutoff, Source.updated_at.is_(None)),
+            )
+        )).scalars().all()
+
+        if not rows:
+            return
+
+        for src in rows:
+            src.auto_recover_count = (src.auto_recover_count or 0) + 1
+            src.status = "error"
+            attempts = src.auto_recover_count
+            cap = settings.max_auto_recover_attempts
+            if attempts >= cap:
+                src.error_message = (
+                    f"Worker died with no progress for >{timeout_sec // 60} min "
+                    f"on {attempts} consecutive attempts (cap={cap}). Retry is "
+                    f"blocked — check LLM provider config and source file, then "
+                    f"ask an admin to reset auto_recover_count."
+                )
+            else:
+                src.error_message = (
+                    f"Worker died with no progress for >{timeout_sec // 60} min. "
+                    f"Press Retry to try again ({attempts}/{cap} auto-recoveries used)."
+                )
+            src.progress_message = src.error_message
+
+        await session.commit()
+        logger.warning(
+            f"sweep_stuck_processing_cron: flipped {len(rows)} source(s) "
+            f"from 'processing' → 'error' (stuck >{timeout_sec}s)"
+        )
+
+
 async def daily_stats_rollup_cron(ctx: dict):
     """
     Cronjob: recompute admin Statistics rollups for yesterday (UTC).
@@ -1099,6 +1168,9 @@ class WorkerSettings:
         # Every 10 minutes — quick recovery from stuck 'running' AI reviews
         # caused by hard worker death (OOM, SIGKILL, container restart).
         cron(sweep_stuck_ai_review_cron, minute={0, 10, 20, 30, 40, 50}),
+        # Every 10 minutes (offset) — recover sources stuck at 'processing'
+        # from the same hard-death causes, gated by auto_recover_count.
+        cron(sweep_stuck_processing_cron, minute={5, 15, 25, 35, 45, 55}),
     ]
 
     @staticmethod

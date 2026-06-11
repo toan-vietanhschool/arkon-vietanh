@@ -125,6 +125,11 @@ class Source(Base):
     progress: Mapped[int] = mapped_column(Integer, default=0)
     progress_message: Mapped[Optional[str]] = mapped_column(String(500))
     job_id: Mapped[Optional[str]] = mapped_column(String(200))
+    # Consecutive times sweep_stuck_processing_cron flipped this source from a
+    # dead 'processing' state back to 'error'. The retry API blocks once this
+    # crosses settings.max_auto_recover_attempts (prevents token-burning loops
+    # on deterministic failures). Reset to 0 on any successful checkpoint.
+    auto_recover_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
     pipeline_strategy: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True,
         comment="single_pass | standard | hierarchical — set by Phase 0 triage",
