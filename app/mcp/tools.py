@@ -280,6 +280,16 @@ def register_tools(mcp: FastMCP):
                 all_scopes=identity.is_admin,
             )
 
+            # Verbatim source chunks — same semantic pool, RBAC-scoped to the
+            # caller's allowed source set (mirrors the source drill-down tools).
+            allowed_source_ids = await _get_allowed_source_ids(identity, session)
+            chunk_hits = await wiki_service.search_source_chunks_semantic(
+                session,
+                query_embedding=query_embedding,
+                top_k=top_k,
+                allowed_source_ids=allowed_source_ids,
+            )
+
             # Out-of-scope peek — admins already see everything, so the hint
             # only fires for non-admins. Limit to a small fixed sample so an
             # adversary can't enumerate the entire org's page list via search.
@@ -295,29 +305,60 @@ def register_tools(mcp: FastMCP):
                 )
                 oos_hint = await _format_oos_hint(session, oos_hits)
 
-        if not hits:
-            base = f"No wiki pages found for: \"{query}\""
+        # Collapse multiple chunk hits from the same source into one entry
+        # (best similarity + the matching page numbers).
+        grouped: dict = {}
+        for source, chunk, sim in chunk_hits:
+            g = grouped.get(source.id)
+            if g is None or sim > g["sim"]:
+                preview = (chunk.text or "").strip().replace("\n", " ")
+                if len(preview) > 200:
+                    preview = preview[:200] + "…"
+                grouped[source.id] = {
+                    "source": source, "sim": sim, "preview": preview, "pages": set(),
+                }
+            grouped[source.id]["pages"].add(chunk.page_number)
+
+        # Unify into one ranked list by similarity.
+        ranked: list = [("wiki", sim, page) for page, sim in hits]
+        ranked += [("source", g["sim"], g) for g in grouped.values()]
+        ranked.sort(key=lambda r: r[1], reverse=True)
+        ranked = ranked[:top_k]
+
+        if not ranked:
+            base = f"No knowledge base matches found for: \"{query}\""
             if oos_hint:
                 return f"{base}\n\n{oos_hint}"
             return base
 
-        lines = [f"**Wiki search — {len(hits)} result(s) for: \"{query}\"**\n"]
-        for page, sim in hits:
+        lines = [f"**KB search — {len(ranked)} result(s) for: \"{query}\"**\n"]
+        for kind, sim, obj in ranked:
             similarity_pct = f"{sim:.0%}"
-            summary = page.summary or ""
-            kt_label = (
-                f" [{', '.join(page.knowledge_type_slugs)}]"
-                if page.knowledge_type_slugs else ""
-            )
-            entry = (
-                f"- `{page.slug}` ({page.page_type}){kt_label} — {similarity_pct}\n"
-                f"  **{page.title}**"
-            )
-            if summary:
-                entry += f" — {summary}"
+            if kind == "wiki":
+                page = obj
+                kt_label = (
+                    f" [{', '.join(page.knowledge_type_slugs)}]"
+                    if page.knowledge_type_slugs else ""
+                )
+                entry = (
+                    f"- 📘 `{page.slug}` ({page.page_type}){kt_label} — {similarity_pct}\n"
+                    f"  **{page.title}**"
+                )
+                if page.summary:
+                    entry += f" — {page.summary}"
+                entry += "\n  _Read: `read_wiki_page(\"%s\")`_" % page.slug
+            else:
+                source = obj["source"]
+                title = source.title or source.file_name or source.url or "Untitled"
+                pages_sorted = sorted(obj["pages"])
+                pages_label = ",".join(str(p) for p in pages_sorted[:5])
+                entry = (
+                    f"- 📄 **{title}** (nguyên văn) — {similarity_pct} — trang {pages_label}\n"
+                    f"  “{obj['preview']}”\n"
+                    f"  _Đọc bản gốc: `get_source_pages(\"{source.id}\", \"{pages_sorted[0]}\")`_"
+                )
             lines.append(entry)
 
-        lines.append("\n_Use `read_wiki_page(slug)` to read the full markdown._")
         if oos_hint:
             lines.append("")
             lines.append(oos_hint)

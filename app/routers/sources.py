@@ -65,6 +65,7 @@ class SourceResponse(BaseModel):
     # Multi-department (v2)
     department_ids: list[str] = []
     department_names: list[str] = []
+    preserve_verbatim: bool = False
     contributed_by_employee_id: Optional[uuid.UUID] = None
     contributed_by_name: Optional[str] = None
     scope_type: str = "global"
@@ -86,6 +87,7 @@ class SourceCreateURL(BaseModel):
     title: Optional[str] = None
     knowledge_type_id: Optional[uuid.UUID] = None
     department_ids: list[uuid.UUID] = []
+    preserve_verbatim: bool = False
 
 
 class SourceUpdate(BaseModel):
@@ -130,6 +132,7 @@ def _to_response(source: Source, wiki_page_count: int = 0) -> SourceResponse:
         knowledge_type_color=source.knowledge_type.color if source.knowledge_type else None,
         department_ids=dept_ids,
         department_names=dept_names,
+        preserve_verbatim=bool(source.preserve_verbatim),
         contributed_by_employee_id=source.contributed_by_employee_id,
         contributed_by_name=source.contributor.name if source.contributor else None,
         scope_type=source.scope_type or "global",
@@ -300,6 +303,7 @@ async def upload_source(
     department_ids: Optional[str] = Form(None),  # comma-separated UUIDs
     scope_type: Optional[str] = Form(None),
     scope_id: Optional[str] = Form(None),
+    preserve_verbatim: bool = Form(False),
     db: AsyncSession = Depends(get_db),
     user: Employee = require_permission("doc:create"),
 ):
@@ -338,6 +342,7 @@ async def upload_source(
         contributed_by_employee_id=user.id,
         scope_type=scope_type or ScopeType.GLOBAL.value,
         scope_id=uuid.UUID(scope_id) if scope_id else None,
+        preserve_verbatim=preserve_verbatim,
     )
     source = await repo.create(source)
     await db.flush()
@@ -399,6 +404,7 @@ async def add_url_source(
         knowledge_type_id=req.knowledge_type_id,
         contributed_by_employee_id=user.id,
         scope_type=ScopeType.GLOBAL.value,
+        preserve_verbatim=req.preserve_verbatim,
     )
     source = await repo.create(source)
     await db.flush()
@@ -464,7 +470,7 @@ async def update_source(
         old_dept_ids = set(old_dept_rows)
         new_dept_ids = set(body.department_ids)
 
-        if old_dept_ids != new_dept_ids and source.status == "ready":
+        if old_dept_ids != new_dept_ids and source.status == "ready" and not source.preserve_verbatim:
             dept_changed = True
 
             # Snapshot old scopes before detaching so we can regenerate their indexes

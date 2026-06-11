@@ -24,6 +24,8 @@
     "knowledgeTypeLabel": "Loại kiến thức",
     "knowledgeTypePlaceholder": "Chọn loại (tùy chọn)",
     "knowledgeTypeNone": "Không có",
+    "verbatimLabel": "Giữ nguyên văn — bỏ qua tạo wiki",
+    "verbatimHint": "Dùng cho tài liệu chính thức hoặc cần độ chính xác cao (hợp đồng, nghị định, quy định). Tài liệu được lưu trữ và tìm kiếm đúng nguyên văn, không tóm tắt hay viết lại bằng AI.",
     "departmentsLabel": "Phòng ban",
     "departmentsHint": "Chọn phòng ban có quyền truy cập tài liệu này. Để trống để cho phép truy cập toàn cục.",
     "noDepartments": "Không có phòng ban",
